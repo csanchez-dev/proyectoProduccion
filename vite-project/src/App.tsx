@@ -3,6 +3,7 @@ import Layout from "./components/Layout"
 import Agenda from "./pages/Agenda"
 import Register from "./pages/Register"
 import Profile from "./pages/Profile"
+import Admin from "./pages/Admin"
 
 function Home() {
   return <h1>Inicio</h1>
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/conferencias" element={<Agenda />} />
         <Route path="/registro" element={<Register />} />
         <Route path="/perfil" element={<Profile />} />
+        <Route path="/admin" element={<Admin />} />
       </Routes>
     </Layout>
   )

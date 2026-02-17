@@ -26,9 +26,27 @@ export default function Register() {
     e.preventDefault()
     if (isLogin) {
       console.log("Iniciando sesión con:", formData.email)
-      localStorage.setItem("user_session", JSON.stringify({ email: formData.email }))
-      alert("¡Inicio de sesión exitoso!")
-      window.location.href = "/" // Redirigir y recargar para actualizar Layout
+
+      // Lógica de Super Usuarios
+      let role = "USER"
+      let name = "Usuario"
+
+      if (formData.email === "superadmin@coniiti.com" && formData.password === "super123") {
+        role = "SUPER_ADMIN"
+        name = "Super Admin"
+      } else if (formData.email === "manager@coniiti.com" && formData.password === "manager123") {
+        role = "CONTENT_MANAGER"
+        name = "Gestor"
+      }
+
+      localStorage.setItem("user_session", JSON.stringify({
+        email: formData.email,
+        role: role,
+        fullName: name
+      }))
+
+      alert(role !== "USER" ? `¡Bienvenido Administrador: ${name}!` : "¡Inicio de sesión exitoso!")
+      window.location.href = role !== "USER" ? "/admin" : "/"
     } else {
       if (!formData.acceptTerms) {
         alert("Debes aceptar la política de tratamiento de datos para continuar.")

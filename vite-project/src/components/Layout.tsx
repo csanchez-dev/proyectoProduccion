@@ -6,19 +6,29 @@ type Props = {
 }
 
 export default function Layout({ children }: Props) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [user, setUser] = useState<any>(null)
   const navigate = useNavigate()
 
   // Simulación de verificación de sesión (se activa al recargar o navegar)
   useEffect(() => {
-    const user = localStorage.getItem("user_session")
-    setIsLoggedIn(!!user)
+    const session = localStorage.getItem("user_session")
+    if (session) {
+      setUser(JSON.parse(session))
+    }
+
+    // Aplicar tema persistente
+    const theme = localStorage.getItem("site_theme")
+    if (theme && theme !== "default") {
+      document.body.className = `theme-${theme}`
+    } else {
+      document.body.className = ""
+    }
   }, [])
 
   const handleLogout = () => {
     if (confirm("¿Estás seguro de que deseas cerrar sesión?")) {
       localStorage.removeItem("user_session")
-      setIsLoggedIn(false)
+      setUser(null)
       navigate("/")
     }
   }
@@ -57,8 +67,11 @@ export default function Layout({ children }: Props) {
           </ul>
 
           <div className="user-auth-zone">
-            {isLoggedIn ? (
+            {user ? (
               <div className="user-profile-menu">
+                {(user.role === "SUPER_ADMIN" || user.role === "CONTENT_MANAGER") && (
+                  <Link to="/admin" className="btn-admin-pill">Panel Admin</Link>
+                )}
                 <Link to="/perfil" className="btn-profile">Mi Perfil</Link>
                 <button onClick={handleLogout} className="btn-logout">Cerrar Sesión</button>
               </div>

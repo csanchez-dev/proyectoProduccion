@@ -11,8 +11,14 @@ h3 {
 }
 
 :root {
+  --primary-color: #375fe4;
+  --primary-hover: #1448f0;
+  --secondary-color: #1f2a44;
+  --accent-color: #4998f1;
+  --btn-gradient: linear-gradient(90deg, #4998f1, #375fe4);
+  --btn-hover-gradient: linear-gradient(90deg, #1448f0, #4663e5);
+
   font-family: 'Open Sans', sans-serif;
-  ;
   line-height: 1.5;
   font-weight: 400;
 
@@ -24,6 +30,31 @@ h3 {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Temas por Países */
+body.theme-colombia {
+  --primary-color: #003893;
+  --primary-hover: #002d75;
+  --secondary-color: #f1c40f;
+  --accent-color: #ce1126;
+  --btn-gradient: linear-gradient(90deg, #f1c40f, #003893);
+}
+
+body.theme-italy {
+  --primary-color: #008c45;
+  --primary-hover: #007037;
+  --secondary-color: #1f2a44;
+  --accent-color: #cd212a;
+  --btn-gradient: linear-gradient(90deg, #008c45, #cd212a);
+}
+
+body.theme-mexico {
+  --primary-color: #006847;
+  --primary-hover: #005036;
+  --secondary-color: #ce1126;
+  --accent-color: #ce1126;
+  --btn-gradient: linear-gradient(90deg, #006847, #ce1126);
 }
 
 * {
@@ -95,8 +126,8 @@ header {
 
 .btn-login-header {
   background: white;
-  border: 2px solid #375fe4;
-  color: #375fe4;
+  border: 2px solid var(--primary-color);
+  color: var(--primary-color);
   padding: 8px 16px;
   border-radius: 8px;
   text-decoration: none;
@@ -106,7 +137,7 @@ header {
 }
 
 .btn-login-header:hover {
-  background: #375fe4;
+  background: var(--primary-color);
   color: white;
 }
 
@@ -118,7 +149,7 @@ header {
 
 .btn-profile {
   background: #f0f4ff;
-  color: #375fe4;
+  color: var(--primary-color);
   padding: 8px 16px;
   border-radius: 8px;
   text-decoration: none;
@@ -148,7 +179,7 @@ header {
   text-decoration: none;
   position: relative;
   text-decoration: none;
-  color: #1f2a44;
+  color: var(--secondary-color);
   font-weight: 700;
 }
 
@@ -160,7 +191,7 @@ header {
 
   width: 100%;
   height: 2px;
-  background-color: #1f2a44;
+  background-color: var(--secondary-color);
 
   transform: scaleX(0);
   transform-origin: left;
@@ -205,7 +236,7 @@ header {
 }
 
 .btn {
-  background: linear-gradient(90deg, #4998f1, #375fe4);
+  background: var(--btn-gradient);
   color: #fff;
   font-weight: 600;
   padding: 12px 28px;
@@ -218,7 +249,7 @@ header {
 
 .btn:hover {
   transform: scale(1.05);
-  background: linear-gradient(90deg, #1448f0, #4663e5);
+  background: var(--btn-hover-gradient);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
@@ -647,3 +678,161 @@ footer {
     grid-template-columns: 1fr;
   }
 }
+
+/* Panel de Administración */
+.admin-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #eee;
+}
+
+.role-badge {
+  background: #1f2a44;
+  color: #f1c40f;
+  padding: 8px 16px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 2rem;
+  min-height: 600px;
+}
+
+.admin-sidebar {
+  background: #f8f9fa;
+  border-radius: 15px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-sidebar button {
+  text-align: left;
+  padding: 12px 15px;
+  border: none;
+  background: none;
+  border-radius: 10px;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-sidebar button:hover,
+.admin-sidebar button.active {
+  background: #375fe4;
+  color: white;
+}
+
+.admin-content {
+  background: white;
+  border-radius: 15px;
+  padding: 2rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.btn-add {
+  background: #27ae60;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th {
+  text-align: left;
+  padding: 12px;
+  background: #f1f4f9;
+  color: #1f2a44;
+}
+
+.admin-table td {
+  padding: 15px 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-edit-sm,
+.btn-delete-sm {
+  border: none;
+  background: #f1f4f9;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-delete-sm:hover {
+  background: #e74c3c;
+  color: white;
+}
+
+.guests-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.guest-admin-card {
+  text-align: center;
+  padding: 1.5rem;
+  border: 1px solid #eee;
+  border-radius: 12px;
+}
+
+.guest-admin-card img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 1rem;
+}
+
+/* Botón Admin en Header */
+.btn-admin-pill {
+  background: #ffc107;
+  color: #000;
+  padding: 8px 16px;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  margin-right: 0.5rem;
+  border: 2px solid #000;
+}
+.theme-select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; background: #f9f9f9; }
+.settings-form .form-group { margin-bottom: 2rem; }
+.settings-form label { display: block; margin-bottom: 0.8rem; font-weight: 700; color: var(--secondary-color); }
