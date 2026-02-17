@@ -861,3 +861,8 @@ footer {
 .banner-actions { display: flex; gap: 10px; }
 .btn-update-img { background: #375fe4; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; }
 .btn-remove-img { background: #fff; color: #e74c3c; border: 1px solid #e74c3c; padding: 8px 15px; border-radius: 6px; cursor: pointer; }
+
+.add-guest-form { background: #f9fbfd; padding: 1.5rem; border-radius: 12px; border: 1px solid #e3e8ee; margin-bottom: 2rem; }
+.add-guest-form textarea { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-family: inherit; margin-bottom: 1rem; }
+.btn-save-guest { background: #375fe4; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+.btn-save-guest:hover { background: #1448f0; }

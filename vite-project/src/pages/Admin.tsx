@@ -28,6 +28,36 @@ export default function Admin() {
         }
     }
 
+    const [showGuestForm, setShowGuestForm] = useState(false)
+    const [newGuest, setNewGuest] = useState({
+        name: "",
+        organization: "",
+        bio: "",
+        avatar: ""
+    })
+
+    const handleAddGuest = (e: React.FormEvent) => {
+        e.preventDefault()
+        // En una app real, esto sería un POST a una API
+        // Aquí simulamos añadiendo un nuevo objeto a la estructura
+        const newId = (conferences.length + 1).toString()
+        const simulatedConf = {
+            id: newId,
+            title: `Conferencia de ${newGuest.name}`,
+            description: newGuest.bio,
+            startTime: new Date().toISOString(),
+            endTime: new Date().toISOString(),
+            location: "TBD",
+            category: "General",
+            level: "Básico",
+            speaker: { ...newGuest }
+        }
+        setConferences([...conferences, simulatedConf])
+        setShowGuestForm(false)
+        setNewGuest({ name: "", organization: "", bio: "", avatar: "" })
+        alert("¡Nuevo invitado añadido exitosamente!")
+    }
+
     if (!userRole) return <div className="loading">Cargando panel...</div>
 
     return (
@@ -93,24 +123,76 @@ export default function Admin() {
                             </table>
                         </div>
                     )}
-
                     {activeTab === "guests" && (
                         <div className="admin-view">
                             <div className="view-header">
                                 <h2>Gestión de Invitados</h2>
-                                <button className="btn-add">+ Nuevo Invitado</button>
+                                <button
+                                    className="btn-add"
+                                    onClick={() => setShowGuestForm(!showGuestForm)}
+                                >
+                                    {showGuestForm ? "Cerrar Formulario" : "+ Nuevo Invitado"}
+                                </button>
                             </div>
-                            <div className="guests-grid">
-                                {conferences.map(conf => (
-                                    <div key={conf.id} className="guest-admin-card">
-                                        <img src={conf.speaker.avatar} alt={conf.speaker.name} />
-                                        <div className="guest-info">
-                                            <h4>{conf.speaker.name}</h4>
-                                            <p>{conf.speaker.organization}</p>
+
+                            {showGuestForm && (
+                                <form className="add-guest-form fade-in" onSubmit={handleAddGuest}>
+                                    <div className="form-row">
+                                        <div className="form-group">
+                                            <label>Nombre Completo</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={newGuest.name}
+                                                onChange={(e) => setNewGuest({ ...newGuest, name: e.target.value })}
+                                            />
                                         </div>
-                                        <button className="btn-edit-sm">Editar Datos</button>
+                                        <div className="form-group">
+                                            <label>Organización / Universidad</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={newGuest.organization}
+                                                onChange={(e) => setNewGuest({ ...newGuest, organization: e.target.value })}
+                                            />
+                                        </div>
                                     </div>
-                                ))}
+                                    <div className="form-group">
+                                        <label>URL de la Foto</label>
+                                        <input
+                                            type="text"
+                                            placeholder="https://... (deja vacío para avatar por defecto)"
+                                            value={newGuest.avatar}
+                                            onChange={(e) => setNewGuest({ ...newGuest, avatar: e.target.value || "/default-avatar.png" })}
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Bio / Perfil Profesional</label>
+                                        <textarea
+                                            rows={3}
+                                            required
+                                            value={newGuest.bio}
+                                            onChange={(e) => setNewGuest({ ...newGuest, bio: e.target.value })}
+                                        ></textarea>
+                                    </div>
+                                    <button type="submit" className="btn-save-guest">Guardar Invitado</button>
+                                </form>
+                            )}
+
+                            <div className="guests-grid">
+                                {Array.from(new Set(conferences.map(c => c.speaker.name))).map(speakerName => {
+                                    const speaker = conferences.find(c => c.speaker.name === speakerName)?.speaker;
+                                    return (
+                                        <div key={speakerName} className="guest-admin-card fade-in">
+                                            <img src={speaker?.avatar || "/default-avatar.png"} alt={speakerName} />
+                                            <div className="guest-info">
+                                                <h4>{speakerName}</h4>
+                                                <p>{speaker?.organization}</p>
+                                            </div>
+                                            <button className="btn-edit-sm">Editar Datos</button>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
