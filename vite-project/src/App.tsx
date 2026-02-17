@@ -5,9 +5,7 @@ import Register from "./pages/Register"
 import Profile from "./pages/Profile"
 import Admin from "./pages/Admin"
 
-function Home() {
-  return <h1>Inicio</h1>
-}
+import Home from "./pages/Home"
 
 export default function App() {
   return (

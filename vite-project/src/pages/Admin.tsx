@@ -4,7 +4,14 @@ import { conferences as initialConferences } from "../data/conference_mocks"
 
 export default function Admin() {
     const [userRole, setUserRole] = useState<string | null>(null)
-    const [conferences, setConferences] = useState(initialConferences)
+    const [conferences, setConferences] = useState(() => {
+        const saved = localStorage.getItem("site_conferences")
+        return saved ? JSON.parse(saved) : initialConferences
+    })
+    const [deletedConferences, setDeletedConferences] = useState<any[]>(() => {
+        const saved = localStorage.getItem("site_deleted_conferences")
+        return saved ? JSON.parse(saved) : []
+    })
     const [activeTab, setActiveTab] = useState("conferences")
     const navigate = useNavigate()
 
@@ -22,24 +29,31 @@ export default function Admin() {
         }
     }, [navigate])
 
-    const [deletedConferences, setDeletedConferences] = useState<any[]>([])
+    // Persistencia automática de los cambios
+    useEffect(() => {
+        localStorage.setItem("site_conferences", JSON.stringify(conferences))
+    }, [conferences])
+
+    useEffect(() => {
+        localStorage.setItem("site_deleted_conferences", JSON.stringify(deletedConferences))
+    }, [deletedConferences])
     const [editingConf, setEditingConf] = useState<any | null>(null)
 
     const handleDeleteConference = (id: string) => {
         if (confirm("¿Estás seguro de mover esta conferencia a la papelera?")) {
-            const confToDelete = conferences.find(c => c.id === id)
+            const confToDelete = conferences.find((c: any) => c.id === id)
             if (confToDelete) {
                 setDeletedConferences([...deletedConferences, confToDelete])
-                setConferences(conferences.filter(c => c.id !== id))
+                setConferences(conferences.filter((c: any) => c.id !== id))
             }
         }
     }
 
     const handleRestoreConference = (id: string) => {
-        const confToRestore = deletedConferences.find(c => c.id === id)
+        const confToRestore = deletedConferences.find((c: any) => c.id === id)
         if (confToRestore) {
             setConferences([...conferences, confToRestore])
-            setDeletedConferences(deletedConferences.filter(c => c.id !== id))
+            setDeletedConferences(deletedConferences.filter((c: any) => c.id !== id))
             alert("Conferencia restaurada")
         }
     }

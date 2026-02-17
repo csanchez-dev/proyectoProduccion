@@ -874,3 +874,16 @@ footer {
 .modal-content { background: white; padding: 2rem; border-radius: 15px; width: 500px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
 .modal-actions { display: flex; gap: 1rem; margin-top: 1.5rem; }
 .btn-restore { background: #2ecc71; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; }
+
+/* Estilos de la Página de Inicio e Invitados */
+.home-container { padding-bottom: 4rem; }
+.hero-section { background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1540575861501-7ce0e2211239?auto=format&fit=crop&w=1600&q=80'); background-size: cover; background-position: center; color: white; text-align: center; padding: 100px 20px; margin-bottom: 4rem; }
+.invitados-section { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+.section-header { text-align: center; margin-bottom: 3rem; }
+.section-header h2 { font-size: 2.5rem; color: var(--secondary-color); margin-bottom: 0.5rem; }
+.guest-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.05); transition: transform 0.3s; text-align: center; padding: 2rem; border: 1px solid #f0f0f0; }
+.guest-card:hover { transform: translateY(-10px); }
+.guest-image-container img { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 5px solid var(--primary-color); margin-bottom: 1.5rem; }
+.guest-details h3 { font-size: 1.4rem; color: #1f2a44; margin-bottom: 0.5rem; }
+.guest-org { font-weight: 700; color: var(--primary-color); margin-bottom: 1rem; }
+.guest-bio { font-size: 0.9rem; color: #666; line-height: 1.6; }
