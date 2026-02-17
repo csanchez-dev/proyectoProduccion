@@ -173,14 +173,24 @@ export default function Register() {
                     </div>
                     <div className="form-group">
                       <label htmlFor="career">Carrera</label>
-                      <input
-                        type="text"
+                      <select
                         id="career"
                         name="career"
                         required
                         value={formData.career}
                         onChange={handleInputChange}
-                      />
+                      >
+                        <option value="">Selecciona tu carrera</option>
+                        <option value="Administración de Empresas">Administración de Empresas</option>
+                        <option value="Arquitectura">Arquitectura</option>
+                        <option value="Derecho">Derecho</option>
+                        <option value="Economía">Economía</option>
+                        <option value="Ingeniería Civil">Ingeniería Civil</option>
+                        <option value="Ingeniería de Sistemas">Ingeniería de Sistemas</option>
+                        <option value="Ingeniería Electrónica">Ingeniería Electrónica</option>
+                        <option value="Ingeniería Industrial">Ingeniería Industrial</option>
+                        <option value="Psicología">Psicología</option>
+                      </select>
                     </div>
                   </div>
                 )}

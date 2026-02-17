@@ -87,11 +87,20 @@ export default function Profile() {
                                 <div className="info-item">
                                     <label>Carrera</label>
                                     {isEditing ? (
-                                        <input
-                                            type="text"
+                                        <select
                                             value={userData.career}
                                             onChange={(e) => setUserData({ ...userData, career: e.target.value })}
-                                        />
+                                        >
+                                            <option value="Administración de Empresas">Administración de Empresas</option>
+                                            <option value="Arquitectura">Arquitectura</option>
+                                            <option value="Derecho">Derecho</option>
+                                            <option value="Economía">Economía</option>
+                                            <option value="Ingeniería Civil">Ingeniería Civil</option>
+                                            <option value="Ingeniería de Sistemas">Ingeniería de Sistemas</option>
+                                            <option value="Ingeniería Electrónica">Ingeniería Electrónica</option>
+                                            <option value="Ingeniería Industrial">Ingeniería Industrial</option>
+                                            <option value="Psicología">Psicología</option>
+                                        </select>
                                     ) : (
                                         <p>{userData.career}</p>
                                     )}
