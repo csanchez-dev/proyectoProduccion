@@ -35,7 +35,8 @@ export default function Layout({ children }: Props) {
             <li><Link to="/">Inicio</Link></li>
             <li><Link to="#invitados">Invitados</Link></li>
             <li><Link to="/conferencias">Agenda</Link></li>
-            <li><Link to="/registro">Registro</Link></li>
+            <li><Link to="/registro">Acceso</Link></li>
+            <li><Link to="/perfil">Mi Perfil</Link></li>
             <li><Link to="#acerca-de">Acerca de</Link></li>
             <li><Link to="#contacto">Contacto</Link></li>
           </ul>
