@@ -1055,3 +1055,15 @@ header {
 /* Aplicación extendida de variables de color */
 p, li, label, h3, h4 { color: inherit; }
 
+
+/* Estilos para Previsualización de Imágenes en Admin */
+.banner-edit-zone { display: flex; flex-direction: column; gap: 1rem; }
+.file-upload-wrapper { border: 2px dashed #ddd; border-radius: 12px; padding: 2rem; text-align: center; background: #fff; transition: border-color 0.3s; }
+.file-upload-wrapper:hover { border-color: var(--primary-color); }
+.file-input { cursor: pointer; }
+.banner-actions { display: flex; gap: 1rem; }
+
+
+.btn-remove-img-sm { background: #fee2e2; color: #dc2626; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; margin-top: 5px; }
+.btn-remove-img-sm:hover { background: #fecaca; }
+

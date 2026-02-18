@@ -372,40 +372,42 @@ export default function Admin() {
                                 <div className="form-group">
                                     <label>Imagen de Banner (Cabecera)</label>
                                     <div className="banner-edit-zone">
-                                        <input
-                                            type="text"
-                                            placeholder="URL de la imagen (ej: https://...)"
-                                            defaultValue={localStorage.getItem("site_banner") || "/banner-header.png"}
-                                            id="bannerInput"
-                                        />
-                                        <div className="banner-actions">
-                                            <button
-                                                type="button"
-                                                className="btn-update-img"
-                                                onClick={() => {
-                                                    const val = (document.getElementById('bannerInput') as HTMLInputElement).value;
-                                                    localStorage.setItem("site_banner", val);
-                                                    alert("Banner actualizado. Recarga la página para ver los cambios.");
+                                        <div className="file-upload-wrapper">
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) {
+                                                        const reader = new FileReader();
+                                                        reader.onloadend = () => {
+                                                            if (reader.result) {
+                                                                localStorage.setItem("site_banner", reader.result as string);
+                                                                alert("¡Banner cargado con éxito! Recarga para ver el cambio.");
+                                                            }
+                                                        };
+                                                        reader.readAsDataURL(file);
+                                                    }
                                                 }}
-                                            >
-                                                Actualizar Foto
-                                            </button>
+                                                className="file-input"
+                                            />
+                                        </div>
+                                        <div className="banner-actions">
                                             <button
                                                 type="button"
                                                 className="btn-remove-img"
                                                 onClick={() => {
-                                                    localStorage.setItem("site_banner", "");
-                                                    (document.getElementById('bannerInput') as HTMLInputElement).value = "";
-                                                    alert("Banner eliminado.");
+                                                    localStorage.removeItem("site_banner");
+                                                    alert("Banner restaurado al original.");
                                                 }}
                                             >
-                                                Quitar Foto
+                                                Restaurar Original
                                             </button>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="form-group">
-                                    <label>Logos de la Institución y Evento</label>
+                                    <label>Logos de la Institución y Evento (Encabezado)</label>
                                     <div className="logos-edit-grid">
                                         <div className="logo-upload-item">
                                             <span>Logo Universidad</span>
@@ -419,13 +421,23 @@ export default function Admin() {
                                                         reader.onloadend = () => {
                                                             if (reader.result) {
                                                                 localStorage.setItem("site_logo_uni", reader.result as string);
-                                                                alert("Logo de la Universidad cargado con éxito. Recarga para ver.");
+                                                                alert("Logo de Universidad cargado correctamente.");
                                                             }
                                                         };
                                                         reader.readAsDataURL(file);
                                                     }
                                                 }}
                                             />
+                                            <button
+                                                type="button"
+                                                className="btn-remove-img-sm"
+                                                onClick={() => {
+                                                    localStorage.removeItem("site_logo_uni");
+                                                    alert("Logo de Universidad restaurado.");
+                                                }}
+                                            >
+                                                Restaurar Original
+                                            </button>
                                         </div>
                                         <div className="logo-upload-item">
                                             <span>Logo CONIITI</span>
@@ -439,13 +451,23 @@ export default function Admin() {
                                                         reader.onloadend = () => {
                                                             if (reader.result) {
                                                                 localStorage.setItem("site_logo_evento", reader.result as string);
-                                                                alert("Logo del Evento cargado con éxito. Recarga para ver.");
+                                                                alert("Logo del Evento cargado correctamente.");
                                                             }
                                                         };
                                                         reader.readAsDataURL(file);
                                                     }
                                                 }}
                                             />
+                                            <button
+                                                type="button"
+                                                className="btn-remove-img-sm"
+                                                onClick={() => {
+                                                    localStorage.removeItem("site_logo_evento");
+                                                    alert("Logo del Evento restaurado.");
+                                                }}
+                                            >
+                                                Restaurar Original
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
