@@ -69,6 +69,10 @@ export default function Layout({ children }: Props) {
             className="header-banner"
             src={bannerUrl}
             alt="Banner Cabecera"
+            onError={() => {
+              localStorage.removeItem("site_banner");
+              setBannerUrl("/banner-header.png");
+            }}
           />
         )}
 
@@ -77,11 +81,19 @@ export default function Layout({ children }: Props) {
             src={logoUni}
             alt="Logo Universidad Catolica"
             className="logo-uni"
+            onError={() => {
+              localStorage.removeItem("site_logo_uni");
+              setLogoUni("/ucatolica-logo.png");
+            }}
           />
           <img
             src={logoEvento}
             alt="Logo Coniiti"
             className="logo-event"
+            onError={() => {
+              localStorage.removeItem("site_logo_evento");
+              setLogoEvento("/logo-coniiti.png");
+            }}
           />
         </div>
 

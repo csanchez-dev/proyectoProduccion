@@ -379,11 +379,20 @@ export default function Admin() {
                                                 onChange={(e) => {
                                                     const file = e.target.files?.[0];
                                                     if (file) {
+                                                        if (file.size > 1500000) {
+                                                            alert("La imagen es muy pesada (máx 1.5MB). Por favor elige una más pequeña para evitar bloqueos.");
+                                                            return;
+                                                        }
                                                         const reader = new FileReader();
                                                         reader.onloadend = () => {
                                                             if (reader.result) {
-                                                                localStorage.setItem("site_banner", reader.result as string);
-                                                                alert("¡Banner cargado con éxito! Recarga para ver el cambio.");
+                                                                try {
+                                                                    localStorage.setItem("site_banner", reader.result as string);
+                                                                    alert("¡Banner cargado! Recargando para aplicar cambios...");
+                                                                    window.location.reload();
+                                                                } catch (err) {
+                                                                    alert("Error: La imagen sigue siendo muy grande para la memoria del navegador.");
+                                                                }
                                                             }
                                                         };
                                                         reader.readAsDataURL(file);
@@ -398,7 +407,8 @@ export default function Admin() {
                                                 className="btn-remove-img"
                                                 onClick={() => {
                                                     localStorage.removeItem("site_banner");
-                                                    alert("Banner restaurado al original.");
+                                                    alert("Banner restaurado. Se recargará la página.");
+                                                    window.location.reload();
                                                 }}
                                             >
                                                 Restaurar Original
@@ -417,11 +427,15 @@ export default function Admin() {
                                                 onChange={(e) => {
                                                     const file = e.target.files?.[0];
                                                     if (file) {
+                                                        if (file.size > 800000) {
+                                                            alert("El logo es muy grande (máx 800KB).");
+                                                            return;
+                                                        }
                                                         const reader = new FileReader();
                                                         reader.onloadend = () => {
                                                             if (reader.result) {
                                                                 localStorage.setItem("site_logo_uni", reader.result as string);
-                                                                alert("Logo de Universidad cargado correctamente.");
+                                                                window.location.reload();
                                                             }
                                                         };
                                                         reader.readAsDataURL(file);
@@ -433,7 +447,7 @@ export default function Admin() {
                                                 className="btn-remove-img-sm"
                                                 onClick={() => {
                                                     localStorage.removeItem("site_logo_uni");
-                                                    alert("Logo de Universidad restaurado.");
+                                                    window.location.reload();
                                                 }}
                                             >
                                                 Restaurar Original
@@ -447,11 +461,15 @@ export default function Admin() {
                                                 onChange={(e) => {
                                                     const file = e.target.files?.[0];
                                                     if (file) {
+                                                        if (file.size > 800000) {
+                                                            alert("El logo es muy grande (máx 800KB).");
+                                                            return;
+                                                        }
                                                         const reader = new FileReader();
                                                         reader.onloadend = () => {
                                                             if (reader.result) {
                                                                 localStorage.setItem("site_logo_evento", reader.result as string);
-                                                                alert("Logo del Evento cargado correctamente.");
+                                                                window.location.reload();
                                                             }
                                                         };
                                                         reader.readAsDataURL(file);
@@ -463,7 +481,7 @@ export default function Admin() {
                                                 className="btn-remove-img-sm"
                                                 onClick={() => {
                                                     localStorage.removeItem("site_logo_evento");
-                                                    alert("Logo del Evento restaurado.");
+                                                    window.location.reload();
                                                 }}
                                             >
                                                 Restaurar Original
@@ -517,13 +535,28 @@ export default function Admin() {
                                     <label>Modo de Mantenimiento</label>
                                     <input type="checkbox" />
                                 </div>
-                                <button
-                                    type="button"
-                                    className="btn-submit"
-                                    onClick={() => alert("Configuración global guardada correctamente")}
-                                >
-                                    Guardar Cambios Globales
-                                </button>
+                                <div className="admin-actions-footer">
+                                    <button
+                                        type="button"
+                                        className="btn-submit"
+                                        onClick={() => alert("Configuración global guardada correctamente")}
+                                    >
+                                        Guardar Cambios Globales
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn-logout"
+                                        style={{ marginLeft: '1rem', background: '#e74c3c' }}
+                                        onClick={() => {
+                                            if (confirm("¿Seguro que quieres borrar toda la personalización (colores y logos)?")) {
+                                                ["site_banner", "site_logo_uni", "site_logo_evento", "custom_bg_color", "custom_text_color", "custom_header_bg"].forEach(key => localStorage.removeItem(key));
+                                                window.location.reload();
+                                            }
+                                        }}
+                                    >
+                                        Limpiar y Resetear Diseño
+                                    </button>
+                                </div>
                             </form>
                         </div>
                     )}
