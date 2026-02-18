@@ -58,3 +58,8 @@ Para probar las funciones de gestión avanzada, utiliza estas credenciales en la
 
 ---
 Diseño y desarrollo orientado a la excelencia para la **Universidad Católica de Colombia**.
+
+ejecucion: 
+cd vite-project
+npm install
+npm run dev
