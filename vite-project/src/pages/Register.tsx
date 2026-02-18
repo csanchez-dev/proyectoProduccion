@@ -11,6 +11,7 @@ export default function Register() {
     password: "",
     institutionalCode: "",
     career: "",
+    gender: "",
     acceptTerms: false
   })
 
@@ -53,7 +54,22 @@ export default function Register() {
         return
       }
       console.log("Registrando usuario:", { role, ...formData })
-      localStorage.setItem("user_session", JSON.stringify({ email: formData.email, fullName: formData.fullName }))
+      localStorage.setItem("user_session", JSON.stringify({ email: formData.email, fullName: formData.fullName, gender: formData.gender }))
+
+      // Actualizar estadísticas de género para el dashboard
+      if (formData.gender) {
+        const stats = JSON.parse(localStorage.getItem('gender_stats') || JSON.stringify([
+          { name: 'Masculino', value: 45 },
+          { name: 'Femenino', value: 38 },
+          { name: 'Otro', value: 12 }
+        ]));
+        const genderIndex = stats.findIndex((s: any) => s.name === formData.gender);
+        if (genderIndex >= 0) {
+          stats[genderIndex].value += 1;
+        }
+        localStorage.setItem('gender_stats', JSON.stringify(stats));
+      }
+
       alert("¡Cuenta creada exitosamente!")
       window.location.href = "/perfil" // Redirigir y recargar
     }
@@ -216,6 +232,24 @@ export default function Register() {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+            {!isLogin && (
+              <div className="form-group fade-in" style={{ marginTop: '1rem' }}>
+                <label htmlFor="gender">Género</label>
+                <select
+                  id="gender"
+                  name="gender"
+                  required
+                  value={formData.gender}
+                  onChange={handleInputChange}
+                  style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #ddd' }}
+                >
+                  <option value="">Selecciona tu género</option>
+                  <option value="Masculino">Masculino</option>
+                  <option value="Femenino">Femenino</option>
+                  <option value="Otro">Otro / Prefiero no decirlo</option>
+                </select>
               </div>
             )}
 

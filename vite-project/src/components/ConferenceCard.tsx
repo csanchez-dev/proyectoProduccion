@@ -18,6 +18,20 @@ export default function ConferenceCard({ conference }: Props) {
     setTimeout(() => {
       setIsLoading(false)
       setIsRegistered(true)
+
+      // Actualizar estadísticas para el panel admin
+      const stats = JSON.parse(localStorage.getItem('conf_stats') || '[]');
+      const confIndex = stats.findIndex((s: any) => s.name === conference.title);
+      if (confIndex >= 0) {
+        stats[confIndex].value += 1;
+      } else {
+        stats.push({ name: conference.title, value: 1 });
+      }
+      localStorage.setItem('conf_stats', JSON.stringify(stats));
+
+      // Registrar evento
+      const tracker = import('../utils/tracker');
+      tracker.then(t => t.trackEvent('CLICK', window.location.pathname, `Inscripción: ${conference.title}`));
     }, 1500)
   }
 

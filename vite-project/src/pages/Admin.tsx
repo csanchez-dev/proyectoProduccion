@@ -1,6 +1,11 @@
 ﻿import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { conferences as initialConferences } from "../data/conference_mocks"
+import { getEvents, getGenderStats, getConferenceStats, getPageViewsStats } from "../utils/tracker"
+import {
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+    PieChart, Pie, Cell, LineChart, Line, ScatterChart, Scatter, ZAxis
+} from 'recharts'
 
 export default function Admin() {
     const [userRole, setUserRole] = useState<string | null>(null)
@@ -13,6 +18,11 @@ export default function Admin() {
         return saved ? JSON.parse(saved) : []
     })
     const [activeTab, setActiveTab] = useState("conferences")
+    const [chartTypes, setChartTypes] = useState<any>({
+        views: 'bar',
+        gender: 'pie',
+        conferences: 'bar'
+    })
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -172,6 +182,14 @@ export default function Admin() {
                     >
                         🗑️ Papelera
                     </button>
+                    {userRole === "SUPER_ADMIN" && (
+                        <button
+                            className={activeTab === "analytics" ? "active" : ""}
+                            onClick={() => setActiveTab("analytics")}
+                        >
+                            📈 Análisis de Datos
+                        </button>
+                    )}
                     {userRole === "SUPER_ADMIN" && (
                         <button
                             className={activeTab === "settings" ? "active" : ""}
@@ -567,55 +585,148 @@ export default function Admin() {
                                 </div>
                             </form>
 
-                            {/* Sección de Análisis de Datos */}
-                            <div className="analytics-section" style={{ marginTop: '3rem', borderTop: '2px solid #eee', paddingTop: '2rem' }}>
-                                <div className="view-header">
-                                    <h2>📈 Análisis de Datos</h2>
-                                    <button
-                                        className="btn-remove-img-sm"
-                                        onClick={() => {
-                                            if (confirm("¿Borrar todos los registros de actividad?")) {
-                                                localStorage.removeItem('app_analytics');
-                                                window.location.reload();
-                                            }
-                                        }}
-                                    >
-                                        Borrar Historial
-                                    </button>
-                                </div>
-                                <div className="analytics-grid">
-                                    <div className="analytics-card">
-                                        <h4>Resumen de Actividad Reciente</h4>
-                                        <div className="log-list" style={{ maxHeight: '300px', overflowY: 'auto', background: '#f9f9f9', padding: '1rem', borderRadius: '8px', fontSize: '0.85rem' }}>
-                                            {(() => {
-                                                const logs = JSON.parse(localStorage.getItem('app_analytics') || '[]');
-                                                return logs.length > 0 ? logs.map((log: any, i: number) => (
-                                                    <div key={i} className="log-item" style={{ padding: '8px 0', borderBottom: '1px solid #eee' }}>
-                                                        <span style={{ color: '#888', marginRight: '10px' }}>[{log.timestamp.split(', ')[1]}]</span>
-                                                        <strong style={{ color: log.type === 'PAGE_VIEW' ? '#375fe4' : '#2ecc71' }}>{log.type}</strong>
-                                                        <span style={{ marginLeft: '10px' }}>{log.path}</span>
-                                                        {log.details && <em style={{ display: 'block', color: '#666', fontSize: '0.75rem' }}>{log.details}</em>}
-                                                    </div>
-                                                )) : <p>No hay actividad registrada aún.</p>
-                                            })()}
-                                        </div>
+                        </div>
+                    )}
+
+                    {activeTab === "analytics" && userRole === "SUPER_ADMIN" && (
+                        <div className="admin-view fade-in">
+                            <div className="view-header">
+                                <h2>📊 Dashboard de Inteligencia de Datos</h2>
+                                <p>Análisis avanzado del comportamiento de usuarios y registros.</p>
+                            </div>
+
+                            <div className="analytics-dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '2rem', marginTop: '2rem' }}>
+
+                                {/* Gráfica de Visitas */}
+                                <div className="analytics-card premium-card" style={{ padding: '1.5rem', background: 'white', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                        <h4 style={{ margin: 0 }}>Vistas por Página</h4>
+                                        <select
+                                            value={chartTypes.views}
+                                            onChange={(e) => setChartTypes({ ...chartTypes, views: e.target.value })}
+                                            style={{ padding: '5px', borderRadius: '5px', border: '1px solid #ddd' }}
+                                        >
+                                            <option value="bar">Barras</option>
+                                            <option value="line">Líneas</option>
+                                            <option value="pie">Circular</option>
+                                        </select>
                                     </div>
-                                    <div className="analytics-card" style={{ marginTop: '1.5rem' }}>
-                                        <h4>Páginas más visitadas</h4>
-                                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '1rem' }}>
-                                            {(() => {
-                                                const logs = JSON.parse(localStorage.getItem('app_analytics') || '[]');
-                                                const counts: any = {};
-                                                logs.filter((l: any) => l.type === 'PAGE_VIEW').forEach((l: any) => {
-                                                    counts[l.path] = (counts[l.path] || 0) + 1;
-                                                });
-                                                return Object.entries(counts).sort((a: any, b: any) => b[1] - a[1]).map(([path, count]: any) => (
-                                                    <div key={path} className="theme-pill" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                                        {path} <span style={{ background: 'var(--primary-color)', color: 'white', padding: '2px 8px', borderRadius: '10px', fontSize: '0.7rem' }}>{count}</span>
-                                                    </div>
-                                                ));
-                                            })()}
-                                        </div>
+                                    <div style={{ width: '100%', height: 300 }}>
+                                        <ResponsiveContainer>
+                                            {chartTypes.views === 'bar' ? (
+                                                <BarChart data={getPageViewsStats()}>
+                                                    <CartesianGrid strokeDasharray="3 3" />
+                                                    <XAxis dataKey="name" />
+                                                    <YAxis />
+                                                    <Tooltip />
+                                                    <Bar dataKey="value" fill="#375fe4" radius={[4, 4, 0, 0]} />
+                                                </BarChart>
+                                            ) : chartTypes.views === 'line' ? (
+                                                <LineChart data={getPageViewsStats()}>
+                                                    <CartesianGrid strokeDasharray="3 3" />
+                                                    <XAxis dataKey="name" />
+                                                    <YAxis />
+                                                    <Tooltip />
+                                                    <Line type="monotone" dataKey="value" stroke="#375fe4" strokeWidth={3} />
+                                                </LineChart>
+                                            ) : (
+                                                <PieChart>
+                                                    <Pie data={getPageViewsStats()} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                                                        {[0, 1, 2, 3, 4].map((_, index) => <Cell key={`cell-${index}`} fill={['#375fe4', '#4998f1', '#1f2a44', '#e74c3c'][index % 4]} />)}
+                                                    </Pie>
+                                                    <Tooltip />
+                                                </PieChart>
+                                            )}
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+
+                                {/* Gráfica de Género */}
+                                <div className="analytics-card premium-card" style={{ padding: '1.5rem', background: 'white', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                        <h4 style={{ margin: 0 }}>Distribución por Género</h4>
+                                        <select
+                                            value={chartTypes.gender}
+                                            onChange={(e) => setChartTypes({ ...chartTypes, gender: e.target.value })}
+                                            style={{ padding: '5px', borderRadius: '5px', border: '1px solid #ddd' }}
+                                        >
+                                            <option value="pie">Pastel</option>
+                                            <option value="bar">Barras</option>
+                                        </select>
+                                    </div>
+                                    <div style={{ width: '100%', height: 300 }}>
+                                        <ResponsiveContainer>
+                                            {chartTypes.gender === 'pie' ? (
+                                                <PieChart>
+                                                    <Pie data={getGenderStats()} cx="50%" cy="50%" outerRadius={100} label dataKey="value">
+                                                        <Cell fill="#3498db" />
+                                                        <Cell fill="#e91e63" />
+                                                        <Cell fill="#95a5a6" />
+                                                    </Pie>
+                                                    <Tooltip />
+                                                    <Legend />
+                                                </PieChart>
+                                            ) : (
+                                                <BarChart data={getGenderStats()}>
+                                                    <XAxis dataKey="name" />
+                                                    <YAxis />
+                                                    <Tooltip />
+                                                    <Bar dataKey="value" fill="#3498db">
+                                                        <Cell fill="#3498db" />
+                                                        <Cell fill="#e91e63" />
+                                                        <Cell fill="#95a5a6" />
+                                                    </Bar>
+                                                </BarChart>
+                                            )}
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+
+                                {/* Gráfica de Conferencias */}
+                                <div className="analytics-card premium-card" style={{ padding: '1.5rem', background: 'white', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                        <h4 style={{ margin: 0 }}>Inscripciones por Conferencia</h4>
+                                        <select
+                                            value={chartTypes.conferences}
+                                            onChange={(e) => setChartTypes({ ...chartTypes, conferences: e.target.value })}
+                                            style={{ padding: '5px', borderRadius: '5px', border: '1px solid #ddd' }}
+                                        >
+                                            <option value="bar">Barras</option>
+                                            <option value="scatter">Dispersión</option>
+                                        </select>
+                                    </div>
+                                    <div style={{ width: '100%', height: 300 }}>
+                                        <ResponsiveContainer>
+                                            {chartTypes.conferences === 'bar' ? (
+                                                <BarChart data={getConferenceStats()} layout="vertical">
+                                                    <XAxis type="number" />
+                                                    <YAxis dataKey="name" type="category" width={100} />
+                                                    <Tooltip />
+                                                    <Bar dataKey="value" fill="#2ecc71" radius={[0, 4, 4, 0]} />
+                                                </BarChart>
+                                            ) : (
+                                                <ScatterChart>
+                                                    <XAxis dataKey="name" />
+                                                    <YAxis dataKey="value" name="Inscritos" />
+                                                    <ZAxis range={[60, 400]} />
+                                                    <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+                                                    <Scatter name="Conferencias" data={getConferenceStats()} fill="#2ecc71" />
+                                                </ScatterChart>
+                                            )}
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+
+                                {/* Log de Actividad Reciente */}
+                                <div className="analytics-card premium-card" style={{ padding: '1.5rem', background: 'white', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
+                                    <h4>Historial de Actividad Global</h4>
+                                    <div style={{ maxHeight: '250px', overflowY: 'auto', fontSize: '0.8rem' }}>
+                                        {getEvents().map((log, i) => (
+                                            <div key={i} style={{ padding: '10px 0', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between' }}>
+                                                <span><strong style={{ color: 'var(--primary-color)' }}>{log.type}</strong> en {log.path}</span>
+                                                <span style={{ color: '#888' }}>{log.timestamp}</span>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
