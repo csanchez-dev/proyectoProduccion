@@ -1067,3 +1067,13 @@ p, li, label, h3, h4 { color: inherit; }
 .btn-remove-img-sm { background: #fee2e2; color: #dc2626; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; margin-top: 5px; }
 .btn-remove-img-sm:hover { background: #fecaca; }
 
+
+.logo-container { background: transparent !important; padding: 0.5rem; }
+.logo-uni, .logo-event { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
+
+
+/* Analytics Premium Styles */
+.analytics-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 5px solid var(--primary-color); }
+.log-item:hover { background: #eee; border-radius: 4px; }
+.log-item strong { min-width: 80px; display: inline-block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; }
+

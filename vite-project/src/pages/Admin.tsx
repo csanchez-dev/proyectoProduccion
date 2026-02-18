@@ -421,6 +421,9 @@ export default function Admin() {
                                     <div className="logos-edit-grid">
                                         <div className="logo-upload-item">
                                             <span>Logo Universidad</span>
+                                            <div className="mini-preview">
+                                                <img src={localStorage.getItem("site_logo_uni") || "/ucatolica-logo.png"} alt="Preview Uni" style={{ height: '40px', objectFit: 'contain', background: '#eee', padding: '5px', borderRadius: '4px' }} />
+                                            </div>
                                             <input
                                                 type="file"
                                                 accept="image/*"
@@ -435,6 +438,7 @@ export default function Admin() {
                                                         reader.onloadend = () => {
                                                             if (reader.result) {
                                                                 localStorage.setItem("site_logo_uni", reader.result as string);
+                                                                alert("Logo de Universidad actualizado.");
                                                                 window.location.reload();
                                                             }
                                                         };
@@ -455,6 +459,9 @@ export default function Admin() {
                                         </div>
                                         <div className="logo-upload-item">
                                             <span>Logo CONIITI</span>
+                                            <div className="mini-preview">
+                                                <img src={localStorage.getItem("site_logo_evento") || "/logo-coniiti.png"} alt="Preview Evento" style={{ height: '40px', objectFit: 'contain', background: '#eee', padding: '5px', borderRadius: '4px' }} />
+                                            </div>
                                             <input
                                                 type="file"
                                                 accept="image/*"
@@ -469,6 +476,7 @@ export default function Admin() {
                                                         reader.onloadend = () => {
                                                             if (reader.result) {
                                                                 localStorage.setItem("site_logo_evento", reader.result as string);
+                                                                alert("Logo del Evento actualizado.");
                                                                 window.location.reload();
                                                             }
                                                         };
@@ -558,6 +566,59 @@ export default function Admin() {
                                     </button>
                                 </div>
                             </form>
+
+                            {/* Sección de Análisis de Datos */}
+                            <div className="analytics-section" style={{ marginTop: '3rem', borderTop: '2px solid #eee', paddingTop: '2rem' }}>
+                                <div className="view-header">
+                                    <h2>📈 Análisis de Datos</h2>
+                                    <button
+                                        className="btn-remove-img-sm"
+                                        onClick={() => {
+                                            if (confirm("¿Borrar todos los registros de actividad?")) {
+                                                localStorage.removeItem('app_analytics');
+                                                window.location.reload();
+                                            }
+                                        }}
+                                    >
+                                        Borrar Historial
+                                    </button>
+                                </div>
+                                <div className="analytics-grid">
+                                    <div className="analytics-card">
+                                        <h4>Resumen de Actividad Reciente</h4>
+                                        <div className="log-list" style={{ maxHeight: '300px', overflowY: 'auto', background: '#f9f9f9', padding: '1rem', borderRadius: '8px', fontSize: '0.85rem' }}>
+                                            {(() => {
+                                                const logs = JSON.parse(localStorage.getItem('app_analytics') || '[]');
+                                                return logs.length > 0 ? logs.map((log: any, i: number) => (
+                                                    <div key={i} className="log-item" style={{ padding: '8px 0', borderBottom: '1px solid #eee' }}>
+                                                        <span style={{ color: '#888', marginRight: '10px' }}>[{log.timestamp.split(', ')[1]}]</span>
+                                                        <strong style={{ color: log.type === 'PAGE_VIEW' ? '#375fe4' : '#2ecc71' }}>{log.type}</strong>
+                                                        <span style={{ marginLeft: '10px' }}>{log.path}</span>
+                                                        {log.details && <em style={{ display: 'block', color: '#666', fontSize: '0.75rem' }}>{log.details}</em>}
+                                                    </div>
+                                                )) : <p>No hay actividad registrada aún.</p>
+                                            })()}
+                                        </div>
+                                    </div>
+                                    <div className="analytics-card" style={{ marginTop: '1.5rem' }}>
+                                        <h4>Páginas más visitadas</h4>
+                                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '1rem' }}>
+                                            {(() => {
+                                                const logs = JSON.parse(localStorage.getItem('app_analytics') || '[]');
+                                                const counts: any = {};
+                                                logs.filter((l: any) => l.type === 'PAGE_VIEW').forEach((l: any) => {
+                                                    counts[l.path] = (counts[l.path] || 0) + 1;
+                                                });
+                                                return Object.entries(counts).sort((a: any, b: any) => b[1] - a[1]).map(([path, count]: any) => (
+                                                    <div key={path} className="theme-pill" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                        {path} <span style={{ background: 'var(--primary-color)', color: 'white', padding: '2px 8px', borderRadius: '10px', fontSize: '0.7rem' }}>{count}</span>
+                                                    </div>
+                                                ));
+                                            })()}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
 

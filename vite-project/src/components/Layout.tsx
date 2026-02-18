@@ -1,5 +1,6 @@
 import { useState, useEffect, type ReactNode } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate, useLocation } from "react-router-dom"
+import { trackEvent } from "../utils/tracker"
 
 type Props = {
   children: ReactNode
@@ -8,10 +9,29 @@ type Props = {
 export default function Layout({ children }: Props) {
   const [user, setUser] = useState<any>(null)
   const navigate = useNavigate()
+  const location = useLocation()
 
   const [bannerUrl, setBannerUrl] = useState("/banner-header.png")
   const [logoUni, setLogoUni] = useState("/ucatolica-logo.png")
   const [logoEvento, setLogoEvento] = useState("/logo-coniiti.png")
+
+  // Tracking de ruta
+  useEffect(() => {
+    trackEvent('PAGE_VIEW', location.pathname)
+  }, [location])
+
+  // Tracking de clics globales
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (target.tagName === 'A' || target.tagName === 'BUTTON' || target.closest('a') || target.closest('button')) {
+        const text = target.innerText || target.getAttribute('alt') || 'Sin texto'
+        trackEvent('CLICK', location.pathname, `Clic en: ${text.slice(0, 30)}`)
+      }
+    }
+    document.addEventListener('click', handleClick)
+    return () => document.removeEventListener('click', handleClick)
+  }, [location])
 
   // Simulación de verificación de sesión (se activa al recargar o navegar)
   useEffect(() => {
