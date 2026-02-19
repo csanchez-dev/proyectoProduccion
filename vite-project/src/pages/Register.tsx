@@ -1,6 +1,18 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { translations, getTranslation } from "../utils/i18n"
+import type { Language } from "../utils/i18n"
 
 export default function Register() {
+  const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
+
+  useEffect(() => {
+    const updateLang = () => setLang((localStorage.getItem("app_lang") as Language) || 'es');
+    window.addEventListener('app-lang-updated', updateLang);
+    return () => window.removeEventListener('app-lang-updated', updateLang);
+  }, []);
+
+  const t = (key: keyof typeof translations.es) => getTranslation(key, lang)
+
   const [isLogin, setIsLogin] = useState(false)
   const [role, setRole] = useState("")
   const [formData, setFormData] = useState({
@@ -83,18 +95,21 @@ export default function Register() {
             className={isLogin ? "active" : ""}
             onClick={() => setIsLogin(true)}
           >
-            Iniciar Sesión
+            {t('register_login_tab')}
           </button>
           <button
             className={!isLogin ? "active" : ""}
             onClick={() => setIsLogin(false)}
           >
-            Crear Cuenta
+            {t('register_create_tab')}
           </button>
         </div>
 
-        <h2>{isLogin ? "Bienvenido de nuevo" : "Crea tu Cuenta"}</h2>
-        <p>{isLogin ? "Ingresa tus credenciales para acceder" : "Completa tus datos para registrarte en el CONIITI 2026"}</p>
+        <h2>{isLogin ? (lang === 'es' ? "Bienvenido de nuevo" : "Welcome back") : t('register_title')}</h2>
+        <p>{isLogin
+          ? (lang === 'es' ? "Ingresa tus credenciales para acceder" : "Enter your credentials to access")
+          : (lang === 'es' ? "Completa tus datos para registrarte en el CONIITI 2026" : "Complete your details to register for CONIITI 2026")
+        }</p>
 
         <form onSubmit={handleSubmit}>
           {!isLogin && (
@@ -236,7 +251,7 @@ export default function Register() {
             )}
             {!isLogin && (
               <div className="form-group fade-in" style={{ marginTop: '1rem' }}>
-                <label htmlFor="gender">Género</label>
+                <label htmlFor="gender">{t('register_gender')}</label>
                 <select
                   id="gender"
                   name="gender"
@@ -245,10 +260,10 @@ export default function Register() {
                   onChange={handleInputChange}
                   style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #ddd' }}
                 >
-                  <option value="">Selecciona tu género</option>
-                  <option value="Masculino">Masculino</option>
-                  <option value="Femenino">Femenino</option>
-                  <option value="Otro">Otro / Prefiero no decirlo</option>
+                  <option value="">{lang === 'es' ? "Selecciona tu género" : "Select your gender"}</option>
+                  <option value="Masculino">{t('register_gender_male')}</option>
+                  <option value="Femenino">{t('register_gender_female')}</option>
+                  <option value="Otro">{t('register_gender_other')}</option>
                 </select>
               </div>
             )}
@@ -270,7 +285,7 @@ export default function Register() {
             )}
 
             <button type="submit" className="btn-submit">
-              {isLogin ? "Entrar" : "Registrarse"}
+              {isLogin ? t('login_submit') : t('register_submit')}
             </button>
           </div>
         </form>

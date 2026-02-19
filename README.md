@@ -28,17 +28,6 @@ Una vez iniciado, abre la URL que aparece en pantalla (normalmente `http://local
 
 ---
 
-## ðŸ” Cuentas de Administrador (Super Usuarios)
-
-Para probar las funciones de gestión avanzada, utiliza estas credenciales en la pestaña de **Acceso (Login)**:
-
-| Usuario | Correo Electrónico | Contraseña | Permisos |
-| :--- | :--- | :--- | :--- |
-| **SÃºper Usuario 1** | `superadmin@coniiti.com` | `super123` | **Acceso Total**: Configuración de temas, banner y gestión total. |
-| **SÃºper Usuario 2** | `admin@coniiti.com` | `admin12` | **Gestor**: Agenda, invitados y papelera. |
-
----
-
 ## âœ¨ Funcionalidades Principales
 
 - **Panel de Control Superior**: Gestión de conferencias, invitados y papelera de reciclaje.
@@ -59,7 +48,3 @@ Para probar las funciones de gestión avanzada, utiliza estas credenciales en la
 ---
 Diseño y desarrollo orientado a la excelencia para la **Universidad Católica de Colombia**.
 
-ejecucion: 
-cd vite-project
-npm install
-npm run dev

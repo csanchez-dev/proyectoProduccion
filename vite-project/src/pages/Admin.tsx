@@ -2,6 +2,8 @@
 import { useNavigate } from "react-router-dom"
 import { conferences as initialConferences } from "../data/conference_mocks"
 import { getEvents, getGenderStats, getConferenceStats, getPageViewsStats } from "../utils/tracker"
+import { translations, getTranslation } from "../utils/i18n"
+import type { Language } from "../utils/i18n"
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     PieChart, Pie, Cell, LineChart, Line, ScatterChart, Scatter, ZAxis
@@ -9,6 +11,16 @@ import {
 
 export default function Admin() {
     const [userRole, setUserRole] = useState<string | null>(null)
+    const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
+
+    useEffect(() => {
+        const updateLang = () => setLang((localStorage.getItem("app_lang") as Language) || 'es');
+        window.addEventListener('app-lang-updated', updateLang);
+        return () => window.removeEventListener('app-lang-updated', updateLang);
+    }, []);
+
+    const t = (key: keyof typeof translations.es) => getTranslation(key, lang)
+
     const [conferences, setConferences] = useState(() => {
         const saved = localStorage.getItem("site_conferences")
         return saved ? JSON.parse(saved) : initialConferences
@@ -18,6 +30,24 @@ export default function Admin() {
         return saved ? JSON.parse(saved) : []
     })
     const [activeTab, setActiveTab] = useState("conferences")
+    const [bannerPreview, setBannerPreview] = useState(localStorage.getItem("site_banner") || "/banner-header.png")
+    const [logoUniPreview, setLogoUniPreview] = useState(localStorage.getItem("site_logo_uni") || "/ucatolica-logo.png")
+    const [logoEventPreview, setLogoEventPreview] = useState(localStorage.getItem("site_logo_evento") || "/logo-coniiti.png")
+
+    // Estados para colores
+    const [bgColor, setBgColor] = useState(localStorage.getItem("custom_bg_color") || "#ffffff")
+    const [textColor, setTextColor] = useState(localStorage.getItem("custom_text_color") || "#1b1a1a")
+    const [headerColor, setHeaderColor] = useState(localStorage.getItem("custom_header_bg") || "#1f2a44")
+
+    const dispatchUpdate = () => {
+        window.dispatchEvent(new Event('site-config-updated'));
+        setBannerPreview(localStorage.getItem("site_banner") || "/banner-header.png");
+        setLogoUniPreview(localStorage.getItem("site_logo_uni") || "/ucatolica-logo.png");
+        setLogoEventPreview(localStorage.getItem("site_logo_evento") || "/logo-coniiti.png");
+        setBgColor(localStorage.getItem("custom_bg_color") || "#ffffff");
+        setTextColor(localStorage.getItem("custom_text_color") || "#1b1a1a");
+        setHeaderColor(localStorage.getItem("custom_header_bg") || "#1f2a44");
+    };
     const [chartTypes, setChartTypes] = useState<any>({
         views: 'bar',
         gender: 'pie',
@@ -51,7 +81,7 @@ export default function Admin() {
 
     const handleDeleteConference = (id: string) => {
         if (confirm("¿Estás seguro de mover esta conferencia a la papelera?")) {
-            const confToDelete = conferences.find((c: any) => c.id === id)
+            const confToDelete = conferences.find((c: { id: string }) => c.id === id)
             if (confToDelete) {
                 setDeletedConferences([...deletedConferences, confToDelete])
                 setConferences(conferences.filter((c: any) => c.id !== id))
@@ -68,7 +98,7 @@ export default function Admin() {
         }
     }
 
-    const handleEditConference = (conf: any) => {
+    const handleEditConference = (conf: { id: string, title: string, description: string, speakerName?: string, startTime: string, endTime: string, location: string, category: string, level: string, speaker: any, career?: string }) => {
         setEditingConf({ ...conf })
     }
 
@@ -79,7 +109,8 @@ export default function Admin() {
         description: "",
         speakerName: "",
         startTime: "",
-        endTime: ""
+        endTime: "",
+        career: ""
     })
 
     const handleAddConference = (e: React.FormEvent) => {
@@ -94,6 +125,7 @@ export default function Admin() {
             location: newConf.location,
             category: "General",
             level: "Básico",
+            career: newConf.career || "General",
             speaker: {
                 name: newConf.speakerName,
                 organization: "Por definir",
@@ -103,13 +135,13 @@ export default function Admin() {
         }
         setConferences([...conferences, simulatedConf])
         setShowConfForm(false)
-        setNewConf({ title: "", location: "", description: "", speakerName: "", startTime: "", endTime: "" })
+        setNewConf({ title: "", location: "", description: "", speakerName: "", startTime: "", endTime: "", career: "" })
         alert("¡Conferencia agendada exitosamente!")
     }
 
     const handleSaveEdit = (e: React.FormEvent) => {
         e.preventDefault()
-        setConferences(conferences.map(c => c.id === editingConf.id ? editingConf : c))
+        setConferences(conferences.map((c: { id: string }) => c.id === editingConf.id ? editingConf : c))
         setEditingConf(null)
         alert("Cambios guardados correctamente")
     }
@@ -153,13 +185,13 @@ export default function Admin() {
         alert("¡Invitado y foto cargados exitosamente!")
     }
 
-    if (!userRole) return <div className="loading">Cargando panel...</div>
+    if (!userRole) return <div className="loading">{lang === 'es' ? 'Cargando panel...' : 'Loading panel...'}</div>
 
     return (
         <div className="admin-container fade-in">
             <div className="admin-header">
-                <h1>Panel de Gestión Superior</h1>
-                <p className="role-badge">{userRole === "SUPER_ADMIN" ? "Super Usuario 1: Acceso Total" : "Super Usuario 2: Gestión de Contenido"}</p>
+                <h1>{t('admin_title')}</h1>
+                <p className="role-badge">{userRole === "SUPER_ADMIN" ? t('admin_role_super') : t('admin_role_content')}</p>
             </div>
 
             <div className="admin-grid">
@@ -168,26 +200,26 @@ export default function Admin() {
                         className={activeTab === "conferences" ? "active" : ""}
                         onClick={() => setActiveTab("conferences")}
                     >
-                        📋 Agenda de Conferencias
+                        {t('admin_sidebar_agenda')}
                     </button>
                     <button
                         className={activeTab === "guests" ? "active" : ""}
                         onClick={() => setActiveTab("guests")}
                     >
-                        👥 Listado de Invitados
+                        {t('admin_sidebar_guests')}
                     </button>
                     <button
                         className={activeTab === "trash" ? "active" : ""}
                         onClick={() => setActiveTab("trash")}
                     >
-                        🗑️ Papelera
+                        {t('admin_sidebar_trash')}
                     </button>
                     {userRole === "SUPER_ADMIN" && (
                         <button
                             className={activeTab === "analytics" ? "active" : ""}
                             onClick={() => setActiveTab("analytics")}
                         >
-                            📈 Análisis de Datos
+                            {t('admin_sidebar_analytics')}
                         </button>
                     )}
                     {userRole === "SUPER_ADMIN" && (
@@ -195,7 +227,7 @@ export default function Admin() {
                             className={activeTab === "settings" ? "active" : ""}
                             onClick={() => setActiveTab("settings")}
                         >
-                            ⚙️ Configuración de Página
+                            {t('admin_sidebar_settings')}
                         </button>
                     )}
                 </aside>
@@ -245,6 +277,28 @@ export default function Admin() {
                                         </div>
                                     </div>
                                     <div className="form-group">
+                                        <label>Carrera Afín</label>
+                                        <select
+                                            value={newConf.career}
+                                            onChange={e => setNewConf({ ...newConf, career: e.target.value })}
+                                            required
+                                            className="admin-select"
+                                        >
+                                            <option value="">Selecciona la carrera</option>
+                                            <option value="Administración de Empresas">Administración de Empresas</option>
+                                            <option value="Arquitectura">Arquitectura</option>
+                                            <option value="Derecho">Derecho</option>
+                                            <option value="Economía">Economía</option>
+                                            <option value="Ingeniería Civil">Ingeniería Civil</option>
+                                            <option value="Ingeniería de Sistemas">Ingeniería de Sistemas</option>
+                                            <option value="Ingeniería Electrónica">Ingeniería Electrónica</option>
+                                            <option value="Ingeniería Industrial">Ingeniería Industrial</option>
+                                            <option value="Psicología">Psicología</option>
+                                            <option value="Diseño Gráfico">Diseño Gráfico</option>
+                                            <option value="General">General / Todas</option>
+                                        </select>
+                                    </div>
+                                    <div className="form-group">
                                         <label>Descripción / Resumen</label>
                                         <textarea
                                             rows={3}
@@ -267,7 +321,7 @@ export default function Admin() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {conferences.map(conf => (
+                                    {conferences.map((conf: any) => (
                                         <tr key={conf.id}>
                                             <td>{conf.title}</td>
                                             <td>{conf.speaker.name}</td>
@@ -344,8 +398,8 @@ export default function Admin() {
                             )}
 
                             <div className="guests-grid">
-                                {Array.from(new Set(conferences.map(c => c.speaker.name))).map(speakerName => {
-                                    const speaker = conferences.find(c => c.speaker.name === speakerName)?.speaker;
+                                {Array.from(new Set(conferences.map((c: any) => c.speaker.name))).map((speakerName: any) => {
+                                    const speaker = conferences.find((c: any) => c.speaker.name === speakerName)?.speaker;
                                     return (
                                         <div key={speakerName} className="guest-admin-card fade-in">
                                             <img src={speaker?.avatar || "/default-avatar.png"} alt={speakerName} />
@@ -378,6 +432,7 @@ export default function Admin() {
                                             localStorage.setItem("site_theme", theme);
                                             // Aplicar inmediatamente al body para previsualizar
                                             document.body.className = theme === "default" ? "" : `theme-${theme}`;
+                                            dispatchUpdate();
                                         }}
                                         className="theme-select"
                                     >
@@ -391,6 +446,9 @@ export default function Admin() {
                                     <label>Imagen de Banner (Cabecera)</label>
                                     <div className="banner-edit-zone">
                                         <div className="file-upload-wrapper">
+                                            <div className="banner-admin-preview" style={{ marginBottom: '1rem' }}>
+                                                <img src={bannerPreview} alt="Banner Preview" style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: '8px' }} />
+                                            </div>
                                             <input
                                                 type="file"
                                                 accept="image/*"
@@ -406,8 +464,7 @@ export default function Admin() {
                                                             if (reader.result) {
                                                                 try {
                                                                     localStorage.setItem("site_banner", reader.result as string);
-                                                                    alert("¡Banner cargado! Recargando para aplicar cambios...");
-                                                                    window.location.reload();
+                                                                    dispatchUpdate();
                                                                 } catch (err) {
                                                                     alert("Error: La imagen sigue siendo muy grande para la memoria del navegador.");
                                                                 }
@@ -425,8 +482,7 @@ export default function Admin() {
                                                 className="btn-remove-img"
                                                 onClick={() => {
                                                     localStorage.removeItem("site_banner");
-                                                    alert("Banner restaurado. Se recargará la página.");
-                                                    window.location.reload();
+                                                    dispatchUpdate();
                                                 }}
                                             >
                                                 Restaurar Original
@@ -440,7 +496,7 @@ export default function Admin() {
                                         <div className="logo-upload-item">
                                             <span>Logo Universidad</span>
                                             <div className="mini-preview">
-                                                <img src={localStorage.getItem("site_logo_uni") || "/ucatolica-logo.png"} alt="Preview Uni" style={{ height: '40px', objectFit: 'contain', background: '#eee', padding: '5px', borderRadius: '4px' }} />
+                                                <img src={logoUniPreview} alt="Preview Uni" style={{ height: '40px', objectFit: 'contain', background: '#eee', padding: '5px', borderRadius: '4px' }} />
                                             </div>
                                             <input
                                                 type="file"
@@ -456,8 +512,7 @@ export default function Admin() {
                                                         reader.onloadend = () => {
                                                             if (reader.result) {
                                                                 localStorage.setItem("site_logo_uni", reader.result as string);
-                                                                alert("Logo de Universidad actualizado.");
-                                                                window.location.reload();
+                                                                dispatchUpdate();
                                                             }
                                                         };
                                                         reader.readAsDataURL(file);
@@ -469,7 +524,7 @@ export default function Admin() {
                                                 className="btn-remove-img-sm"
                                                 onClick={() => {
                                                     localStorage.removeItem("site_logo_uni");
-                                                    window.location.reload();
+                                                    dispatchUpdate();
                                                 }}
                                             >
                                                 Restaurar Original
@@ -478,7 +533,7 @@ export default function Admin() {
                                         <div className="logo-upload-item">
                                             <span>Logo CONIITI</span>
                                             <div className="mini-preview">
-                                                <img src={localStorage.getItem("site_logo_evento") || "/logo-coniiti.png"} alt="Preview Evento" style={{ height: '40px', objectFit: 'contain', background: '#eee', padding: '5px', borderRadius: '4px' }} />
+                                                <img src={logoEventPreview} alt="Preview Evento" style={{ height: '40px', objectFit: 'contain', background: '#eee', padding: '5px', borderRadius: '4px' }} />
                                             </div>
                                             <input
                                                 type="file"
@@ -494,8 +549,7 @@ export default function Admin() {
                                                         reader.onloadend = () => {
                                                             if (reader.result) {
                                                                 localStorage.setItem("site_logo_evento", reader.result as string);
-                                                                alert("Logo del Evento actualizado.");
-                                                                window.location.reload();
+                                                                dispatchUpdate();
                                                             }
                                                         };
                                                         reader.readAsDataURL(file);
@@ -507,7 +561,7 @@ export default function Admin() {
                                                 className="btn-remove-img-sm"
                                                 onClick={() => {
                                                     localStorage.removeItem("site_logo_evento");
-                                                    window.location.reload();
+                                                    dispatchUpdate();
                                                 }}
                                             >
                                                 Restaurar Original
@@ -522,11 +576,12 @@ export default function Admin() {
                                             <span>Fondo General</span>
                                             <input
                                                 type="color"
-                                                defaultValue={localStorage.getItem("custom_bg_color") || "#ffffff"}
+                                                value={bgColor}
                                                 onChange={(e) => {
                                                     const color = e.target.value;
                                                     localStorage.setItem("custom_bg_color", color);
-                                                    document.documentElement.style.setProperty('--site-bg', color);
+                                                    setBgColor(color);
+                                                    dispatchUpdate();
                                                 }}
                                             />
                                         </div>
@@ -534,11 +589,12 @@ export default function Admin() {
                                             <span>Texto Principal</span>
                                             <input
                                                 type="color"
-                                                defaultValue={localStorage.getItem("custom_text_color") || "#1b1a1a"}
+                                                value={textColor}
                                                 onChange={(e) => {
                                                     const color = e.target.value;
                                                     localStorage.setItem("custom_text_color", color);
-                                                    document.documentElement.style.setProperty('--site-text', color);
+                                                    setTextColor(color);
+                                                    dispatchUpdate();
                                                 }}
                                             />
                                         </div>
@@ -546,11 +602,12 @@ export default function Admin() {
                                             <span>Color de Cabecera</span>
                                             <input
                                                 type="color"
-                                                defaultValue={localStorage.getItem("custom_header_bg") || "#1f2a44"}
+                                                value={headerColor}
                                                 onChange={(e) => {
                                                     const color = e.target.value;
                                                     localStorage.setItem("custom_header_bg", color);
-                                                    document.documentElement.style.setProperty('--header-bg', color);
+                                                    setHeaderColor(color);
+                                                    dispatchUpdate();
                                                 }}
                                             />
                                         </div>
@@ -576,7 +633,7 @@ export default function Admin() {
                                         onClick={() => {
                                             if (confirm("¿Seguro que quieres borrar toda la personalización (colores y logos)?")) {
                                                 ["site_banner", "site_logo_uni", "site_logo_evento", "custom_bg_color", "custom_text_color", "custom_header_bg"].forEach(key => localStorage.removeItem(key));
-                                                window.location.reload();
+                                                dispatchUpdate();
                                             }
                                         }}
                                     >
@@ -789,6 +846,26 @@ export default function Admin() {
                                             value={editingConf.location}
                                             onChange={e => setEditingConf({ ...editingConf, location: e.target.value })}
                                         />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Carrera Afín</label>
+                                        <select
+                                            value={editingConf.career}
+                                            onChange={e => setEditingConf({ ...editingConf, career: e.target.value })}
+                                            className="admin-select"
+                                        >
+                                            <option value="Administración de Empresas">Administración de Empresas</option>
+                                            <option value="Arquitectura">Arquitectura</option>
+                                            <option value="Derecho">Derecho</option>
+                                            <option value="Economía">Economía</option>
+                                            <option value="Ingeniería Civil">Ingeniería Civil</option>
+                                            <option value="Ingeniería de Sistemas">Ingeniería de Sistemas</option>
+                                            <option value="Ingeniería Electrónica">Ingeniería Electrónica</option>
+                                            <option value="Ingeniería Industrial">Ingeniería Industrial</option>
+                                            <option value="Psicología">Psicología</option>
+                                            <option value="Diseño Gráfico">Diseño Gráfico</option>
+                                            <option value="General">General / Todas</option>
+                                        </select>
                                     </div>
                                     <div className="form-group">
                                         <label>Descripción</label>

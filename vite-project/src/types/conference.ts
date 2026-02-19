@@ -15,4 +15,5 @@ export type Conference = {
   speaker: Speaker
   category?: string
   level?: string
+  career?: string
 }

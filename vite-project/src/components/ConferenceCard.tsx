@@ -37,25 +37,39 @@ export default function ConferenceCard({ conference }: Props) {
 
   return (
     <div className={`card ${isRegistered ? 'registered' : ''}`}>
-      <h3>{conference.title}</h3>
-      <img src="/conference-card.jpg" alt="conference card image" />
-      <p>{conference.description}</p>
-      <div className="info">
-        <p>
-          <strong>Horario:</strong> {new Date(conference.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -{" "}
-          {new Date(conference.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </p>
-        <p><strong>Lugar:</strong> {conference.location}</p>
-        <p><strong>Ponente:</strong> {conference.speaker.name}</p>
+      <div className="card-image-wrapper">
+        <img src="/conference-card.jpg" alt={conference.title} className="card-img" />
+        <div className="category-badge">{conference.category || 'General'}</div>
       </div>
 
-      <button
-        className={`btn ${isRegistered ? 'btn-registered' : ''} ${isLoading ? 'btn-loading' : ''}`}
-        onClick={handleRegister}
-        disabled={isLoading || isRegistered}
-      >
-        {isLoading ? "Procesando..." : isRegistered ? "✓ Inscrito" : "Inscribirse ahora"}
-      </button>
+      <div className="card-body">
+        <h3>{conference.title}</h3>
+        <p className="description">{conference.description}</p>
+
+        <div className="info">
+          <div className="info-row">
+            <span className="icon">🕒</span>
+            <span>{new Date(conference.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(conference.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
+          <div className="info-row">
+            <span className="icon">📍</span>
+            <span>{conference.location}</span>
+          </div>
+          <div className="info-row">
+            <span className="icon">👤</span>
+            <span>{conference.speaker.name}</span>
+          </div>
+        </div>
+
+        <button
+          className={`btn ${isRegistered ? 'btn-registered' : ''} ${isLoading ? 'btn-loading' : ''}`}
+          onClick={handleRegister}
+          disabled={isLoading || isRegistered}
+          style={{ width: '100%', marginTop: 'auto' }}
+        >
+          {isLoading ? "Procesando..." : isRegistered ? "✓ Inscrito" : "Inscribirse ahora"}
+        </button>
+      </div>
     </div>
   )
 }
