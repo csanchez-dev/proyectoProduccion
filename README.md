@@ -2,12 +2,12 @@
 
 Plataforma integral para la gestión del **Congreso Internacional de Innovación y Tendencias en IngenierÃ­a (CONIITI) 2026**. Esta aplicación permite a los usuarios registrarse, inscribirse en conferencias y a los administradores gestionar ponentes, agenda y configuraciones globales.
 
-## ðŸš€ GuÃ­a de Ejecución
+## Guia de Ejecución
 
 Sigue estos pasos para poner en marcha el proyecto en tu mÃ¡quina local:
 
 ### 1. Requisitos Previos
-AsegÃºrate de tener instalado **Node.js** (v16+) en tu sistema.
+asegurate de tener instalado **Node.js** (v16+) en tu sistema.
 
 ### 2. Comandos en el Terminal
 
@@ -28,7 +28,7 @@ Una vez iniciado, abre la URL que aparece en pantalla (normalmente `http://local
 
 ---
 
-## âœ¨ Funcionalidades Principales
+## Funcionalidades Principales
 
 - **Panel de Control Superior**: Gestión de conferencias, invitados y papelera de reciclaje.
 - **Sincronización en Tiempo Real**: Los invitados y conferencias creados en el panel aparecen automÃ¡ticamente en la pÃ¡gina de **Inicio** y **Agenda**.
