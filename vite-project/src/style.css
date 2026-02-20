@@ -127,6 +127,7 @@ header {
   align-items: center;
   justify-items: center;
   flex-direction: column;
+  gap: 0.8rem;
 
 }
 
@@ -135,7 +136,7 @@ header {
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: 1rem
+  gap: 1rem;
 }
 
 .btn {
