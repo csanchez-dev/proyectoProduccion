@@ -13,7 +13,6 @@
     "rootDir": "./src",
     "outDir": "./dist",
     "esModuleInterop": true,
-   
     
   }
 }
