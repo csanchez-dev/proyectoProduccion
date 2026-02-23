@@ -1,9 +1,10 @@
 import { Router } from 'express'
-import { inscribirse } from './inscripcion.controller'
 import { authMiddleware } from '../../middleware/auth.middleware'
+import * as controller from './inscripcion.controller'
 
 const router = Router()
 
-router.post('/', authMiddleware, inscribirse)
+router.post('/', authMiddleware, controller.inscribirse)
+router.get('/mis-inscripciones', authMiddleware, controller.misInscripciones)
 
 export default router

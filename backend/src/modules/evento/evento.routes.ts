@@ -1,14 +1,10 @@
-import { Request, Response } from 'express'
-import * as service from './evento.service'
+import { Router } from 'express'
+import * as controller from './evento.controller'
+import { authMiddleware } from '../../middleware/auth.middleware'
 
-export const getEventos = async (_: Request, res: Response) => {
-  const { data, error } = await service.obtenerEventos()
-  if (error) return res.status(400).json({ error: error.message })
-  res.json(data)
-}
+const router = Router()
 
-export const postEvento = async (req: Request, res: Response) => {
-  const { data, error } = await service.crearEvento(req.body)
-  if (error) return res.status(403).json({ error: error.message })
-  res.status(201).json(data)
-}
+router.get('/', controller.getEventos)
+router.post('/', authMiddleware, controller.postEvento)
+
+export default router
