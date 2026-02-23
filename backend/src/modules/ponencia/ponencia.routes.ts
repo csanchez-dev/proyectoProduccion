@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import * as controller from './ponencia/ponencia.controller'
+import * as controller from './ponencia.controller'
 import { authMiddleware } from '../../middleware/auth.middleware'
 
 const router = Router()
