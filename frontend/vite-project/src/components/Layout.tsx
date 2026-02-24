@@ -69,7 +69,18 @@ export default function Layout({ children }: Props) {
     if (customText) document.documentElement.style.setProperty('--site-text', customText)
 
     const customPrimary = localStorage.getItem("custom_primary_color")
-    if (customPrimary) document.documentElement.style.setProperty('--primary-color', customPrimary)
+    if (customPrimary) {
+      document.documentElement.style.setProperty('--primary-color', customPrimary)
+    } else {
+      document.documentElement.style.setProperty('--primary-color', "#2563EB")
+    }
+
+    const customSecondary = localStorage.getItem("custom_secondary_color")
+    if (customSecondary) {
+      document.documentElement.style.setProperty('--secondary-color', customSecondary)
+    } else {
+      document.documentElement.style.setProperty('--secondary-color', "#1E293B")
+    }
 
     const customHeader = localStorage.getItem("custom_header_bg")
     if (customHeader) document.documentElement.style.setProperty('--header-bg', customHeader)
@@ -127,17 +138,7 @@ export default function Layout({ children }: Props) {
               <select
                 value={lang}
                 onChange={(e) => handleLangChange(e.target.value as Language)}
-                style={{
-                  background: 'rgba(255,255,255,0.15)',
-                  color: 'white',
-                  border: '1px solid rgba(255,255,255,0.3)',
-                  padding: '5px 10px',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '0.85rem',
-                  outline: 'none',
-                  fontWeight: '600'
-                }}
+                className="lang-select"
               >
                 <option value="es" style={{ color: '#333' }}>🌐 Idioma: Español</option>
                 <option value="en" style={{ color: '#333' }}>🌐 Language: English</option>

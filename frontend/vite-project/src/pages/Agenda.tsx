@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import ConferenceCard from "../components/ConferenceCard"
 import { conferences as initialConferences } from "../data/conference_mocks"
 import type { Language } from "../utils/i18n"
@@ -15,6 +15,27 @@ export default function Agenda() {
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [levelFilter, setLevelFilter] = useState("all")
   const [careerFilter, setCareerFilter] = useState("all")
+
+  const [config, setConfig] = useState({
+    title: localStorage.getItem("agenda_title") || (lang === 'es' ? '📅 Agenda CONIITI 2026' : '📅 CONIITI 2026 Agenda'),
+    subtitle: localStorage.getItem("agenda_subtitle") || (lang === 'es' ? 'Explora todas las charlas y conferencias del evento' : 'Explore all the talks and conferences of the event'),
+    showFilters: localStorage.getItem("agenda_show_filters") !== "false",
+    columns: localStorage.getItem("agenda_cols") || "auto"
+  });
+
+  const refreshConfig = () => {
+    setConfig({
+      title: localStorage.getItem("agenda_title") || (lang === 'es' ? '📅 Agenda CONIITI 2026' : '📅 CONIITI 2026 Agenda'),
+      subtitle: localStorage.getItem("agenda_subtitle") || (lang === 'es' ? 'Explora todas las charlas y conferencias del evento' : 'Explore all the talks and conferences of the event'),
+      showFilters: localStorage.getItem("agenda_show_filters") !== "false",
+      columns: localStorage.getItem("agenda_cols") || "auto"
+    });
+  };
+
+  useEffect(() => {
+    window.addEventListener('site-config-updated', refreshConfig);
+    return () => window.removeEventListener('site-config-updated', refreshConfig);
+  }, [lang]);
 
   const categories = useMemo(() => {
     const cats = new Set(conferencesList.map((c: any) => c.category).filter(Boolean))
@@ -74,87 +95,83 @@ export default function Agenda() {
     <section className="agenda-page">
       {/* ── Header ── */}
       <div className="agenda-header-section">
-        <h1 className="agenda-title">
-          {lang === 'es' ? '📅 Agenda CONIITI 2026' : '📅 CONIITI 2026 Agenda'}
-        </h1>
-        <p className="agenda-subtitle">
-          {lang === 'es'
-            ? 'Explora todas las charlas y conferencias del evento'
-            : 'Explore all the talks and conferences of the event'}
-        </p>
+        <h1 className="agenda-title">{config.title}</h1>
+        <p className="agenda-subtitle">{config.subtitle}</p>
 
         {/* ── Controles de búsqueda y filtros ── */}
-        <div className="agenda-controls-card">
-          {/* Buscador */}
-          <div className="search-box" style={{ flex: '1', minWidth: '280px', position: 'relative' }}>
-            <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '1.1rem' }}>🔍</span>
-            <input
-              type="text"
-              placeholder={lang === 'es' ? "Buscar por charla o ponente..." : "Search by talk or speaker..."}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.75rem 1rem 0.75rem 2.6rem',
-                borderRadius: '12px',
-                border: '1.5px solid #e5e7eb',
-                fontSize: '0.95rem',
-                outline: 'none',
-                transition: 'border-color 0.2s',
-                background: 'white',
-              }}
-              onFocus={(e) => e.target.style.borderColor = 'var(--primary-color)'}
-              onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-            />
+        {config.showFilters && (
+          <div className="agenda-controls-card">
+            {/* Buscador */}
+            <div className="search-box" style={{ flex: '1', minWidth: '280px', position: 'relative' }}>
+              <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '1.1rem' }}>🔍</span>
+              <input
+                type="text"
+                placeholder={lang === 'es' ? "Buscar por charla o ponente..." : "Search by talk or speaker..."}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem 0.75rem 2.6rem',
+                  borderRadius: '12px',
+                  border: '1.5px solid #e5e7eb',
+                  fontSize: '0.95rem',
+                  outline: 'none',
+                  transition: 'border-color 0.2s',
+                  background: 'white',
+                }}
+                onFocus={(e) => e.target.style.borderColor = 'var(--primary-color)'}
+                onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+              />
+            </div>
+
+            {/* Filtro Carrera */}
+            <select value={careerFilter} onChange={(e) => setCareerFilter(e.target.value)} style={selectStyle}>
+              <option value="all">🎓 {lang === 'es' ? "Todas las Carreras" : "All Careers"}</option>
+              {careers.filter(c => c !== "all").map(career => (
+                <option key={career} value={career}>{career}</option>
+              ))}
+            </select>
+
+            {/* Filtro Categoría */}
+            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} style={selectStyle}>
+              <option value="all">🏷️ {lang === 'es' ? "Todas las Categorías" : "All Categories"}</option>
+              {categories.filter(c => c !== "all").map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+
+            {/* Filtro Nivel */}
+            <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} style={selectStyle}>
+              <option value="all">📊 {lang === 'es' ? "Todos los Niveles" : "All Levels"}</option>
+              {levels.filter(l => l !== "all").map(level => (
+                <option key={level} value={level}>{level}</option>
+              ))}
+            </select>
+
+            {/* Botón limpiar (solo si hay filtros activos) */}
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                style={{
+                  padding: '0.72rem 1.2rem',
+                  borderRadius: '12px',
+                  border: '1.5px solid #e5e7eb',
+                  background: '#fff0f0',
+                  color: '#e74c3c',
+                  cursor: 'pointer',
+                  fontWeight: '700',
+                  fontSize: '0.85rem',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#e74c3c'; e.currentTarget.style.color = 'white'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#fff0f0'; e.currentTarget.style.color = '#e74c3c'; }}
+              >
+                ✕ {lang === 'es' ? 'Limpiar' : 'Clear'}
+              </button>
+            )}
           </div>
-
-          {/* Filtro Carrera */}
-          <select value={careerFilter} onChange={(e) => setCareerFilter(e.target.value)} style={selectStyle}>
-            <option value="all">🎓 {lang === 'es' ? "Todas las Carreras" : "All Careers"}</option>
-            {careers.filter(c => c !== "all").map(career => (
-              <option key={career} value={career}>{career}</option>
-            ))}
-          </select>
-
-          {/* Filtro Categoría */}
-          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} style={selectStyle}>
-            <option value="all">🏷️ {lang === 'es' ? "Todas las Categorías" : "All Categories"}</option>
-            {categories.filter(c => c !== "all").map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-
-          {/* Filtro Nivel */}
-          <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} style={selectStyle}>
-            <option value="all">📊 {lang === 'es' ? "Todos los Niveles" : "All Levels"}</option>
-            {levels.filter(l => l !== "all").map(level => (
-              <option key={level} value={level}>{level}</option>
-            ))}
-          </select>
-
-          {/* Botón limpiar (solo si hay filtros activos) */}
-          {hasActiveFilters && (
-            <button
-              onClick={clearFilters}
-              style={{
-                padding: '0.72rem 1.2rem',
-                borderRadius: '12px',
-                border: '1.5px solid #e5e7eb',
-                background: '#fff0f0',
-                color: '#e74c3c',
-                cursor: 'pointer',
-                fontWeight: '700',
-                fontSize: '0.85rem',
-                whiteSpace: 'nowrap',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = '#e74c3c'; e.currentTarget.style.color = 'white'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = '#fff0f0'; e.currentTarget.style.color = '#e74c3c'; }}
-            >
-              ✕ {lang === 'es' ? 'Limpiar' : 'Clear'}
-            </button>
-          )}
-        </div>
+        )}
 
         {/* Contador de resultados */}
         <p className="results-count">
@@ -165,7 +182,7 @@ export default function Agenda() {
       </div>
 
       {/* ── Grilla de conferencias ── */}
-      <div className="agenda">
+      <div className="agenda" style={config.columns !== "auto" ? { gridTemplateColumns: `repeat(${config.columns}, 1fr)` } : {}}>
         {filteredConferences.length > 0 ? (
           filteredConferences.map((conf: any) => (
             <ConferenceCard key={conf.id} conference={conf} />

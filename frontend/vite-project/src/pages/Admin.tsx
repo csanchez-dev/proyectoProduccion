@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react"
+﻿import React, { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { conferences as initialConferences } from "../data/conference_mocks"
 import { getEvents, getGenderStats, getConferenceStats, getPageViewsStats } from "../utils/tracker"
@@ -38,6 +38,8 @@ export default function Admin() {
     const [bgColor, setBgColor] = useState(localStorage.getItem("custom_bg_color") || "#ffffff")
     const [textColor, setTextColor] = useState(localStorage.getItem("custom_text_color") || "#1b1a1a")
     const [headerColor, setHeaderColor] = useState(localStorage.getItem("custom_header_bg") || "#1f2a44")
+    const [primaryColor, setPrimaryColor] = useState(localStorage.getItem("custom_primary_color") || "#2563EB")
+    const [secondaryColor, setSecondaryColor] = useState(localStorage.getItem("custom_secondary_color") || "#1E293B")
 
     const dispatchUpdate = () => {
         window.dispatchEvent(new Event('site-config-updated'));
@@ -47,12 +49,15 @@ export default function Admin() {
         setBgColor(localStorage.getItem("custom_bg_color") || "#ffffff");
         setTextColor(localStorage.getItem("custom_text_color") || "#1b1a1a");
         setHeaderColor(localStorage.getItem("custom_header_bg") || "#1f2a44");
+        setPrimaryColor(localStorage.getItem("custom_primary_color") || "#2563EB");
+        setSecondaryColor(localStorage.getItem("custom_secondary_color") || "#1E293B");
     };
     const [chartTypes, setChartTypes] = useState<any>({
         views: 'bar',
         gender: 'pie',
         conferences: 'bar'
     })
+    const [settingsTab, setSettingsTab] = useState("general")
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -415,360 +420,362 @@ export default function Admin() {
                         </div>
                     )}
 
-                    {activeTab === "settings" && userRole === "SUPER_ADMIN" && (() => {
-                        const [settingsTab, setSettingsTab] = React.useState("general")
+                    {activeTab === "settings" && userRole === "SUPER_ADMIN" && (
+                        <div className="admin-view">
+                            <div className="view-header">
+                                <h2>⚙️ Configuración del Sitio</h2>
+                                <p>Personaliza el aspecto y contenido de cada sección del sitio.</p>
+                            </div>
 
-                        const settingsNav = [
-                            { id: "general", icon: "⚙️", label: "General" },
-                            { id: "pg-inicio", icon: "🏠", label: "Inicio" },
-                            { id: "pg-invitados", icon: "👥", label: "Invitados" },
-                            { id: "pg-agenda", icon: "📅", label: "Agenda" },
-                            { id: "pg-acerca", icon: "ℹ️", label: "Acerca De" },
-                            { id: "pg-contacto", icon: "✉️", label: "Contacto" },
-                        ]
+                            {/* Sub-navegación de Configuración */}
+                            <div className="settings-subnav" style={{
+                                display: 'flex', gap: '0.5rem', flexWrap: 'wrap',
+                                borderBottom: '2px solid #f0f0f0', paddingBottom: '1rem', marginBottom: '2rem'
+                            }}>
+                                {[
+                                    { id: "general", icon: "⚙️", label: "General" },
+                                    { id: "pg-inicio", icon: "🏠", label: "Inicio" },
+                                    { id: "pg-invitados", icon: "👥", label: "Invitados" },
+                                    { id: "pg-agenda", icon: "📅", label: "Agenda" },
+                                    { id: "pg-acerca", icon: "ℹ️", label: "Acerca De" },
+                                    { id: "pg-contacto", icon: "✉️", label: "Contacto" },
+                                ].map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setSettingsTab(tab.id)}
+                                        style={{
+                                            padding: '8px 18px',
+                                            borderRadius: '10px',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            fontWeight: settingsTab === tab.id ? '700' : '500',
+                                            background: settingsTab === tab.id ? 'var(--primary-color)' : '#f0f4ff',
+                                            color: settingsTab === tab.id ? 'white' : '#374151',
+                                            transition: 'all 0.2s',
+                                            fontSize: '0.9rem'
+                                        }}
+                                    >
+                                        {tab.icon} {tab.label}
+                                    </button>
+                                ))}
+                            </div>
 
-                        return (
-                            <div className="admin-view">
-                                <div className="view-header">
-                                    <h2>⚙️ Configuración del Sitio</h2>
-                                    <p>Personaliza el aspecto y contenido de cada sección del sitio.</p>
-                                </div>
-
-                                {/* Sub-navegación de Configuración */}
-                                <div className="settings-subnav" style={{
-                                    display: 'flex', gap: '0.5rem', flexWrap: 'wrap',
-                                    borderBottom: '2px solid #f0f0f0', paddingBottom: '1rem', marginBottom: '2rem'
-                                }}>
-                                    {settingsNav.map(tab => (
-                                        <button
-                                            key={tab.id}
-                                            onClick={() => setSettingsTab(tab.id)}
-                                            style={{
-                                                padding: '8px 18px',
-                                                borderRadius: '10px',
-                                                border: 'none',
-                                                cursor: 'pointer',
-                                                fontWeight: settingsTab === tab.id ? '700' : '500',
-                                                background: settingsTab === tab.id ? 'var(--primary-color)' : '#f0f4ff',
-                                                color: settingsTab === tab.id ? 'white' : '#374151',
-                                                transition: 'all 0.2s',
-                                                fontSize: '0.9rem'
+                            {/* ── GENERAL ── */}
+                            {settingsTab === "general" && (
+                                <form className="settings-form">
+                                    <h3 style={{ marginBottom: '1.5rem', color: 'var(--secondary-color)' }}>⚙️ Configuración General</h3>
+                                    <div className="form-group">
+                                        <label>Nombre del Evento</label>
+                                        <input type="text" defaultValue="CONIITI 2026" />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Tema por País (Colores y Estilos)</label>
+                                        <select
+                                            defaultValue={localStorage.getItem("site_theme") || "default"}
+                                            onChange={(e) => {
+                                                const theme = e.target.value;
+                                                localStorage.setItem("site_theme", theme);
+                                                document.body.className = theme === "default" ? "" : `theme-${theme}`;
+                                                dispatchUpdate();
                                             }}
+                                            className="theme-select"
                                         >
-                                            {tab.icon} {tab.label}
-                                        </button>
-                                    ))}
-                                </div>
-
-                                {/* ── GENERAL ── */}
-                                {settingsTab === "general" && (
-                                    <form className="settings-form">
-                                        <h3 style={{ marginBottom: '1.5rem', color: 'var(--secondary-color)' }}>⚙️ Configuración General</h3>
-                                        <div className="form-group">
-                                            <label>Nombre del Evento</label>
-                                            <input type="text" defaultValue="CONIITI 2026" />
-                                        </div>
-                                        <div className="form-group">
-                                            <label>Tema por País (Colores y Estilos)</label>
-                                            <select
-                                                defaultValue={localStorage.getItem("site_theme") || "default"}
-                                                onChange={(e) => {
-                                                    const theme = e.target.value;
-                                                    localStorage.setItem("site_theme", theme);
-                                                    document.body.className = theme === "default" ? "" : `theme-${theme}`;
-                                                    dispatchUpdate();
-                                                }}
-                                                className="theme-select"
-                                            >
-                                                <option value="default">Estándar (Universidad Católica)</option>
-                                                <option value="colombia">Colombia (Amarillo, Azul y Rojo)</option>
-                                                <option value="italy">Italia (Verde, Blanco y Rojo)</option>
-                                                <option value="mexico">México (Verde y Rojo)</option>
-                                            </select>
-                                        </div>
-                                        <div className="form-group">
-                                            <label>Imagen de Banner (Cabecera)</label>
-                                            <div className="banner-edit-zone">
-                                                <div className="file-upload-wrapper">
-                                                    <div className="banner-admin-preview" style={{ marginBottom: '1rem' }}>
-                                                        <img src={bannerPreview} alt="Banner Preview" style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: '8px' }} />
-                                                    </div>
-                                                    <input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        onChange={(e) => {
-                                                            const file = e.target.files?.[0];
-                                                            if (file) {
-                                                                if (file.size > 1500000) { alert("La imagen es muy pesada (máx 1.5MB)."); return; }
-                                                                const reader = new FileReader();
-                                                                reader.onloadend = () => {
-                                                                    if (reader.result) {
-                                                                        try { localStorage.setItem("site_banner", reader.result as string); dispatchUpdate(); }
-                                                                        catch { alert("La imagen sigue siendo muy grande para el navegador."); }
-                                                                    }
-                                                                };
-                                                                reader.readAsDataURL(file);
-                                                            }
-                                                        }}
-                                                        className="file-input"
-                                                    />
+                                            <option value="default">Estándar (Universidad Católica)</option>
+                                            <option value="colombia">Colombia (Amarillo, Azul y Rojo)</option>
+                                            <option value="italy">Italia (Verde, Blanco y Rojo)</option>
+                                            <option value="mexico">México (Verde y Rojo)</option>
+                                        </select>
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Imagen de Banner (Cabecera)</label>
+                                        <div className="banner-edit-zone">
+                                            <div className="file-upload-wrapper">
+                                                <div className="banner-admin-preview" style={{ marginBottom: '1rem' }}>
+                                                    <img src={bannerPreview} alt="Banner Preview" style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: '8px' }} />
                                                 </div>
-                                                <div className="banner-actions">
-                                                    <button type="button" className="btn-remove-img" onClick={() => { localStorage.removeItem("site_banner"); dispatchUpdate(); }}>
-                                                        Restaurar Original
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="form-group">
-                                            <label>Logos de la Institución y Evento (Encabezado)</label>
-                                            <div className="logos-edit-grid">
-                                                <div className="logo-upload-item">
-                                                    <span>Logo Universidad</span>
-                                                    <div className="mini-preview">
-                                                        <img src={logoUniPreview} alt="Preview Uni" style={{ height: '40px', objectFit: 'contain', background: '#eee', padding: '5px', borderRadius: '4px' }} />
-                                                    </div>
-                                                    <input type="file" accept="image/*" onChange={(e) => {
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={(e) => {
                                                         const file = e.target.files?.[0];
                                                         if (file) {
-                                                            if (file.size > 800000) { alert("El logo es muy grande (máx 800KB)."); return; }
+                                                            if (file.size > 1500000) { alert("La imagen es muy pesada (máx 1.5MB)."); return; }
                                                             const reader = new FileReader();
-                                                            reader.onloadend = () => { if (reader.result) { localStorage.setItem("site_logo_uni", reader.result as string); dispatchUpdate(); } };
+                                                            reader.onloadend = () => {
+                                                                if (reader.result) {
+                                                                    try { localStorage.setItem("site_banner", reader.result as string); dispatchUpdate(); }
+                                                                    catch { alert("La imagen sigue siendo muy grande para el navegador."); }
+                                                                }
+                                                            };
                                                             reader.readAsDataURL(file);
                                                         }
-                                                    }} />
-                                                    <button type="button" className="btn-remove-img-sm" onClick={() => { localStorage.removeItem("site_logo_uni"); dispatchUpdate(); }}>Restaurar Original</button>
-                                                </div>
-                                                <div className="logo-upload-item">
-                                                    <span>Logo CONIITI</span>
-                                                    <div className="mini-preview">
-                                                        <img src={logoEventPreview} alt="Preview Evento" style={{ height: '40px', objectFit: 'contain', background: '#eee', padding: '5px', borderRadius: '4px' }} />
-                                                    </div>
-                                                    <input type="file" accept="image/*" onChange={(e) => {
-                                                        const file = e.target.files?.[0];
-                                                        if (file) {
-                                                            if (file.size > 800000) { alert("El logo es muy grande (máx 800KB)."); return; }
-                                                            const reader = new FileReader();
-                                                            reader.onloadend = () => { if (reader.result) { localStorage.setItem("site_logo_evento", reader.result as string); dispatchUpdate(); } };
-                                                            reader.readAsDataURL(file);
-                                                        }
-                                                    }} />
-                                                    <button type="button" className="btn-remove-img-sm" onClick={() => { localStorage.removeItem("site_logo_evento"); dispatchUpdate(); }}>Restaurar Original</button>
-                                                </div>
+                                                    }}
+                                                    className="file-input"
+                                                />
+                                            </div>
+                                            <div className="banner-actions">
+                                                <button type="button" className="btn-remove-img" onClick={() => { localStorage.removeItem("site_banner"); dispatchUpdate(); }}>
+                                                    Restaurar Original
+                                                </button>
                                             </div>
                                         </div>
-                                        <div className="form-group">
-                                            <label>Personalización de Colores</label>
-                                            <div className="color-picker-grid">
-                                                <div className="color-item">
-                                                    <span>Fondo General</span>
-                                                    <input type="color" value={bgColor} onChange={(e) => { localStorage.setItem("custom_bg_color", e.target.value); setBgColor(e.target.value); dispatchUpdate(); }} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Logos de la Institución y Evento (Encabezado)</label>
+                                        <div className="logos-edit-grid">
+                                            <div className="logo-upload-item">
+                                                <span>Logo Universidad</span>
+                                                <div className="mini-preview">
+                                                    <img src={logoUniPreview} alt="Preview Uni" style={{ height: '40px', objectFit: 'contain', background: '#eee', padding: '5px', borderRadius: '4px' }} />
                                                 </div>
-                                                <div className="color-item">
-                                                    <span>Texto Principal</span>
-                                                    <input type="color" value={textColor} onChange={(e) => { localStorage.setItem("custom_text_color", e.target.value); setTextColor(e.target.value); dispatchUpdate(); }} />
-                                                </div>
-                                                <div className="color-item">
-                                                    <span>Color de Cabecera</span>
-                                                    <input type="color" value={headerColor} onChange={(e) => { localStorage.setItem("custom_header_bg", e.target.value); setHeaderColor(e.target.value); dispatchUpdate(); }} />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="form-group">
-                                            <label>Modo de Mantenimiento</label>
-                                            <input type="checkbox" />
-                                        </div>
-                                        <div className="admin-actions-footer">
-                                            <button type="button" className="btn-submit" onClick={() => alert("Configuración global guardada correctamente")}>
-                                                Guardar Cambios Globales
-                                            </button>
-                                            <button type="button" className="btn-logout" style={{ marginLeft: '1rem', background: '#e74c3c' }}
-                                                onClick={() => {
-                                                    if (confirm("¿Seguro que quieres borrar toda la personalización?")) {
-                                                        ["site_banner", "site_logo_uni", "site_logo_evento", "custom_bg_color", "custom_text_color", "custom_header_bg"].forEach(key => localStorage.removeItem(key));
-                                                        dispatchUpdate();
-                                                    }
-                                                }}>
-                                                Limpiar y Resetear Diseño
-                                            </button>
-                                        </div>
-                                    </form>
-                                )}
-
-                                {/* ── PÁGINA: INICIO ── */}
-                                {settingsTab === "pg-inicio" && (
-                                    <div className="page-settings-panel fade-in">
-                                        <h3 style={{ marginBottom: '1.5rem', color: 'var(--secondary-color)' }}>🏠 Configuración — Página de Inicio</h3>
-                                        <div className="settings-form">
-                                            <div className="form-group">
-                                                <label>Título Principal (Hero)</label>
-                                                <input type="text" defaultValue={localStorage.getItem("home_hero_title") || "CONIITI 2026"}
-                                                    onChange={e => localStorage.setItem("home_hero_title", e.target.value)} />
-                                            </div>
-                                            <div className="form-group">
-                                                <label>Subtítulo del Hero</label>
-                                                <input type="text" defaultValue={localStorage.getItem("home_hero_subtitle") || "Congreso Internacional de Innovación Tecnológica"}
-                                                    onChange={e => localStorage.setItem("home_hero_subtitle", e.target.value)} />
-                                            </div>
-                                            <div className="form-group">
-                                                <label>Imagen de Fondo (Hero)</label>
                                                 <input type="file" accept="image/*" onChange={(e) => {
                                                     const file = e.target.files?.[0];
                                                     if (file) {
+                                                        if (file.size > 800000) { alert("El logo es muy grande (máx 800KB)."); return; }
                                                         const reader = new FileReader();
-                                                        reader.onloadend = () => { if (reader.result) localStorage.setItem("home_hero_bg", reader.result as string); };
+                                                        reader.onloadend = () => { if (reader.result) { localStorage.setItem("site_logo_uni", reader.result as string); dispatchUpdate(); } };
                                                         reader.readAsDataURL(file);
                                                     }
                                                 }} />
+                                                <button type="button" className="btn-remove-img-sm" onClick={() => { localStorage.removeItem("site_logo_uni"); dispatchUpdate(); }}>Restaurar Original</button>
                                             </div>
-                                            <div className="form-group">
-                                                <label>Texto del Botón Principal</label>
-                                                <input type="text" defaultValue={localStorage.getItem("home_btn_text") || "Ver Agenda"}
-                                                    onChange={e => localStorage.setItem("home_btn_text", e.target.value)} />
+                                            <div className="logo-upload-item">
+                                                <span>Logo CONIITI</span>
+                                                <div className="mini-preview">
+                                                    <img src={logoEventPreview} alt="Preview Evento" style={{ height: '40px', objectFit: 'contain', background: '#eee', padding: '5px', borderRadius: '4px' }} />
+                                                </div>
+                                                <input type="file" accept="image/*" onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) {
+                                                        if (file.size > 800000) { alert("El logo es muy grande (máx 800KB)."); return; }
+                                                        const reader = new FileReader();
+                                                        reader.onloadend = () => { if (reader.result) { localStorage.setItem("site_logo_evento", reader.result as string); dispatchUpdate(); } };
+                                                        reader.readAsDataURL(file);
+                                                    }
+                                                }} />
+                                                <button type="button" className="btn-remove-img-sm" onClick={() => { localStorage.removeItem("site_logo_evento"); dispatchUpdate(); }}>Restaurar Original</button>
                                             </div>
-                                            <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); alert("Cambios de Inicio guardados."); }}>
-                                                Guardar Cambios
-                                            </button>
                                         </div>
                                     </div>
-                                )}
-
-                                {/* ── PÁGINA: INVITADOS ── */}
-                                {settingsTab === "pg-invitados" && (
-                                    <div className="page-settings-panel fade-in">
-                                        <h3 style={{ marginBottom: '1.5rem', color: 'var(--secondary-color)' }}>👥 Configuración — Página de Invitados</h3>
-                                        <div className="settings-form">
-                                            <div className="form-group">
-                                                <label>Título de la Sección</label>
-                                                <input type="text" defaultValue={localStorage.getItem("guests_title") || "Nuestros Invitados"}
-                                                    onChange={e => localStorage.setItem("guests_title", e.target.value)} />
+                                    <div className="form-group">
+                                        <label>Personalización de Colores</label>
+                                        <div className="color-picker-grid">
+                                            <div className="color-item">
+                                                <span>Fondo General</span>
+                                                <input type="color" value={bgColor} onChange={(e) => { localStorage.setItem("custom_bg_color", e.target.value); setBgColor(e.target.value); dispatchUpdate(); }} />
                                             </div>
-                                            <div className="form-group">
-                                                <label>Subtítulo / Descripción</label>
-                                                <textarea rows={2} defaultValue={localStorage.getItem("guests_subtitle") || "Expertos internacionales que compartirán su conocimiento"}
-                                                    onChange={e => localStorage.setItem("guests_subtitle", e.target.value)}></textarea>
+                                            <div className="color-item">
+                                                <span>Texto Principal</span>
+                                                <input type="color" value={textColor} onChange={(e) => { localStorage.setItem("custom_text_color", e.target.value); setTextColor(e.target.value); dispatchUpdate(); }} />
                                             </div>
-                                            <div className="form-group">
-                                                <label>Mostrar Organización del Ponente</label>
-                                                <input type="checkbox" defaultChecked={localStorage.getItem("guests_show_org") !== "false"}
-                                                    onChange={e => localStorage.setItem("guests_show_org", String(e.target.checked))} />
+                                            <div className="color-item">
+                                                <span>Color de Cabecera</span>
+                                                <input type="color" value={headerColor} onChange={(e) => { localStorage.setItem("custom_header_bg", e.target.value); setHeaderColor(e.target.value); dispatchUpdate(); }} />
                                             </div>
-                                            <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); alert("Cambios de Invitados guardados."); }}>
-                                                Guardar Cambios
-                                            </button>
+                                            <div className="color-item">
+                                                <span>Color Primario (Botones)</span>
+                                                <input type="color" value={primaryColor} onChange={(e) => { localStorage.setItem("custom_primary_color", e.target.value); setPrimaryColor(e.target.value); dispatchUpdate(); }} />
+                                            </div>
+                                            <div className="color-item">
+                                                <span>Color Secundario</span>
+                                                <input type="color" value={secondaryColor} onChange={(e) => { localStorage.setItem("custom_secondary_color", e.target.value); setSecondaryColor(e.target.value); dispatchUpdate(); }} />
+                                            </div>
                                         </div>
                                     </div>
-                                )}
-
-                                {/* ── PÁGINA: AGENDA ── */}
-                                {settingsTab === "pg-agenda" && (
-                                    <div className="page-settings-panel fade-in">
-                                        <h3 style={{ marginBottom: '1.5rem', color: 'var(--secondary-color)' }}>📅 Configuración — Página de Agenda</h3>
-                                        <div className="settings-form">
-                                            <div className="form-group">
-                                                <label>Título de la Sección</label>
-                                                <input type="text" defaultValue={localStorage.getItem("agenda_title") || "Agenda CONIITI 2026"}
-                                                    onChange={e => localStorage.setItem("agenda_title", e.target.value)} />
-                                            </div>
-                                            <div className="form-group">
-                                                <label>Descripción Introductoria</label>
-                                                <textarea rows={2} defaultValue={localStorage.getItem("agenda_subtitle") || "Explora todas las charlas y conferencias del evento"}
-                                                    onChange={e => localStorage.setItem("agenda_subtitle", e.target.value)}></textarea>
-                                            </div>
-                                            <div className="form-group">
-                                                <label>Mostrar Filtros en la Agenda</label>
-                                                <input type="checkbox" defaultChecked={localStorage.getItem("agenda_show_filters") !== "false"}
-                                                    onChange={e => localStorage.setItem("agenda_show_filters", String(e.target.checked))} />
-                                            </div>
-                                            <div className="form-group">
-                                                <label>Número de Columnas (Escritorio)</label>
-                                                <select defaultValue={localStorage.getItem("agenda_cols") || "auto"}
-                                                    onChange={e => localStorage.setItem("agenda_cols", e.target.value)}>
-                                                    <option value="auto">Automático (recomendado)</option>
-                                                    <option value="2">2 columnas</option>
-                                                    <option value="3">3 columnas</option>
-                                                    <option value="4">4 columnas</option>
-                                                </select>
-                                            </div>
-                                            <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); alert("Cambios de Agenda guardados."); }}>
-                                                Guardar Cambios
-                                            </button>
-                                        </div>
+                                    <div className="form-group">
+                                        <label>Modo de Mantenimiento</label>
+                                        <input type="checkbox" />
                                     </div>
-                                )}
-
-                                {/* ── PÁGINA: ACERCA DE ── */}
-                                {settingsTab === "pg-acerca" && (
-                                    <div className="page-settings-panel fade-in">
-                                        <h3 style={{ marginBottom: '1.5rem', color: 'var(--secondary-color)' }}>ℹ️ Configuración — Acerca De</h3>
-                                        <div className="settings-form">
-                                            <div className="form-group">
-                                                <label>Título de la Sección</label>
-                                                <input type="text" defaultValue={localStorage.getItem("about_title") || "Acerca del CONIITI"}
-                                                    onChange={e => localStorage.setItem("about_title", e.target.value)} />
-                                            </div>
-                                            <div className="form-group">
-                                                <label>Descripción del Evento</label>
-                                                <textarea rows={5} defaultValue={localStorage.getItem("about_description") || "El Congreso Internacional de Innovación Tecnológica reúne a expertos de todo el mundo para compartir avances en ciencia y tecnología."}
-                                                    onChange={e => localStorage.setItem("about_description", e.target.value)}></textarea>
-                                            </div>
-                                            <div className="form-group">
-                                                <label>Fecha del Evento</label>
-                                                <input type="text" defaultValue={localStorage.getItem("about_date") || "2026"}
-                                                    onChange={e => localStorage.setItem("about_date", e.target.value)} />
-                                            </div>
-                                            <div className="form-group">
-                                                <label>Lugar del Evento</label>
-                                                <input type="text" defaultValue={localStorage.getItem("about_location") || "Universidad Católica"}
-                                                    onChange={e => localStorage.setItem("about_location", e.target.value)} />
-                                            </div>
-                                            <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); alert("Cambios de 'Acerca de' guardados."); }}>
-                                                Guardar Cambios
-                                            </button>
-                                        </div>
+                                    <div className="admin-actions-footer">
+                                        <button type="button" className="btn-submit" onClick={() => alert("Configuración global guardada correctamente")}>
+                                            Guardar Cambios Globales
+                                        </button>
+                                        <button type="button" className="btn-logout" style={{ marginLeft: '1rem', background: '#e74c3c' }}
+                                            onClick={() => {
+                                                if (confirm("¿Seguro que quieres borrar toda la personalización?")) {
+                                                    ["site_banner", "site_logo_uni", "site_logo_evento", "custom_bg_color", "custom_text_color", "custom_header_bg", "custom_primary_color", "custom_secondary_color"].forEach(key => localStorage.removeItem(key));
+                                                    dispatchUpdate();
+                                                }
+                                            }}>
+                                            Limpiar y Resetear Diseño
+                                        </button>
                                     </div>
-                                )}
+                                </form>
+                            )}
 
-                                {/* ── PÁGINA: CONTACTO ── */}
-                                {settingsTab === "pg-contacto" && (
-                                    <div className="page-settings-panel fade-in">
-                                        <h3 style={{ marginBottom: '1.5rem', color: 'var(--secondary-color)' }}>✉️ Configuración — Contacto</h3>
-                                        <div className="settings-form">
-                                            <div className="form-group">
-                                                <label>Título de la Sección</label>
-                                                <input type="text" defaultValue={localStorage.getItem("contact_title") || "Contáctanos"}
-                                                    onChange={e => localStorage.setItem("contact_title", e.target.value)} />
-                                            </div>
-                                            <div className="form-group">
-                                                <label>Correo Electrónico de Contacto</label>
-                                                <input type="email" defaultValue={localStorage.getItem("contact_email") || "coniiti@ucatolica.edu.co"}
-                                                    onChange={e => localStorage.setItem("contact_email", e.target.value)} />
-                                            </div>
-                                            <div className="form-group">
-                                                <label>Teléfono</label>
-                                                <input type="text" defaultValue={localStorage.getItem("contact_phone") || "+57 (601) 327 7300"}
-                                                    onChange={e => localStorage.setItem("contact_phone", e.target.value)} />
-                                            </div>
-                                            <div className="form-group">
-                                                <label>Dirección</label>
-                                                <input type="text" defaultValue={localStorage.getItem("contact_address") || "Bogotá, Colombia"}
-                                                    onChange={e => localStorage.setItem("contact_address", e.target.value)} />
-                                            </div>
-                                            <div className="form-group">
-                                                <label>Mensaje en el formulario de contacto</label>
-                                                <textarea rows={3} defaultValue={localStorage.getItem("contact_form_msg") || "¿Tienes dudas? Escríbenos y te responderemos a la brevedad."}
-                                                    onChange={e => localStorage.setItem("contact_form_msg", e.target.value)}></textarea>
-                                            </div>
-                                            <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); alert("Cambios de Contacto guardados."); }}>
-                                                Guardar Cambios
-                                            </button>
+                            {/* ── PÁGINA: INICIO ── */}
+                            {settingsTab === "pg-inicio" && (
+                                <div className="page-settings-panel fade-in">
+                                    <h3>🏠 Configuración — Página de Inicio</h3>
+                                    <div className="settings-form">
+                                        <div className="form-group">
+                                            <label>Título Principal (Hero)</label>
+                                            <input type="text" defaultValue={localStorage.getItem("home_hero_title") || "CONIITI 2026"}
+                                                onChange={e => localStorage.setItem("home_hero_title", e.target.value)} />
                                         </div>
+                                        <div className="form-group">
+                                            <label>Subtítulo del Hero</label>
+                                            <input type="text" defaultValue={localStorage.getItem("home_hero_subtitle") || "Congreso Internacional de Innovación Tecnológica"}
+                                                onChange={e => localStorage.setItem("home_hero_subtitle", e.target.value)} />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Imagen de Fondo (Hero)</label>
+                                            <input type="file" accept="image/*" onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (file) {
+                                                    const reader = new FileReader();
+                                                    reader.onloadend = () => { if (reader.result) localStorage.setItem("home_hero_bg", reader.result as string); };
+                                                    reader.readAsDataURL(file);
+                                                }
+                                            }} />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Texto del Botón Principal</label>
+                                            <input type="text" defaultValue={localStorage.getItem("home_btn_text") || "Ver Agenda"}
+                                                onChange={e => localStorage.setItem("home_btn_text", e.target.value)} />
+                                        </div>
+                                        <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); alert("Cambios de Inicio guardados."); }}>
+                                            Guardar Cambios
+                                        </button>
                                     </div>
-                                )}
+                                </div>
+                            )}
 
-                            </div>
-                        )
-                    })()}
+                            {/* ── PÁGINA: INVITADOS ── */}
+                            {settingsTab === "pg-invitados" && (
+                                <div className="page-settings-panel fade-in">
+                                    <h3>👥 Configuración — Página de Invitados</h3>
+                                    <div className="settings-form">
+                                        <div className="form-group">
+                                            <label>Título de la Sección</label>
+                                            <input type="text" defaultValue={localStorage.getItem("guests_title") || "Nuestros Invitados"}
+                                                onChange={e => localStorage.setItem("guests_title", e.target.value)} />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Subtítulo / Descripción</label>
+                                            <textarea rows={2} defaultValue={localStorage.getItem("guests_subtitle") || "Expertos internacionales que compartirán su conocimiento"}
+                                                onChange={e => localStorage.setItem("guests_subtitle", e.target.value)}></textarea>
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Mostrar Organización del Ponente</label>
+                                            <input type="checkbox" defaultChecked={localStorage.getItem("guests_show_org") !== "false"}
+                                                onChange={e => localStorage.setItem("guests_show_org", String(e.target.checked))} />
+                                        </div>
+                                        <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); alert("Cambios de Invitados guardados."); }}>
+                                            Guardar Cambios
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── PÁGINA: AGENDA ── */}
+                            {settingsTab === "pg-agenda" && (
+                                <div className="page-settings-panel fade-in">
+                                    <h3>📅 Configuración — Página de Agenda</h3>
+                                    <div className="settings-form">
+                                        <div className="form-group">
+                                            <label>Título de la Sección</label>
+                                            <input type="text" defaultValue={localStorage.getItem("agenda_title") || "Agenda CONIITI 2026"}
+                                                onChange={e => localStorage.setItem("agenda_title", e.target.value)} />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Descripción Introductoria</label>
+                                            <textarea rows={2} defaultValue={localStorage.getItem("agenda_subtitle") || "Explora todas las charlas y conferencias del evento"}
+                                                onChange={e => localStorage.setItem("agenda_subtitle", e.target.value)}></textarea>
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Mostrar Filtros en la Agenda</label>
+                                            <input type="checkbox" defaultChecked={localStorage.getItem("agenda_show_filters") !== "false"}
+                                                onChange={e => localStorage.setItem("agenda_show_filters", String(e.target.checked))} />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Número de Columnas (Escritorio)</label>
+                                            <select defaultValue={localStorage.getItem("agenda_cols") || "auto"}
+                                                onChange={e => localStorage.setItem("agenda_cols", e.target.value)}>
+                                                <option value="auto">Automático (recomendado)</option>
+                                                <option value="2">2 columnas</option>
+                                                <option value="3">3 columnas</option>
+                                                <option value="4">4 columnas</option>
+                                            </select>
+                                        </div>
+                                        <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); alert("Cambios de Agenda guardados."); }}>
+                                            Guardar Cambios
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── PÁGINA: ACERCA DE ── */}
+                            {settingsTab === "pg-acerca" && (
+                                <div className="page-settings-panel fade-in">
+                                    <h3>ℹ️ Configuración — Acerca De</h3>
+                                    <div className="settings-form">
+                                        <div className="form-group">
+                                            <label>Título de la Sección</label>
+                                            <input type="text" defaultValue={localStorage.getItem("about_title") || "Acerca del CONIITI"}
+                                                onChange={e => localStorage.setItem("about_title", e.target.value)} />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Descripción del Evento</label>
+                                            <textarea rows={5} defaultValue={localStorage.getItem("about_description") || "El Congreso Internacional de Innovación Tecnológica reúne a expertos de todo el mundo para compartir avances en ciencia y tecnología."}
+                                                onChange={e => localStorage.setItem("about_description", e.target.value)}></textarea>
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Fecha del Evento</label>
+                                            <input type="text" defaultValue={localStorage.getItem("about_date") || "2026"}
+                                                onChange={e => localStorage.setItem("about_date", e.target.value)} />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Lugar del Evento</label>
+                                            <input type="text" defaultValue={localStorage.getItem("about_location") || "Universidad Católica"}
+                                                onChange={e => localStorage.setItem("about_location", e.target.value)} />
+                                        </div>
+                                        <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); alert("Cambios de 'Acerca de' guardados."); }}>
+                                            Guardar Cambios
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── PÁGINA: CONTACTO ── */}
+                            {settingsTab === "pg-contacto" && (
+                                <div className="page-settings-panel fade-in">
+                                    <h3>✉️ Configuración — Contacto</h3>
+                                    <div className="settings-form">
+                                        <div className="form-group">
+                                            <label>Título de la Sección</label>
+                                            <input type="text" defaultValue={localStorage.getItem("contact_title") || "Contáctanos"}
+                                                onChange={e => localStorage.setItem("contact_title", e.target.value)} />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Correo Electrónico de Contacto</label>
+                                            <input type="email" defaultValue={localStorage.getItem("contact_email") || "coniiti@ucatolica.edu.co"}
+                                                onChange={e => localStorage.setItem("contact_email", e.target.value)} />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Teléfono</label>
+                                            <input type="text" defaultValue={localStorage.getItem("contact_phone") || "+57 (601) 327 7300"}
+                                                onChange={e => localStorage.setItem("contact_phone", e.target.value)} />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Dirección</label>
+                                            <input type="text" defaultValue={localStorage.getItem("contact_address") || "Bogotá, Colombia"}
+                                                onChange={e => localStorage.setItem("contact_address", e.target.value)} />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Mensaje en el formulario de contacto</label>
+                                            <textarea rows={3} defaultValue={localStorage.getItem("contact_form_msg") || "¿Tienes dudas? Escríbenos y te responderemos a la brevedad."}
+                                                onChange={e => localStorage.setItem("contact_form_msg", e.target.value)}></textarea>
+                                        </div>
+                                        <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); alert("Cambios de Contacto guardados."); }}>
+                                            Guardar Cambios
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                        </div>
+                    )}
 
                     {activeTab === "analytics" && userRole === "SUPER_ADMIN" && (
                         <div className="admin-view fade-in">
@@ -1009,7 +1016,7 @@ export default function Admin() {
                         </div>
                     )}
                 </main>
-            </div>
-        </div>
+            </div >
+        </div >
     )
 }
