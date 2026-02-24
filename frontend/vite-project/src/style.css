@@ -74,7 +74,6 @@ body.theme-mexico {
 
 header {
   display: flex;
-  flex-direction: column;
   margin: 0;
   background-color: #1f2a44;
   border-bottom: 5px solid var(--primary-color);
