@@ -124,9 +124,12 @@ header {
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 4px 24px rgba(30, 41, 59, 0.35);
-  backdrop-filter: blur(10px);
-  transition: var(--transition-base);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  height: 5.7rem;
+}
+
+a{
+  text-decoration: none;
 }
 
 
@@ -1128,6 +1131,7 @@ footer {
   text-align: center;
   padding: 100px 20px;
   margin-bottom: 4rem;
+  border-radius: 12px;
 }
 
 .invitados-section {
