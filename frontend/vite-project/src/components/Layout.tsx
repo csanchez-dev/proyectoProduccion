@@ -14,7 +14,6 @@ export default function Layout({ children }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const [bannerUrl, setBannerUrl] = useState("/banner-header.png")
   const [logoEvento, setLogoEvento] = useState("/logo-coniiti.png")
 
   // Función para traducir rápido en el componente
@@ -55,10 +54,6 @@ export default function Layout({ children }: Props) {
       document.body.className = ""
     }
 
-    // Cargar banner persistente
-    const savedBanner = localStorage.getItem("site_banner")
-    if (savedBanner) setBannerUrl(savedBanner)
-    else setBannerUrl("/banner-header.png")
 
     // Cargar logos persistentes
 
@@ -106,20 +101,7 @@ export default function Layout({ children }: Props) {
   return (
     <>
       <header>
-        {bannerUrl && (
-          <img
-            className="header-banner"
-            src={bannerUrl}
-            alt="Banner Cabecera"
-            onError={() => {
-              localStorage.removeItem("site_banner");
-              setBannerUrl("/banner-header.png");
-            }}
-          />
-        )}
-
         <div className="logo-container">
-
           <img
             src={logoEvento}
             alt="Logo Coniiti"
