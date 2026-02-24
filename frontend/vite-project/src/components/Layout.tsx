@@ -15,7 +15,6 @@ export default function Layout({ children }: Props) {
   const location = useLocation()
 
   const [bannerUrl, setBannerUrl] = useState("/banner-header.png")
-  const [logoUni, setLogoUni] = useState("/ucatolica-logo.png")
   const [logoEvento, setLogoEvento] = useState("/logo-coniiti.png")
 
   // Función para traducir rápido en el componente
@@ -62,9 +61,6 @@ export default function Layout({ children }: Props) {
     else setBannerUrl("/banner-header.png")
 
     // Cargar logos persistentes
-    const savedLogoUni = localStorage.getItem("site_logo_uni")
-    if (savedLogoUni) setLogoUni(savedLogoUni)
-    else setLogoUni("/ucatolica-logo.png")
 
     const savedLogoEvento = localStorage.getItem("site_logo_evento")
     if (savedLogoEvento) setLogoEvento(savedLogoEvento)
@@ -123,15 +119,7 @@ export default function Layout({ children }: Props) {
         )}
 
         <div className="logo-container">
-          <img
-            src={logoUni}
-            alt="Logo Universidad Catolica"
-            className="logo-uni"
-            onError={() => {
-              localStorage.removeItem("site_logo_uni");
-              setLogoUni("/ucatolica-logo.png");
-            }}
-          />
+
           <img
             src={logoEvento}
             alt="Logo Coniiti"

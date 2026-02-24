@@ -1,2 +1,10 @@
 * text eol=lf
+# Imágenes como binarios (no tocar finales de línea)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.svg binary
+
 
