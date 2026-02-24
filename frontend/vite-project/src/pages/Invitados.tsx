@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { conferences as initialConferences } from "../data/conference_mocks"
 
 export default function Invitados() {
@@ -6,6 +6,23 @@ export default function Invitados() {
         const saved = localStorage.getItem("site_conferences")
         return saved ? JSON.parse(saved) : initialConferences
     })
+
+    const [config, setConfig] = useState({
+        title: localStorage.getItem("guests_title") || "Nuestros Invitados de Honor",
+        subtitle: localStorage.getItem("guests_subtitle") || "Conoce a los expertos nacionales e internacionales que nos acompañarán en CONIITI 2026"
+    });
+
+    const refreshConfig = () => {
+        setConfig({
+            title: localStorage.getItem("guests_title") || "Nuestros Invitados de Honor",
+            subtitle: localStorage.getItem("guests_subtitle") || "Conoce a los expertos nacionales e internacionales que nos acompañarán en CONIITI 2026"
+        });
+    };
+
+    useEffect(() => {
+        window.addEventListener('site-config-updated', refreshConfig);
+        return () => window.removeEventListener('site-config-updated', refreshConfig);
+    }, []);
 
     // Obtener lista única de ponentes/invitados
     const guests = Array.from(new Set(conferences.map((c: any) => c.speaker.name))).map(name => {
@@ -15,8 +32,8 @@ export default function Invitados() {
     return (
         <div className="invitados-page">
             <div className="section-header">
-                <h2>Nuestros Invitados de Honor</h2>
-                <p>Conoce a los expertos nacionales e internacionales que nos acompañarán en CONIITI 2026</p>
+                <h2>{config.title}</h2>
+                <p>{config.subtitle}</p>
             </div>
 
             <div className="guests-grid">
