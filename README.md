@@ -1,4 +1,4 @@
-﻿# CONIITI 2026 - Plataforma de Gestión
+﻿# CONIITI 2026 - Plataforma de Gestión.
 
 Plataforma integral para la gestión del **Congreso Internacional de Innovación y Tendencias en IngenierÃ­a (CONIITI) 2026**. Esta aplicación permite a los usuarios registrarse, inscribirse en conferencias y a los administradores gestionar ponentes, agenda y configuraciones globales.
 
