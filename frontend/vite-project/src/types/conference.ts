@@ -16,4 +16,6 @@ export type Conference = {
   category?: string
   level?: string
   career?: string
+  type?: 'presencial' | 'virtual'
+  virtualLink?: string
 }

@@ -60,6 +60,26 @@ export default function Admin() {
     const [settingsTab, setSettingsTab] = useState("general")
     const navigate = useNavigate()
 
+    // Gestión de Capacidad de Auditorios
+    const [locCapacities, setLocCapacities] = useState(() => {
+        const saved = localStorage.getItem("site_location_capacities");
+        if (saved) return JSON.parse(saved);
+        return {
+            "Auditorio Paraninfo": 100,
+            "Auditorio Torres": 100,
+            "Auditorio Sede 4 - Sala 1": 30,
+            "Auditorio Sede 4 - Sala 2": 30,
+            "Auditorio Sede 4 - Sala 3": 30,
+            "Auditorio Sede 4 - Sala 4": 30,
+            "Auditorio Sede 4 - Sala 5": 30,
+            "Auditorio Sede 4 - Sala 6": 30
+        };
+    });
+
+    useEffect(() => {
+        localStorage.setItem("site_location_capacities", JSON.stringify(locCapacities));
+    }, [locCapacities]);
+
     useEffect(() => {
         const session = localStorage.getItem("user_session")
         if (session) {
@@ -110,12 +130,14 @@ export default function Admin() {
     const [showConfForm, setShowConfForm] = useState(false)
     const [newConf, setNewConf] = useState({
         title: "",
-        location: "",
+        location: "Auditorio Paraninfo",
         description: "",
         speakerName: "",
         startTime: "",
         endTime: "",
-        career: ""
+        career: "",
+        type: "presencial",
+        virtualLink: ""
     })
 
     const handleAddConference = (e: React.FormEvent) => {
@@ -128,6 +150,8 @@ export default function Admin() {
             startTime: newConf.startTime || new Date().toISOString(),
             endTime: newConf.endTime || new Date().toISOString(),
             location: newConf.location,
+            type: newConf.type,
+            virtualLink: newConf.virtualLink,
             category: "General",
             level: "Básico",
             career: newConf.career || "General",
@@ -140,7 +164,7 @@ export default function Admin() {
         }
         setConferences([...conferences, simulatedConf])
         setShowConfForm(false)
-        setNewConf({ title: "", location: "", description: "", speakerName: "", startTime: "", endTime: "", career: "" })
+        setNewConf({ title: "", location: "Auditorio Paraninfo", description: "", speakerName: "", startTime: "", endTime: "", career: "", type: "presencial", virtualLink: "" })
         alert("¡Conferencia agendada exitosamente!")
     }
 
@@ -272,15 +296,43 @@ export default function Admin() {
                                             />
                                         </div>
                                         <div className="form-group">
-                                            <label>Ubicación (Salón / Auditorio)</label>
-                                            <input
-                                                type="text"
-                                                required
-                                                value={newConf.location}
-                                                onChange={e => setNewConf({ ...newConf, location: e.target.value })}
-                                            />
+                                            <label>Modalidad</label>
+                                            <select
+                                                value={newConf.type}
+                                                onChange={e => setNewConf({ ...newConf, type: e.target.value as any })}
+                                                className="admin-select"
+                                            >
+                                                <option value="presencial">Presencial</option>
+                                                <option value="virtual">Virtual</option>
+                                            </select>
                                         </div>
                                     </div>
+                                    {newConf.type === 'virtual' ? (
+                                        <div className="form-group">
+                                            <label>Enlace de la Reunión (Virtual)</label>
+                                            <input
+                                                type="url"
+                                                placeholder="https://zoom.us/j/..."
+                                                value={newConf.virtualLink}
+                                                onChange={e => setNewConf({ ...newConf, virtualLink: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="form-group">
+                                            <label>Ubicación (Salón / Auditorio)</label>
+                                            <select
+                                                value={newConf.location}
+                                                onChange={e => setNewConf({ ...newConf, location: e.target.value })}
+                                                required
+                                                className="admin-select"
+                                            >
+                                                {Object.keys(locCapacities).map(loc => (
+                                                    <option key={loc} value={loc}>{loc} (Cap: {locCapacities[loc]})</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
                                     <div className="form-group">
                                         <label>Carrera Afín</label>
                                         <select
@@ -439,6 +491,7 @@ export default function Admin() {
                                     { id: "pg-agenda", icon: "📅", label: "Agenda" },
                                     { id: "pg-acerca", icon: "ℹ️", label: "Acerca De" },
                                     { id: "pg-contacto", icon: "✉️", label: "Contacto" },
+                                    { id: "pg-aforos", icon: "🏛️", label: "Aforos y Sedes" },
                                 ].map(tab => (
                                     <button
                                         key={tab.id}
@@ -774,6 +827,72 @@ export default function Admin() {
                                 </div>
                             )}
 
+                            {/* ── PÁGINA: AFOROS ── */}
+                            {settingsTab === "pg-aforos" && (
+                                <div className="page-settings-panel fade-in">
+                                    <h3>🏛️ Gestión de Aforos y Auditorios</h3>
+                                    <p className="hint">Configura la capacidad máxima de cada lugar. Los cambios afectarán el límite de inscripciones en la agenda.</p>
+
+                                    <div className="settings-form" style={{ marginTop: '1.5rem' }}>
+                                        {Object.keys(locCapacities).map(loc => (
+                                            <div className="form-group" key={loc} style={{ borderBottom: '1px solid #eee', paddingBottom: '1rem', marginBottom: '1rem' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <label style={{ fontWeight: '600' }}>{loc}</label>
+                                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                        <input
+                                                            type="number"
+                                                            value={locCapacities[loc]}
+                                                            onChange={e => {
+                                                                setLocCapacities({ ...locCapacities, [loc]: parseInt(e.target.value) || 0 });
+                                                            }}
+                                                            style={{ width: '100px', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}
+                                                        />
+                                                        <span style={{ fontSize: '0.9rem', color: '#666' }}>personas</span>
+                                                        {!loc.startsWith("Auditorio Paraninfo") && !loc.startsWith("Auditorio Torres") && (
+                                                            <button
+                                                                className="btn-remove-img-sm"
+                                                                style={{ margin: 0, padding: '6px 10px', background: '#ffeded', color: '#e74c3c', border: '1px solid #ffdada' }}
+                                                                onClick={() => {
+                                                                    const newCaps = { ...locCapacities };
+                                                                    delete newCaps[loc];
+                                                                    setLocCapacities(newCaps);
+                                                                }}
+                                                            >
+                                                                Eliminar
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        <div className="add-location-box" style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8f9fa', borderRadius: '12px', border: '1px dashed #ccc' }}>
+                                            <h4 style={{ marginTop: 0 }}>+ Añadir Sala en Sede 4</h4>
+                                            <p className="hint">Puedes crear múltiples salas para la Sede 4 con capacidades independientes.</p>
+                                            <button
+                                                type="button"
+                                                className="btn-submit"
+                                                style={{ background: '#34495e' }}
+                                                onClick={() => {
+                                                    const currentSede4Salas = Object.keys(locCapacities).filter(k => k.includes("Sede 4"));
+                                                    const nextNum = currentSede4Salas.length + 1;
+                                                    setLocCapacities({
+                                                        ...locCapacities,
+                                                        [`Auditorio Sede 4 - Sala ${nextNum}`]: 30
+                                                    });
+                                                }}
+                                            >
+                                                Añadir Nueva Sala (Sede 4)
+                                            </button>
+                                        </div>
+
+                                        <button className="btn-submit" style={{ marginTop: '2rem', width: '100%' }} onClick={() => { dispatchUpdate(); alert("Configuración de aforos guardada."); }}>
+                                            Guardar y Aplicar a Toda la Agenda
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
                         </div>
                     )}
 
@@ -972,13 +1091,41 @@ export default function Admin() {
                                         />
                                     </div>
                                     <div className="form-group">
-                                        <label>Ubicación</label>
-                                        <input
-                                            type="text"
-                                            value={editingConf.location}
-                                            onChange={e => setEditingConf({ ...editingConf, location: e.target.value })}
-                                        />
+                                        <label>Modalidad</label>
+                                        <select
+                                            value={editingConf.type || 'presencial'}
+                                            onChange={e => setEditingConf({ ...editingConf, type: e.target.value as any })}
+                                            className="admin-select"
+                                        >
+                                            <option value="presencial">Presencial</option>
+                                            <option value="virtual">Virtual</option>
+                                        </select>
                                     </div>
+                                    {editingConf.type === 'virtual' ? (
+                                        <div className="form-group">
+                                            <label>Enlace de la Reunión (Virtual)</label>
+                                            <input
+                                                type="url"
+                                                value={editingConf.virtualLink || ''}
+                                                onChange={e => setEditingConf({ ...editingConf, virtualLink: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="form-group">
+                                            <label>Ubicación</label>
+                                            <select
+                                                value={editingConf.location}
+                                                onChange={e => setEditingConf({ ...editingConf, location: e.target.value })}
+                                                required
+                                                className="admin-select"
+                                            >
+                                                {Object.keys(locCapacities).map(loc => (
+                                                    <option key={loc} value={loc}>{loc}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
                                     <div className="form-group">
                                         <label>Carrera Afín</label>
                                         <select

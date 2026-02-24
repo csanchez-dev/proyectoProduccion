@@ -1653,6 +1653,42 @@ span {
   gap: 1rem;
 }
 
+.modality-badge {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+  z-index: 2;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(4px);
+}
+
+.modality-badge.presencial {
+  background: rgba(39, 174, 96, 0.9);
+}
+
+.modality-badge.virtual {
+  background: rgba(41, 128, 185, 0.9);
+}
+
+.virtual-link-box a {
+  transition: all 0.3s ease;
+}
+
+.virtual-link-box a:hover {
+  background: #003e99 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 82, 204, 0.3);
+}
+
+.btn-link {
+  display: inline-block;
+  font-weight: 600;
+}
 
 .btn-remove-img-sm {
   background: #fee2e2;
