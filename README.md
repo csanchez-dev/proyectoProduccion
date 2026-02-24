@@ -2,7 +2,7 @@
 
 Plataforma integral para la gestión del **Congreso Internacional de Innovación y Tendencias en Ingeniería (CONIITI) 2026**. Esta aplicación permite a los usuarios registrarse, inscribirse en conferencias y a los administradores gestionar ponentes, agenda y configuraciones globales.
 
-## Guia de Ejecución
+## Guia de Ejecución.
 
 Sigue estos pasos para poner en marcha el proyecto en tu máquina local:
 
