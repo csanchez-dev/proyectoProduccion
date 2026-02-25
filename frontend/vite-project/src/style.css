@@ -2043,3 +2043,45 @@ footer {
     grid-template-columns: 1fr;
   }
 }
+.dayTabs{
+  display:flex;
+  justify-content:center;
+  gap:12px;
+  margin: 18px 0 14px;
+}
+
+.dayTab{
+  position: relative;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,.12);
+  background: white;
+  cursor:pointer;
+  font-weight: 600;
+  transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+/* ✨ Hover (como las cards) */
+.dayTab:hover{
+  transform: translateY(-4px);
+  box-shadow: 0 14px 28px rgba(0,0,0,.12);
+  z-index: 2;
+}
+
+/* ✨ Activo (un poco más firme) */
+.dayTab.active{
+  background: var(--primary-color);
+  color: white;
+  border-color: transparent;
+  transform: translateY(-2px);
+  box-shadow: 0 16px 32px rgba(0,0,0,.18);
+  z-index: 3;
+}
+
+.dayTabIcon{
+  font-size: 1rem;
+  line-height: 1;
+}

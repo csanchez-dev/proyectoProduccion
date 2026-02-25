@@ -1,9 +1,18 @@
 import React, { useState, useMemo, useEffect } from "react"
+import DayTabs, { type DayOption } from "../components/DayTabs";
 import ConferenceCard from "../components/ConferenceCard"
 import { conferences as initialConferences } from "../data/conference_mocks"
 import type { Language } from "../utils/i18n"
 
 export default function Agenda() {
+  const days: DayOption[] = [
+  { id: "day1", label: "Día 1" },
+  { id: "day2", label: "Día 2" },
+  { id: "day3", label: "Día 3" },
+];
+
+  const [activeDayId, setActiveDayId] = useState<string>(days[0].id);
+
   const [lang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
 
   const [conferencesList] = useState(() => {
@@ -15,6 +24,7 @@ export default function Agenda() {
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [levelFilter, setLevelFilter] = useState("all")
   const [careerFilter, setCareerFilter] = useState("all")
+  
 
   const [config, setConfig] = useState({
     title: localStorage.getItem("agenda_title") || (lang === 'es' ? '📅 Agenda CONIITI 2026' : '📅 CONIITI 2026 Agenda'),
@@ -60,15 +70,19 @@ export default function Agenda() {
   ]
 
   const filteredConferences = conferencesList.filter((conf: any) => {
-    const matchesSearch =
-      conf.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      conf.speaker.name.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = categoryFilter === "all" || conf.category === categoryFilter
-    const matchesLevel = levelFilter === "all" || conf.level === levelFilter
-    const matchesCareer = careerFilter === "all" || conf.career === careerFilter
-    return matchesSearch && matchesCategory && matchesLevel && matchesCareer
-  })
+  const matchesSearch =
+    conf.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    conf.speaker.name.toLowerCase().includes(searchTerm.toLowerCase())
 
+  const matchesCategory = categoryFilter === "all" || conf.category === categoryFilter
+  const matchesLevel = levelFilter === "all" || conf.level === levelFilter
+  const matchesCareer = careerFilter === "all" || conf.career === careerFilter
+
+  const confDayId = conf.dayId ?? conf.day ?? conf.day_id ?? conf.dayNumber ?? conf.date
+  const matchesDay = !confDayId || confDayId === activeDayId
+  return matchesSearch && matchesCategory && matchesLevel && matchesCareer && matchesDay
+})
+  
   const clearFilters = () => {
     setSearchTerm("")
     setCategoryFilter("all")
@@ -97,6 +111,7 @@ export default function Agenda() {
       <div className="agenda-header-section">
         <h1 className="agenda-title">{config.title}</h1>
         <p className="agenda-subtitle">{config.subtitle}</p>
+        <DayTabs days={days} activeDayId={activeDayId} onChange={setActiveDayId} />
 
         {/* ── Controles de búsqueda y filtros ── */}
         {config.showFilters && (
