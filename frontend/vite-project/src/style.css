@@ -1,80 +1,36 @@
-﻿/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   CONIITI 2026 — Design System (by UI/UX Pro Max Skill)
-   Style: Glassmorphism | Stack: React | Industry: Academic/Congress
-   Colors: #2563EB primary | #1E293B text | #F8FAFC bg
-   Typography: Crimson Pro (headings) + Inter (body)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Open+Sans:wght@400;700&display=swap');
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Open Sans', sans-serif;
 }
 
 h1,
 h2,
 h3 {
-  font-family: 'Crimson Pro', serif;
-  letter-spacing: -0.02em;
+  font-family: 'Montserrat', sans-serif;
 }
 
 :root {
-  /* ── Colores principales (Design System: Congress Academic) ── */
-  --primary-color: #2563EB;
-  --primary-hover: #1D4ED8;
-  --primary-light: #EFF6FF;
-  --secondary-color: #1E293B;
-  --accent-color: #F97316;
-  /* CTA color from design system */
-  --accent-hover: #EA6C0A;
+  --primary-color: #375fe4;
+  --primary-hover: #1448f0;
+  --secondary-color: #1f2a44;
+  --accent-color: #4998f1;
+  --btn-gradient: linear-gradient(90deg, #4998f1, #375fe4);
+  --btn-hover-gradient: linear-gradient(90deg, #1448f0, #4663e5);
 
-  /* ── Gradientes ── */
-  --btn-gradient: linear-gradient(135deg, #2563EB, #1E40AF);
-  --btn-hover-gradient: linear-gradient(135deg, #1D4ED8, #1E3A8A);
-  --hero-gradient: linear-gradient(135deg, #1E293B 0%, #1E40AF 50%, #0F172A 100%);
-
-  /* ── Superficie & Glassmorphism ── */
-  --bg-page: #F8FAFC;
-  --bg-card: rgba(255, 255, 255, 0.85);
-  --glass-bg: rgba(255, 255, 255, 0.75);
-  --glass-border: 1px solid rgba(255, 255, 255, 0.5);
-  --glass-shadow: 0 8px 32px rgba(37, 99, 235, 0.12);
-  --card-shadow: 0 4px 24px rgba(30, 41, 59, 0.08);
-  --card-shadow-hover: 0 16px 48px rgba(30, 41, 59, 0.15);
-
-  /* ── Texto ── */
-  --text-primary: #1E293B;
-  --text-secondary: #475569;
-  --text-muted: #94A3B8;
-  --text-on-primary: #ffffff;
-
-  /* ── Bordes & Radios ── */
-  --border-color: #E2E8F0;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
-
-  /* ── Espaciado ── */
-  --container-max: 1280px;
-  --section-pad: 5rem 1.5rem;
-
-  /* ── Transiciones ── */
-  --transition-fast: all 0.15s ease;
-  --transition-base: all 0.25s ease;
-  --transition-slow: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-
-  font-family: 'Inter', sans-serif;
-  line-height: 1.6;
+  font-family: 'Open Sans', sans-serif;
+  line-height: 1.5;
   font-weight: 400;
-  color-scheme: light;
-  color: var(--text-primary);
-  background-color: var(--bg-page);
+
+  color-scheme: light dark;
+  color: #1b1a1a;
+  background-color: rgb(255, 255, 255);
+
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
 
 /* Temas por PaÃ­ses */
 body.theme-colombia {
@@ -118,29 +74,24 @@ body.theme-mexico {
 
 header {
   display: flex;
+  flex-direction: column;
   margin: 0;
-  background-color: var(--secondary-color);
-  border-bottom: 3px solid var(--primary-color);
+  background-color: #1f2a44;
+  border-bottom: 5px solid var(--primary-color);
   position: sticky;
   top: 0;
   z-index: 100;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  height: 5.7rem;
-}
-
-a{
-  text-decoration: none;
 }
 
 
 .header-banner {
-  grid-row: 1 / 2;
-  grid-column: 1 / 3;
-  object-fit: cover;
   width: 100%;
-  height: 100%;
-
+  height: auto;
+  max-height: 250px;
+  object-fit: cover;
 }
+
 
 .logo-container {
   display: flex;
@@ -158,9 +109,9 @@ a{
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem 2rem;
-  flex: 1;
+  width: 100%;
   flex-wrap: wrap;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .navbar-links {
@@ -175,48 +126,20 @@ a{
 .user-auth-zone {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1rem;
   flex-wrap: wrap;
-  margin-left: auto;
-  /* Forzar hacia la derecha */
-}
-
-.lang-select {
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 6px 14px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  outline: none;
-  font-weight: 600;
-  transition: var(--transition-base);
-  appearance: none;
-  /* Quitar flecha por defecto para estilizar (opcional) */
-  -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  padding-right: 30px;
-}
-
-.lang-select:hover {
-  background: rgba(255, 255, 255, 0.25);
-  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .btn-login-header {
-  background: var(--primary-color);
-  color: white;
-  padding: 10px 24px;
-  border-radius: 12px;
-  text-decoration: none;
-  font-weight: 700;
-  font-size: 0.95rem;
-  transition: var(--transition-base);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
-  border: none;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  background-color: #1f2a44;
+  border-bottom: 5px solid var(--primary-color);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .btn-login-header:hover {
@@ -309,94 +232,114 @@ a{
 .card {
   display: flex;
   flex-direction: column;
-  background: var(--bg-card);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: var(--radius-lg);
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
   overflow: hidden;
-  transition: var(--transition-slow);
-  box-shadow: var(--card-shadow);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   height: 100%;
-  cursor: pointer;
 }
 
 .card:hover {
-  transform: translateY(-6px);
-  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-8px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
   border-color: var(--primary-color);
 }
 
-/* ── Agenda grid ── */
-.agenda-page {
-  background: var(--bg-page);
-  min-height: 100vh;
-  padding: 0;
+.card-image-wrapper {
+  position: relative;
+  height: 180px;
+  overflow: hidden;
 }
 
-.agenda-header-section {
-  text-align: center;
-  padding: 3rem 1.5rem 2rem;
-  background: linear-gradient(180deg, #EFF6FF 0%, var(--bg-page) 100%);
+.card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
 }
 
-.agenda-title {
-  font-family: 'Crimson Pro', serif;
-  font-size: clamp(2rem, 5vw, 3.2rem);
+.card:hover .card-img {
+  transform: scale(1.1);
+}
+
+.category-badge {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: var(--primary-color);
+  color: white;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
   font-weight: 700;
-  color: var(--secondary-color);
-  margin-bottom: 0.75rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  z-index: 10;
 }
 
-.agenda-subtitle {
-  font-size: 1.1rem;
-  color: var(--text-secondary);
-  margin-bottom: 2rem;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.agenda-controls-card {
+.card-body {
+  padding: 1.5rem;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  justify-content: center;
-  background: white;
-  padding: 1.25rem;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--glass-shadow);
-  border: 1px solid var(--border-color);
-  max-width: 1100px;
-  margin: 0 auto;
+  flex-direction: column;
+  flex-grow: 1;
 }
 
-.results-count {
-  margin-top: 1rem;
+.card-body h3 {
+  font-size: 1.25rem;
+  color: var(--secondary-color);
+  margin-bottom: 0.8rem;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.description {
   font-size: 0.9rem;
-  color: var(--text-muted);
-  font-style: italic;
+  color: #666;
+  margin-bottom: 1.2rem;
+  text-align: left;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.agenda-empty {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 5rem 2rem;
-  color: var(--text-muted);
-  background: white;
-  border-radius: var(--radius-xl);
-  box-shadow: var(--card-shadow);
-  border: 1px solid var(--border-color);
+.info {
+  margin: 0 0 1.5rem 0;
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 12px;
+  width: 100%;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0.6rem;
+  font-size: 0.85rem;
+  color: #444;
+}
+
+.info-row:last-child {
+  margin-bottom: 0;
+}
+
+.icon {
+  font-size: 1.1rem;
 }
 
 .agenda {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 2rem;
-  padding: 2.5rem 1.5rem;
-  max-width: 1400px;
-  margin: 0 auto;
+  grid-template-columns: repeat(3, minmax(260px, 1fr));
+  gap: 24px;
+  justify-content: center;
+  align-items: start;
+  justify-items: center;
+  margin-top: 18px;
 }
+
 
 /* Efectos para el botÃ³n de inscripciÃ³n */
 .btn:disabled {
@@ -475,27 +418,24 @@ footer {
 }
 
 .register-card {
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
   padding: 2.5rem;
-  border-radius: var(--radius-xl);
-  box-shadow: 0 24px 48px rgba(30, 41, 59, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 600px;
   text-align: center;
 }
 
 .register-card h2 {
-  color: var(--secondary-color);
+  color: #1f2a44;
   margin-bottom: 0.5rem;
-  font-size: 2.2rem;
-  font-family: 'Crimson Pro', serif;
+  font-size: 2rem;
 }
 
 .register-card p {
-  color: var(--text-secondary);
+  color: #666;
   margin-bottom: 2rem;
 }
 
@@ -560,24 +500,21 @@ footer {
 
 .btn-submit {
   width: 100%;
-  background: var(--btn-gradient);
+  background: linear-gradient(90deg, #375fe4, #1f2a44);
   color: white;
   padding: 15px;
   border: none;
-  border-radius: var(--radius-md);
-  font-size: 1.05rem;
+  border-radius: 10px;
+  font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
   margin-top: 1rem;
-  transition: var(--transition-base);
-  letter-spacing: 0.02em;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .btn-submit:hover {
-  background: var(--btn-hover-gradient);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.45);
+  box-shadow: 0 10px 20px rgba(31, 42, 68, 0.2);
 }
 
 .checkbox-group {
@@ -626,7 +563,13 @@ footer {
 .tab-header {
   display: flex;
   flex-direction: column;
-  gap: 1rem
+  margin: 0;
+  background-color: #1f2a44;
+  border-bottom: 5px solid var(--primary-color);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .tab-header button {
@@ -1131,7 +1074,6 @@ footer {
   text-align: center;
   padding: 100px 20px;
   margin-bottom: 4rem;
-  border-radius: 12px;
 }
 
 .invitados-section {
@@ -1565,8 +1507,6 @@ footer {
   --site-bg: #ffffff;
   --site-text: #1b1a1a;
   --header-bg: #1f2a44;
-  --primary-color: #2563EB;
-  --secondary-color: #1E293B;
 }
 
 body {
@@ -1574,8 +1514,7 @@ body {
   color: var(--site-text);
 }
 
-header,
-.card-header {
+header {
   background-color: var(--header-bg) !important;
 }
 
@@ -1622,8 +1561,7 @@ p,
 li,
 label,
 h3,
-h4,
-span {
+h4 {
   color: inherit;
 }
 
@@ -1657,42 +1595,6 @@ span {
   gap: 1rem;
 }
 
-.modality-badge {
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: white;
-  z-index: 2;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-  backdrop-filter: blur(4px);
-}
-
-.modality-badge.presencial {
-  background: rgba(39, 174, 96, 0.9);
-}
-
-.modality-badge.virtual {
-  background: rgba(41, 128, 185, 0.9);
-}
-
-.virtual-link-box a {
-  transition: all 0.3s ease;
-}
-
-.virtual-link-box a:hover {
-  background: #003e99 !important;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 82, 204, 0.3);
-}
-
-.btn-link {
-  display: inline-block;
-  font-weight: 600;
-}
 
 .btn-remove-img-sm {
   background: #fee2e2;
@@ -1772,274 +1674,119 @@ span {
   background: #ddd;
   border-radius: 10px;
 }
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   UI/UX Pro Max — Design System Extensions for CONIITI 2026
-   Glassmorphism · Inter/Crimson Pro · #2563EB
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-
-/* ── Utilidades globales ── */
-* {
-  box-sizing: border-box;
+/* ===== Day Tabs (Agenda) ===== */
+.dayTabs {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(8px);
+  width: 100%;
+  max-width: 600px;   /* 👈 más corta (prueba 600) */
+  margin: 12px auto;
+  justify-content: space-between;
 }
 
-button,
-a,
-[role="button"] {
-  cursor: pointer;
-}
-
-/* ── Navbar links mejorados ── */
-.navbar-links a {
-  transition: var(--transition-fast);
-  border-radius: var(--radius-sm);
-  padding: 6px 10px;
-}
-
-.navbar-links a:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: white;
-}
-
-/* ── Badges de categoría / nivel ── */
-.badge {
+.dayTab {
+  flex: 1;
+  justify-content: center;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px 10px;
-  border-radius: 50px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
-.badge-primary {
-  background: var(--primary-light);
-  color: var(--primary-color);
-}
-
-.badge-accent {
-  background: #FFF7ED;
-  color: #C2410C;
-}
-
-.badge-success {
-  background: #F0FDF4;
-  color: #15803D;
-}
-
-/* ── Inputs mejorados ── */
-input,
-select,
-textarea {
-  font-family: 'Inter', sans-serif;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-}
-
-/* ── Panel de Settings por Página ── */
-.page-settings-panel {
-  background: white;
-  border-radius: var(--radius-lg);
-  padding: 2rem;
-  border: 1px solid var(--border-color);
-  box-shadow: var(--card-shadow);
-}
-
-.page-settings-panel h3 {
-  font-family: 'Crimson Pro', serif;
-  font-size: 1.6rem;
-  color: var(--secondary-color);
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 2px solid var(--primary-light);
-}
-
-.settings-subnav {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  padding: 0.5rem;
-  background: #F1F5F9;
-  border-radius: var(--radius-md);
-  margin-bottom: 1.5rem;
-}
-
-.settings-subnav button {
-  padding: 8px 16px;
-  border: none;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid transparent;
   background: transparent;
-  border-radius: var(--radius-sm);
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-secondary);
   cursor: pointer;
-  transition: var(--transition-fast);
-  white-space: nowrap;
-}
-
-.settings-subnav button:hover {
-  background: white;
-  color: var(--primary-color);
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
-}
-
-.settings-subnav button.active {
-  background: white;
-  color: var(--primary-color);
-  box-shadow: 0 2px 12px rgba(37, 99, 235, 0.15);
-}
-
-/* ── Tarjeta Profile premium ── */
-.profile-card {
-  background: white;
-  border-radius: var(--radius-lg);
-  padding: 2rem;
-  box-shadow: var(--card-shadow);
-  border: 1px solid var(--border-color);
-  transition: var(--transition-base);
-}
-
-.profile-card:hover {
-  box-shadow: var(--card-shadow-hover);
-}
-
-/* ── Admin sidebar mejorado ── */
-.admin-sidebar button {
-  font-family: 'Inter', sans-serif;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  transition: var(--transition-fast);
-  border-radius: var(--radius-sm);
-}
-
-.admin-sidebar button.active {
-  background: var(--btn-gradient);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-}
-
-.admin-sidebar button:hover:not(.active) {
-  background: var(--primary-light);
-  color: var(--primary-color);
-}
-
-/* ── Analytics card mejorada ── */
-.analytics-card {
-  border-left: 4px solid var(--primary-color);
-  border-radius: var(--radius-md);
-  box-shadow: var(--card-shadow);
-  transition: var(--transition-base);
-}
-
-.analytics-card:hover {
-  box-shadow: var(--card-shadow-hover);
-  transform: translateY(-2px);
-}
-
-/* ── Role badge premium ── */
-.role-badge {
-  background: linear-gradient(135deg, var(--secondary-color), #334155);
-  color: #FCD34D;
-  padding: 6px 16px;
-  border-radius: 50px;
+  transition: all 150ms ease;
   font-weight: 700;
-  font-size: 0.8rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  color: #334155;
+  outline: none;
 }
 
-/* ── Footer premium ── */
-footer {
-  background: var(--secondary-color);
-  color: rgba(255, 255, 255, 0.7);
-  border-top: none;
-  padding: 2.5rem;
-  margin-top: 0;
+.dayTab:hover {
+  background: rgba(2, 6, 23, 0.04);
 }
 
-/* ── Scrollbar global suave ── */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+.dayTab.active {
+  border: 1px solid rgba(37, 99, 235, 0.35);
+  background: rgba(37, 99, 235, 0.10);
+  color: #1e3a8a;
 }
 
-::-webkit-scrollbar-track {
-  background: #F1F5F9;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
+.dayTabIcon {
+  width: 26px;
+  height: 26px;
   border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2, 6, 23, 0.06);
+  font-size: 14px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-color);
+.dayTab.active .dayTabIcon {
+  background: rgba(37, 99, 235, 0.18);
 }
 
-/* ── Animación fade-in suave ── */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
+/* Accesibilidad (teclado) */
+.dayTab:focus-visible {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+}
+/* ===== Hover elegante solo para DayTabs ===== */
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.dayTab {
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
 
-.fade-in-up {
-  animation: fadeInUp 0.4s ease forwards;
+.dayTab:hover {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+  background: rgba(2, 6, 23, 0.04);
 }
 
-/* ── prefers-reduced-motion (accesibilidad) ── */
-@media (prefers-reduced-motion: reduce) {
-
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
+.dayTabs:hover .dayTab {
+  opacity: 0.6;
+  transform: scale(0.98);
 }
 
-/* ── Responsive breakpoints ── */
-@media (max-width: 768px) {
-  .admin-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .admin-sidebar {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-  }
-
-  .settings-subnav {
-    overflow-x: auto;
-  }
-
-  .agenda-controls-card {
-    flex-direction: column;
-    align-items: stretch;
-  }
+.dayTabs:hover .dayTab:hover {
+  opacity: 1;
+  transform: translateY(-4px) scale(1.03);
+}
+.agenda-page {
+  min-height: auto !important;
+  height: auto !important;
+  padding-top: 24px;
+  padding-bottom: 24px;
+}
+.agenda {
+  align-items: start !important;
+  justify-content: center;
+  justify-items: center;
+  margin-top: 18px;
+}
+.agenda-header-section {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.agenda-page .hero-section,
+.agenda-page .agenda-header-section {
+  padding-top: 20px !important;
+  padding-bottom: 20px !important;
+  margin-bottom: 20px !important;
 }
 
-@media (max-width: 480px) {
-  .form-row {
-    grid-template-columns: 1fr;
-  }
+.agenda-page .agenda-controls {
+  margin-bottom: 16px !important;
+}
+.dayTabsWrapper {
+  margin-top: 12px !important;
+}
 
-  .profile-grid {
-    grid-template-columns: 1fr;
-  }
+.dayTabs {
+  margin: 12px auto 12px !important;
 }
