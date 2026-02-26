@@ -142,7 +142,22 @@ export default function Admin() {
 
     const handleAddConference = (e: React.FormEvent) => {
         e.preventDefault()
-        const newId = (conferences.length + deletedConferences.length + 1).toString()
+
+        // Determinar el ponente real (buscar en la lista existente)
+        let finalSpeakerName = newConf.speakerName;
+        let existingSpeaker = conferences.find((c: any) => c.speaker.name === finalSpeakerName)?.speaker;
+
+        if (finalSpeakerName === "OTRO") {
+            finalSpeakerName = (window as any)._tempNewSpeaker || "Invitado Especial";
+            existingSpeaker = {
+                name: finalSpeakerName,
+                organization: "Invitado Externo",
+                bio: "Experto invitado al evento",
+                avatar: "/default-avatar.png"
+            };
+        }
+
+        const newId = Date.now().toString()
         const simulatedConf = {
             id: newId,
             title: newConf.title,
@@ -155,8 +170,8 @@ export default function Admin() {
             category: "General",
             level: "Básico",
             career: newConf.career || "General",
-            speaker: {
-                name: newConf.speakerName,
+            speaker: existingSpeaker || {
+                name: finalSpeakerName,
                 organization: "Por definir",
                 bio: "",
                 avatar: "/default-avatar.png"
@@ -165,7 +180,7 @@ export default function Admin() {
         setConferences([...conferences, simulatedConf])
         setShowConfForm(false)
         setNewConf({ title: "", location: "Auditorio Paraninfo", description: "", speakerName: "", startTime: "", endTime: "", career: "", type: "presencial", virtualLink: "" })
-        alert("¡Conferencia agendada exitosamente!")
+        alert("¡Conferencia agendada con el conferencista seleccionado!")
     }
 
     const handleSaveEdit = (e: React.FormEvent) => {
@@ -274,99 +289,128 @@ export default function Admin() {
                                 </button>
                             </div>
 
-                            {showConfForm && (
-                                <form className="add-guest-form fade-in" onSubmit={handleAddConference}>
-                                    <div className="form-group">
-                                        <label>Título de la Conferencia</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={newConf.title}
-                                            onChange={e => setNewConf({ ...newConf, title: e.target.value })}
-                                        />
-                                    </div>
-                                    <div className="form-row">
+                            {showConfForm && (() => {
+                                // Obtener lista única de conferencistas disponibles
+                                const availableSpeakers = Array.from(new Set(conferences.map((c: any) => c.speaker.name)))
+                                    .map(name => conferences.find((c: any) => c.speaker.name === name)?.speaker);
+
+                                return (
+                                    <form className="add-guest-form fade-in" onSubmit={handleAddConference}>
                                         <div className="form-group">
-                                            <label>Nombre del Ponente</label>
+                                            <label>Título de la Conferencia</label>
                                             <input
                                                 type="text"
                                                 required
-                                                value={newConf.speakerName}
-                                                onChange={e => setNewConf({ ...newConf, speakerName: e.target.value })}
+                                                value={newConf.title}
+                                                onChange={e => setNewConf({ ...newConf, title: e.target.value })}
                                             />
                                         </div>
+                                        <div className="form-row">
+                                            <div className="form-group">
+                                                <label>Seleccionar Conferencista / Invitado</label>
+                                                <select
+                                                    className="admin-select"
+                                                    required
+                                                    value={newConf.speakerName}
+                                                    onChange={e => {
+                                                        const selectedName = e.target.value;
+                                                        setNewConf({ ...newConf, speakerName: selectedName });
+                                                    }}
+                                                >
+                                                    <option value="">-- Selecciona un invitado --</option>
+                                                    {availableSpeakers.map((s, idx) => (
+                                                        <option key={idx} value={s.name}>{s.name} ({s.organization})</option>
+                                                    ))}
+                                                    <option value="OTRO">+ Otro (Escribir nombre)</option>
+                                                </select>
+                                            </div>
+                                            {newConf.speakerName === "OTRO" && (
+                                                <div className="form-group">
+                                                    <label>Nombre del Nuevo Ponente</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Nombre del nuevo invitado"
+                                                        onChange={e => {
+                                                            // Guardamos temporalmente en speakerName pero permitimos escribir
+                                                            // En el submit manejaremos esto
+                                                            (window as any)._tempNewSpeaker = e.target.value;
+                                                        }}
+                                                    />
+                                                </div>
+                                            )}
+                                            <div className="form-group">
+                                                <label>Modalidad</label>
+                                                <select
+                                                    value={newConf.type}
+                                                    onChange={e => setNewConf({ ...newConf, type: e.target.value as any })}
+                                                    className="admin-select"
+                                                >
+                                                    <option value="presencial">Presencial</option>
+                                                    <option value="virtual">Virtual</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        {newConf.type === 'virtual' ? (
+                                            <div className="form-group">
+                                                <label>Enlace de la Reunión (Virtual)</label>
+                                                <input
+                                                    type="url"
+                                                    placeholder="https://zoom.us/j/..."
+                                                    value={newConf.virtualLink}
+                                                    onChange={e => setNewConf({ ...newConf, virtualLink: e.target.value })}
+                                                    required
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="form-group">
+                                                <label>Ubicación (Salón / Auditorio)</label>
+                                                <select
+                                                    value={newConf.location}
+                                                    onChange={e => setNewConf({ ...newConf, location: e.target.value })}
+                                                    required
+                                                    className="admin-select"
+                                                >
+                                                    {Object.keys(locCapacities).map(loc => (
+                                                        <option key={loc} value={loc}>{loc} (Cap: {locCapacities[loc]})</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        )}
                                         <div className="form-group">
-                                            <label>Modalidad</label>
+                                            <label>Carrera Afín</label>
                                             <select
-                                                value={newConf.type}
-                                                onChange={e => setNewConf({ ...newConf, type: e.target.value as any })}
+                                                value={newConf.career}
+                                                onChange={e => setNewConf({ ...newConf, career: e.target.value })}
+                                                required
                                                 className="admin-select"
                                             >
-                                                <option value="presencial">Presencial</option>
-                                                <option value="virtual">Virtual</option>
+                                                <option value="">Selecciona la carrera</option>
+                                                <option value="Administración de Empresas">Administración de Empresas</option>
+                                                <option value="Arquitectura">Arquitectura</option>
+                                                <option value="Derecho">Derecho</option>
+                                                <option value="Economía">Economía</option>
+                                                <option value="Ingeniería Civil">Ingeniería Civil</option>
+                                                <option value="Ingeniería de Sistemas">Ingeniería de Sistemas</option>
+                                                <option value="Ingeniería Electrónica">Ingeniería Electrónica</option>
+                                                <option value="Ingeniería Industrial">Ingeniería Industrial</option>
+                                                <option value="Psicología">Psicología</option>
+                                                <option value="Diseño Gráfico">Diseño Gráfico</option>
+                                                <option value="General">General / Todas</option>
                                             </select>
                                         </div>
-                                    </div>
-                                    {newConf.type === 'virtual' ? (
                                         <div className="form-group">
-                                            <label>Enlace de la Reunión (Virtual)</label>
-                                            <input
-                                                type="url"
-                                                placeholder="https://zoom.us/j/..."
-                                                value={newConf.virtualLink}
-                                                onChange={e => setNewConf({ ...newConf, virtualLink: e.target.value })}
+                                            <label>Descripción / Resumen</label>
+                                            <textarea
+                                                rows={3}
                                                 required
-                                            />
+                                                value={newConf.description}
+                                                onChange={e => setNewConf({ ...newConf, description: e.target.value })}
+                                            ></textarea>
                                         </div>
-                                    ) : (
-                                        <div className="form-group">
-                                            <label>Ubicación (Salón / Auditorio)</label>
-                                            <select
-                                                value={newConf.location}
-                                                onChange={e => setNewConf({ ...newConf, location: e.target.value })}
-                                                required
-                                                className="admin-select"
-                                            >
-                                                {Object.keys(locCapacities).map(loc => (
-                                                    <option key={loc} value={loc}>{loc} (Cap: {locCapacities[loc]})</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    )}
-                                    <div className="form-group">
-                                        <label>Carrera Afín</label>
-                                        <select
-                                            value={newConf.career}
-                                            onChange={e => setNewConf({ ...newConf, career: e.target.value })}
-                                            required
-                                            className="admin-select"
-                                        >
-                                            <option value="">Selecciona la carrera</option>
-                                            <option value="Administración de Empresas">Administración de Empresas</option>
-                                            <option value="Arquitectura">Arquitectura</option>
-                                            <option value="Derecho">Derecho</option>
-                                            <option value="Economía">Economía</option>
-                                            <option value="Ingeniería Civil">Ingeniería Civil</option>
-                                            <option value="Ingeniería de Sistemas">Ingeniería de Sistemas</option>
-                                            <option value="Ingeniería Electrónica">Ingeniería Electrónica</option>
-                                            <option value="Ingeniería Industrial">Ingeniería Industrial</option>
-                                            <option value="Psicología">Psicología</option>
-                                            <option value="Diseño Gráfico">Diseño Gráfico</option>
-                                            <option value="General">General / Todas</option>
-                                        </select>
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Descripción / Resumen</label>
-                                        <textarea
-                                            rows={3}
-                                            required
-                                            value={newConf.description}
-                                            onChange={e => setNewConf({ ...newConf, description: e.target.value })}
-                                        ></textarea>
-                                    </div>
-                                    <button type="submit" className="btn-save-guest">Publicar Conferencia</button>
-                                </form>
-                            )}
+                                        <button type="submit" className="btn-save-guest">Publicar Conferencia</button>
+                                    </form>
+                                );
+                            })()}
 
                             <table className="admin-table">
                                 <thead>
@@ -834,45 +878,138 @@ export default function Admin() {
                                     <p className="hint">Configura la capacidad máxima de cada lugar. Los cambios afectarán el límite de inscripciones en la agenda.</p>
 
                                     <div className="settings-form" style={{ marginTop: '1.5rem' }}>
-                                        {Object.keys(locCapacities).map(loc => (
-                                            <div className="form-group" key={loc} style={{ borderBottom: '1px solid #eee', paddingBottom: '1rem', marginBottom: '1rem' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                    <label style={{ fontWeight: '600' }}>{loc}</label>
-                                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                                        <input
-                                                            type="number"
-                                                            value={locCapacities[loc]}
-                                                            onChange={e => {
-                                                                setLocCapacities({ ...locCapacities, [loc]: parseInt(e.target.value) || 0 });
-                                                            }}
-                                                            style={{ width: '100px', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}
-                                                        />
-                                                        <span style={{ fontSize: '0.9rem', color: '#666' }}>personas</span>
-                                                        {!loc.startsWith("Auditorio Paraninfo") && !loc.startsWith("Auditorio Torres") && (
-                                                            <button
-                                                                className="btn-remove-img-sm"
-                                                                style={{ margin: 0, padding: '6px 10px', background: '#ffeded', color: '#e74c3c', border: '1px solid #ffdada' }}
-                                                                onClick={() => {
-                                                                    const newCaps = { ...locCapacities };
-                                                                    delete newCaps[loc];
-                                                                    setLocCapacities(newCaps);
-                                                                }}
-                                                            >
-                                                                Eliminar
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
+                                        <div className="venues-grid" style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                                            gap: '1rem',
+                                            marginBottom: '2rem'
+                                        }}>
+                                            {Object.keys(locCapacities).map(loc => {
+                                                const conferenceCount = conferences.filter((c: any) => c.location === loc).length;
+                                                return (
+                                                    <div className="venue-card" key={loc} style={{
+                                                        background: 'white',
+                                                        padding: '1.2rem',
+                                                        borderRadius: '12px',
+                                                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                                                        border: '1px solid #edf2f7',
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        gap: '0.8rem'
+                                                    }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                                                            <div>
+                                                                <h4 style={{ margin: 0, color: '#2d3748' }}>{loc}</h4>
+                                                                <span style={{ fontSize: '0.75rem', color: '#718096', display: 'block', marginTop: '4px' }}>
+                                                                    {conferenceCount} {conferenceCount === 1 ? 'conferencia agendada' : 'conferencias agendadas'}
+                                                                </span>
+                                                            </div>
+                                                            {!loc.startsWith("Auditorio Paraninfo") && !loc.startsWith("Auditorio Torres") && conferenceCount === 0 && (
+                                                                <button
+                                                                    className="btn-delete-sm"
+                                                                    style={{ padding: '4px 8px' }}
+                                                                    onClick={() => {
+                                                                        const newCaps = { ...locCapacities };
+                                                                        delete newCaps[loc];
+                                                                        setLocCapacities(newCaps);
+                                                                    }}
+                                                                >
+                                                                    🗑️
+                                                                </button>
+                                                            )}
+                                                        </div>
 
-                                        <div className="add-location-box" style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8f9fa', borderRadius: '12px', border: '1px dashed #ccc' }}>
-                                            <h4 style={{ marginTop: 0 }}>+ Añadir Sala en Sede 4</h4>
-                                            <p className="hint">Puedes crear múltiples salas para la Sede 4 con capacidades independientes.</p>
+                                                        <div className="form-group" style={{ margin: 0 }}>
+                                                            <label style={{ fontSize: '0.85rem', marginBottom: '4px' }}>Aforo (Personas)</label>
+                                                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                                <input
+                                                                    type="number"
+                                                                    value={locCapacities[loc]}
+                                                                    onChange={e => {
+                                                                        setLocCapacities({ ...locCapacities, [loc]: parseInt(e.target.value) || 0 });
+                                                                    }}
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        padding: '8px',
+                                                                        borderRadius: '8px',
+                                                                        border: '1px solid #e2e8f0',
+                                                                        fontSize: '0.9rem'
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        <div className="add-location-box" style={{
+                                            marginTop: '1.5rem',
+                                            padding: '2rem',
+                                            background: '#fff',
+                                            borderRadius: '20px',
+                                            border: '2px dashed var(--primary-color)',
+                                            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                                            position: 'relative',
+                                            overflow: 'hidden'
+                                        }}>
+                                            <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: 'var(--primary-color)' }}></div>
+                                            <h4 style={{ marginTop: 0, marginBottom: '1.5rem', color: 'var(--primary-color)', fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                ✨ Registrar Nuevo Sitio / Auditorio
+                                            </h4>
+                                            <div style={{
+                                                display: 'grid',
+                                                gridTemplateColumns: '1fr 1fr auto',
+                                                gap: '1.5rem',
+                                                alignItems: 'end'
+                                            }}>
+                                                <div className="form-group" style={{ margin: 0 }}>
+                                                    <label style={{ fontWeight: 600, color: '#4a5568', fontSize: '0.9rem', marginBottom: '8px', display: 'block' }}>Nombre Completo del Sitio</label>
+                                                    <input
+                                                        type="text"
+                                                        id="new-loc-name"
+                                                        placeholder="Ej: Auditorio Central, Sala 202..."
+                                                        style={{ padding: '12px 16px', borderRadius: '12px', border: '1px solid #e2e8f0', width: '100%', fontSize: '1rem', transition: 'border-color 0.2s' }}
+                                                    />
+                                                </div>
+                                                <div className="form-group" style={{ margin: 0 }}>
+                                                    <label style={{ fontWeight: 600, color: '#4a5568', fontSize: '0.9rem', marginBottom: '8px', display: 'block' }}>Capacidad de Aforo</label>
+                                                    <input
+                                                        type="number"
+                                                        id="new-loc-cap"
+                                                        defaultValue="50"
+                                                        style={{ padding: '12px 16px', borderRadius: '12px', border: '1px solid #e2e8f0', width: '100%', fontSize: '1rem' }}
+                                                    />
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    className="btn-submit"
+                                                    style={{ height: '48px', padding: '0 2.5rem', borderRadius: '12px', fontWeight: '700', fontSize: '1rem', transform: 'translateY(-2px)', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                                                    onClick={() => {
+                                                        const nameInput = document.getElementById('new-loc-name') as HTMLInputElement;
+                                                        const capInput = document.getElementById('new-loc-cap') as HTMLInputElement;
+                                                        if (nameInput.value.trim()) {
+                                                            setLocCapacities({
+                                                                ...locCapacities,
+                                                                [nameInput.value.trim()]: parseInt(capInput.value) || 0
+                                                            });
+                                                            nameInput.value = "";
+                                                            alert("¡Sitio añadido! Ahora aparecerá en la lista y en el formulario de conferencias.");
+                                                        } else {
+                                                            alert("Por favor ingresa un nombre para el sitio.");
+                                                        }
+                                                    }}
+                                                >
+                                                    Crear Sitio
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem' }}>
                                             <button
                                                 type="button"
-                                                className="btn-submit"
-                                                style={{ background: '#34495e' }}
+                                                className="btn-add"
+                                                style={{ background: '#edf2f7', color: '#4a5568', border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: '600' }}
                                                 onClick={() => {
                                                     const currentSede4Salas = Object.keys(locCapacities).filter(k => k.includes("Sede 4"));
                                                     const nextNum = currentSede4Salas.length + 1;
@@ -882,7 +1019,7 @@ export default function Admin() {
                                                     });
                                                 }}
                                             >
-                                                Añadir Nueva Sala (Sede 4)
+                                                ⚡ Sede 4: Agregar Sala Rápido
                                             </button>
                                         </div>
 
@@ -1089,6 +1226,27 @@ export default function Admin() {
                                             value={editingConf.title}
                                             onChange={e => setEditingConf({ ...editingConf, title: e.target.value })}
                                         />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Conferencista / Invitado</label>
+                                        <select
+                                            className="admin-select"
+                                            value={editingConf.speaker.name}
+                                            onChange={e => {
+                                                const selectedName = e.target.value;
+                                                const selectedSpeaker = conferences.find((c: any) => c.speaker.name === selectedName)?.speaker;
+                                                if (selectedSpeaker) {
+                                                    setEditingConf({ ...editingConf, speaker: { ...selectedSpeaker } });
+                                                }
+                                            }}
+                                        >
+                                            {Array.from(new Set(conferences.map((c: any) => c.speaker.name)))
+                                                .map(name => conferences.find((c: any) => c.speaker.name === name)?.speaker)
+                                                .map((s, idx) => (
+                                                    <option key={idx} value={s.name}>{s.name} ({s.organization})</option>
+                                                ))
+                                            }
+                                        </select>
                                     </div>
                                     <div className="form-group">
                                         <label>Modalidad</label>
