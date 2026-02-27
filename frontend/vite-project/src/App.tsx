@@ -2,10 +2,10 @@ import { Routes, Route } from "react-router-dom"
 import Layout from "./components/Layout"
 import Agenda from "./pages/Agenda"
 import Register from "./pages/Register"
+import Login from "./pages/Login"
 import Profile from "./pages/Profile"
 import Admin from "./pages/Admin"
 import Invitados from "./pages/Invitados"
-
 import Home from "./pages/Home"
 
 export default function App() {
@@ -15,6 +15,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/conferencias" element={<Agenda />} />
         <Route path="/invitados" element={<Invitados />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/registro" element={<Register />} />
         <Route path="/perfil" element={<Profile />} />
         <Route path="/admin" element={<Admin />} />

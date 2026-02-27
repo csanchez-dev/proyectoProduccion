@@ -3,8 +3,9 @@ import cors from 'cors'
 
 import usuarioRoutes from './modules/usuario/usuario.routes'
 import eventoRoutes from './modules/evento/evento.routes'
-import ponenciaRoutes from './modules/ponencia/ponencia.routes'
-import inscripcionRoutes from './modules/inscripcion/inscripcion.routes'
+import ponencias from './modules/ponencia/ponencia.routes'
+import inscripciones from './modules/inscripcion/inscripcion.routes'
+import ponentes from './modules/ponente/ponente.routes'
 
 const app = express()
 
@@ -13,7 +14,8 @@ app.use(express.json())
 
 app.use('/api/usuarios', usuarioRoutes)
 app.use('/api/eventos', eventoRoutes)
-app.use('/api/ponencias', ponenciaRoutes)
-app.use('/api/inscripciones', inscripcionRoutes)
+app.use('/api/ponencias', ponencias)
+app.use('/api/inscripciones', inscripciones)
+app.use('/api/ponentes', ponentes)
 
 export default app

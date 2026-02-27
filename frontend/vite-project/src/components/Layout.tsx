@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from "react"
-import { Link, useNavigate, useLocation } from "react-router-dom"
+import { Link, useLocation } from "react-router-dom"
 import { trackEvent } from "../utils/tracker"
 import { translations, getTranslation } from "../utils/i18n"
 import type { Language } from "../utils/i18n"
@@ -11,7 +11,6 @@ type Props = {
 export default function Layout({ children }: Props) {
   const [user, setUser] = useState<any>(null)
   const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
-  const navigate = useNavigate()
   const location = useLocation()
 
   const [logoEvento, setLogoEvento] = useState("/logo-coniiti.png")
@@ -101,12 +100,12 @@ export default function Layout({ children }: Props) {
   }, [])
 
   const handleLogout = () => {
-    const confirmMsg = lang === 'es' ? "¿Estás seguro de que deseas cerrar sesión?" : "Are you sure you want to logout?"
-    if (confirm(confirmMsg)) {
-      localStorage.removeItem("user_session")
-      setUser(null)
-      navigate("/")
-    }
+    // Limpieza total del almacenamiento y estado
+    localStorage.removeItem("user_session")
+    setUser(null)
+
+    // Redirección con recarga completa para asegurar limpieza de memoria
+    window.location.href = "/"
   }
 
   return (
@@ -154,7 +153,18 @@ export default function Layout({ children }: Props) {
                 <button onClick={handleLogout} className="btn-logout">{t('nav_logout')}</button>
               </div>
             ) : (
-              <Link to="/registro" className="btn-login-header">{t('nav_login')}</Link>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <Link to="/login" className="btn-login-header">{t('nav_login')}</Link>
+                <Link to="/registro" className="btn-register-header" style={{
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  textDecoration: 'none',
+                  fontWeight: '600',
+                  background: 'var(--primary-color)',
+                  color: 'white',
+                  transition: 'all 0.3s ease'
+                }}>{t('nav_register')}</Link>
+              </div>
             )}
           </div>
         </nav>

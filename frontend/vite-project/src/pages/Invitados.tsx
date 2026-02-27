@@ -1,11 +1,28 @@
 import { useState, useEffect } from "react"
 import { conferences as initialConferences } from "../data/conference_mocks"
+import { getPonencias } from "../services/api"
 
 export default function Invitados() {
-    const [conferences] = useState(() => {
-        const saved = localStorage.getItem("site_conferences")
-        return saved ? JSON.parse(saved) : initialConferences
-    })
+    const [conferences, setConferences] = useState<any[]>([])
+
+    useEffect(() => {
+        const fetchGuests = async () => {
+            try {
+                const data = await getPonencias();
+                if (data && data.length > 0) {
+                    setConferences(data);
+                } else {
+                    const saved = localStorage.getItem("site_conferences")
+                    setConferences(saved ? JSON.parse(saved) : initialConferences);
+                }
+            } catch (err) {
+                console.error("Error fetching guests:", err);
+                const saved = localStorage.getItem("site_conferences")
+                setConferences(saved ? JSON.parse(saved) : initialConferences);
+            }
+        };
+        fetchGuests();
+    }, []);
 
     const [config, setConfig] = useState({
         title: localStorage.getItem("guests_title") || "Nuestros Invitados de Honor",

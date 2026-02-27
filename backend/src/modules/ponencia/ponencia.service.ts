@@ -12,3 +12,6 @@ export const obtenerPonencias = async () =>
 
 export const crearPonencia = async (data: any) =>
   supabase.from('ponencia').insert(data)
+
+export const eliminarPonencia = async (id: string) =>
+  supabase.from('ponencia').delete().eq('id', id)

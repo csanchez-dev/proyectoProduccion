@@ -21,14 +21,31 @@ export default function Admin() {
 
     const t = (key: keyof typeof translations.es) => getTranslation(key, lang)
 
-    const [conferences, setConferences] = useState(() => {
-        const saved = localStorage.getItem("site_conferences")
-        return saved ? JSON.parse(saved) : initialConferences
-    })
+    const [conferences, setConferences] = useState<any[]>([])
     const [deletedConferences, setDeletedConferences] = useState<any[]>(() => {
         const saved = localStorage.getItem("site_deleted_conferences")
         return saved ? JSON.parse(saved) : []
     })
+
+    useEffect(() => {
+        const fetchConferences = async () => {
+            try {
+                const { getPonencias } = await import("../services/api");
+                const data = await getPonencias();
+                if (data && data.length > 0) {
+                    setConferences(data);
+                } else {
+                    const saved = localStorage.getItem("site_conferences")
+                    setConferences(saved ? JSON.parse(saved) : initialConferences);
+                }
+            } catch (err) {
+                console.error("Error loading conferences in Admin:", err);
+                const saved = localStorage.getItem("site_conferences")
+                setConferences(saved ? JSON.parse(saved) : initialConferences);
+            }
+        };
+        fetchConferences();
+    }, []);
     const [activeTab, setActiveTab] = useState("conferences")
     const [bannerPreview, setBannerPreview] = useState(localStorage.getItem("site_banner") || "/banner-header.png")
     const [logoUniPreview, setLogoUniPreview] = useState(localStorage.getItem("site_logo_uni") || "/ucatolica-logo.png")
@@ -90,9 +107,35 @@ export default function Admin() {
                 navigate("/") // No tiene permisos
             }
         } else {
-            navigate("/registro") // No hay sesión
+            navigate("/login") // No hay sesión
         }
     }, [navigate])
+
+    const [speakers, setSpeakers] = useState<any[]>([])
+    const [isLoading, setIsLoading] = useState(false)
+
+    const fetchAllData = async () => {
+        setIsLoading(true);
+        try {
+            const { getPonencias, getPonentes } = await import("../services/api");
+            const [ponenciasData, ponentesData] = await Promise.all([
+                getPonencias(),
+                getPonentes()
+            ]);
+
+            setConferences(ponenciasData.length > 0 ? ponenciasData : initialConferences);
+            setSpeakers(ponentesData);
+        } catch (err) {
+            console.error("Error loading admin data:", err);
+            setConferences(initialConferences);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchAllData();
+    }, []);
 
     // Persistencia automática de los cambios
     useEffect(() => {
@@ -104,13 +147,17 @@ export default function Admin() {
     }, [deletedConferences])
     const [editingConf, setEditingConf] = useState<any | null>(null)
 
-    const handleDeleteConference = (id: string) => {
-        if (confirm("¿Estás seguro de mover esta conferencia a la papelera?")) {
-            const confToDelete = conferences.find((c: { id: string }) => c.id === id)
-            if (confToDelete) {
-                setDeletedConferences([...deletedConferences, confToDelete])
-                setConferences(conferences.filter((c: any) => c.id !== id))
-            }
+    const handleDeleteConference = async (id: string) => {
+        if (!confirm("¿Estás seguro de eliminar esta conferencia?")) return;
+
+        try {
+            const { deletePonencia } = await import("../services/api");
+            await deletePonencia(id);
+            setConferences(conferences.filter((c: any) => c.id !== id));
+            alert("Conferencia eliminada");
+        } catch (err) {
+            console.error("Error deleting conference:", err);
+            alert("No se pudo eliminar de la base de datos.");
         }
     }
 
@@ -140,47 +187,51 @@ export default function Admin() {
         virtualLink: ""
     })
 
-    const handleAddConference = (e: React.FormEvent) => {
+    const handleAddConference = async (e: React.FormEvent) => {
         e.preventDefault()
+        setIsLoading(true)
 
-        // Determinar el ponente real (buscar en la lista existente)
-        let finalSpeakerName = newConf.speakerName;
-        let existingSpeaker = conferences.find((c: any) => c.speaker.name === finalSpeakerName)?.speaker;
+        try {
+            const { createPonencia } = await import("../services/api");
 
-        if (finalSpeakerName === "OTRO") {
-            finalSpeakerName = (window as any)._tempNewSpeaker || "Invitado Especial";
-            existingSpeaker = {
-                name: finalSpeakerName,
-                organization: "Invitado Externo",
-                bio: "Experto invitado al evento",
-                avatar: "/default-avatar.png"
-            };
-        }
+            // Buscar ID del ponente
+            let finalSpeaker = speakers.find(s => s.name === newConf.speakerName);
 
-        const newId = Date.now().toString()
-        const simulatedConf = {
-            id: newId,
-            title: newConf.title,
-            description: newConf.description,
-            startTime: newConf.startTime || new Date().toISOString(),
-            endTime: newConf.endTime || new Date().toISOString(),
-            location: newConf.location,
-            type: newConf.type,
-            virtualLink: newConf.virtualLink,
-            category: "General",
-            level: "Básico",
-            career: newConf.career || "General",
-            speaker: existingSpeaker || {
-                name: finalSpeakerName,
-                organization: "Por definir",
-                bio: "",
-                avatar: "/default-avatar.png"
+            // Si es nuevo ponente (simplificado: crear uno básico si no existe)
+            if (newConf.speakerName === "OTRO") {
+                const { createPonente } = await import("../services/api");
+                const newSpeakerName = (window as any)._tempNewSpeaker || "Invitado Especial";
+                finalSpeaker = await createPonente({
+                    nombre: newSpeakerName,
+                    organizacion: "Invitado Externo",
+                    bio: "Experto invitado",
+                    avatar_url: "/default-avatar.png"
+                });
             }
+
+            if (!finalSpeaker) throw new Error("Debes seleccionar un ponente válido");
+
+            const ponenciaData = {
+                titulo: newConf.title,
+                descripcion: newConf.description,
+                hora_inicio: newConf.startTime || "09:00",
+                hora_fin: newConf.endTime || "10:00",
+                sala_id: 1, // Por ahora hardcoded
+                dia_id: 1,  // Por ahora hardcoded
+                // Nota: faltaría manejar la relación ponencia_ponente en el backend
+            };
+
+            await createPonencia(ponenciaData);
+
+            alert("¡Conferencia guardada en la base de datos!");
+            setShowConfForm(false);
+            fetchAllData(); // Recargar todo
+        } catch (err: any) {
+            console.error("Error saving conference:", err);
+            alert(`Error: ${err.message}`);
+        } finally {
+            setIsLoading(false);
         }
-        setConferences([...conferences, simulatedConf])
-        setShowConfForm(false)
-        setNewConf({ title: "", location: "Auditorio Paraninfo", description: "", speakerName: "", startTime: "", endTime: "", career: "", type: "presencial", virtualLink: "" })
-        alert("¡Conferencia agendada con el conferencista seleccionado!")
     }
 
     const handleSaveEdit = (e: React.FormEvent) => {
@@ -233,7 +284,14 @@ export default function Admin() {
 
     return (
         <div className="admin-container fade-in">
+            {isLoading && (
+                <div className="admin-loading-overlay">
+                    <div className="spinner"></div>
+                    <p>Procesando...</p>
+                </div>
+            )}
             <div className="admin-header">
+
                 <h1>{t('admin_title')}</h1>
                 <p className="role-badge">{userRole === "SUPER_ADMIN" ? t('admin_role_super') : t('admin_role_content')}</p>
             </div>
@@ -290,11 +348,11 @@ export default function Admin() {
                             </div>
 
                             {showConfForm && (() => {
-                                // Obtener lista única de conferencistas disponibles
-                                const availableSpeakers = Array.from(new Set(conferences.map((c: any) => c.speaker.name)))
-                                    .map(name => conferences.find((c: any) => c.speaker.name === name)?.speaker);
+                                // Obtener lista única de conferencistas disponibles desde el estado real
+                                const availableSpeakers = speakers;
 
                                 return (
+
                                     <form className="add-guest-form fade-in" onSubmit={handleAddConference}>
                                         <div className="form-group">
                                             <label>Título de la Conferencia</label>
@@ -499,20 +557,20 @@ export default function Admin() {
                             )}
 
                             <div className="guests-grid">
-                                {Array.from(new Set(conferences.map((c: any) => c.speaker.name))).map((speakerName: any) => {
-                                    const speaker = conferences.find((c: any) => c.speaker.name === speakerName)?.speaker;
-                                    return (
-                                        <div key={speakerName} className="guest-admin-card fade-in">
-                                            <img src={speaker?.avatar || "/default-avatar.png"} alt={speakerName} />
-                                            <div className="guest-info">
-                                                <h4>{speakerName}</h4>
-                                                <p>{speaker?.organization}</p>
-                                            </div>
-                                            <button className="btn-edit-sm">Editar Datos</button>
+                                {speakers.map((speaker: any) => (
+                                    <div key={speaker.id} className="guest-admin-card fade-in">
+                                        <img src={speaker.avatar_url || "/default-avatar.png"} alt={speaker.nombre} />
+                                        <div className="guest-info">
+                                            <h4>{speaker.nombre}</h4>
+                                            <p>{speaker.organizacion}</p>
                                         </div>
-                                    );
-                                })}
+                                        <div className="guest-actions">
+                                            <button className="btn-edit-sm">✏️ Editar</button>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
+
                         </div>
                     )}
 

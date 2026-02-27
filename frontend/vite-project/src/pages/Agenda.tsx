@@ -3,28 +3,50 @@ import DayTabs, { type DayOption } from "../components/DayTabs";
 import ConferenceCard from "../components/ConferenceCard"
 import { conferences as initialConferences } from "../data/conference_mocks"
 import type { Language } from "../utils/i18n"
+import { getPonencias } from "../services/api";
 
 export default function Agenda() {
+
   const days: DayOption[] = [
-  { id: "day1", label: "Día 1" },
-  { id: "day2", label: "Día 2" },
-  { id: "day3", label: "Día 3" },
-];
+    { id: "day1", label: "Día 1" },
+    { id: "day2", label: "Día 2" },
+    { id: "day3", label: "Día 3" },
+  ];
 
   const [activeDayId, setActiveDayId] = useState<string>(days[0].id);
 
   const [lang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
 
-  const [conferencesList] = useState(() => {
-    const saved = localStorage.getItem("site_conferences")
-    return saved ? JSON.parse(saved) : initialConferences
-  })
+  const [conferencesList, setConferencesList] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchConferences = async () => {
+      try {
+        const data = await getPonencias();
+        if (data && data.length > 0) {
+          setConferencesList(data);
+        } else {
+          // Fallback to mocks if DB is empty for now
+          const saved = localStorage.getItem("site_conferences")
+          setConferencesList(saved ? JSON.parse(saved) : initialConferences);
+        }
+      } catch (err) {
+        console.error("Error al cargar conferencias de la API:", err);
+        const saved = localStorage.getItem("site_conferences")
+        setConferencesList(saved ? JSON.parse(saved) : initialConferences);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchConferences();
+  }, []);
 
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [levelFilter, setLevelFilter] = useState("all")
   const [careerFilter, setCareerFilter] = useState("all")
-  
+
 
   const [config, setConfig] = useState({
     title: localStorage.getItem("agenda_title") || (lang === 'es' ? '📅 Agenda CONIITI 2026' : '📅 CONIITI 2026 Agenda'),
@@ -70,19 +92,19 @@ export default function Agenda() {
   ]
 
   const filteredConferences = conferencesList.filter((conf: any) => {
-  const matchesSearch =
-    conf.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conf.speaker.name.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch =
+      conf.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      conf.speaker.name.toLowerCase().includes(searchTerm.toLowerCase())
 
-  const matchesCategory = categoryFilter === "all" || conf.category === categoryFilter
-  const matchesLevel = levelFilter === "all" || conf.level === levelFilter
-  const matchesCareer = careerFilter === "all" || conf.career === careerFilter
+    const matchesCategory = categoryFilter === "all" || conf.category === categoryFilter
+    const matchesLevel = levelFilter === "all" || conf.level === levelFilter
+    const matchesCareer = careerFilter === "all" || conf.career === careerFilter
 
-  const confDayId = conf.dayId ?? conf.day ?? conf.day_id ?? conf.dayNumber ?? conf.date
-  const matchesDay = !confDayId || confDayId === activeDayId
-  return matchesSearch && matchesCategory && matchesLevel && matchesCareer && matchesDay
-})
-  
+    const confDayId = conf.dayId ?? conf.day ?? conf.day_id ?? conf.dayNumber ?? conf.date
+    const matchesDay = !confDayId || confDayId === activeDayId
+    return matchesSearch && matchesCategory && matchesLevel && matchesCareer && matchesDay
+  })
+
   const clearFilters = () => {
     setSearchTerm("")
     setCategoryFilter("all")
@@ -198,7 +220,12 @@ export default function Agenda() {
 
       {/* ── Grilla de conferencias ── */}
       <div className="agenda" style={config.columns !== "auto" ? { gridTemplateColumns: `repeat(${config.columns}, 1fr)` } : {}}>
-        {filteredConferences.length > 0 ? (
+        {isLoading ? (
+          <div className="loading-container" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem' }}>
+            <div className="shimmer-card" style={{ height: '200px', borderRadius: '20px', background: '#f0f0f0' }}></div>
+            <p style={{ marginTop: '1rem', color: '#666' }}>{lang === 'es' ? 'Cargando conferencias reales desde la API...' : 'Loading real conferences from the API...'}</p>
+          </div>
+        ) : filteredConferences.length > 0 ? (
           filteredConferences.map((conf: any) => (
             <ConferenceCard key={conf.id} conference={conf} />
           ))

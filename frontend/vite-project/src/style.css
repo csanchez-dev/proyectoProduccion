@@ -128,7 +128,7 @@ header {
   height: 5.7rem;
 }
 
-a{
+a {
   text-decoration: none;
 }
 
@@ -1648,6 +1648,96 @@ span {
   border-color: var(--primary-color);
 }
 
+/* Premium Auth Pages Style */
+.login-header-premium,
+.registration-header-premium {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.icon-badge {
+  font-size: 3rem;
+  background: #f0f7ff;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin: 0 auto 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.premium-form .form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #4a5568;
+  font-size: 0.95rem;
+}
+
+.premium-form .form-group input,
+.premium-form .form-group select,
+.premium-form .form-group textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: #fdfdfd;
+}
+
+.premium-form .form-group input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  outline: none;
+  background: #fff;
+}
+
+.premium-btn {
+  margin-top: 1.5rem;
+  padding: 14px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  border-radius: 12px;
+  background: var(--primary-color);
+  color: white;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.premium-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(37, 99, 235, 0.4);
+}
+
+.auth-footer {
+  margin-top: 2rem;
+  text-align: center;
+  padding-top: 1.5rem;
+  border-top: 1px solid #edf2f7;
+  color: #718096;
+  font-size: 0.95rem;
+}
+
+.accent-link {
+  color: var(--primary-color);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.accent-link:hover {
+  text-decoration: underline;
+}
+
+.btn-register-header:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
 .file-input {
   cursor: pointer;
 }
@@ -2043,45 +2133,46 @@ footer {
     grid-template-columns: 1fr;
   }
 }
-.dayTabs{
-  display:flex;
-  justify-content:center;
-  gap:12px;
+
+.dayTabs {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
   margin: 18px 0 14px;
 }
 
-.dayTab{
+.dayTab {
   position: relative;
-  display:flex;
-  align-items:center;
-  gap:6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding: 8px 16px;
   border-radius: 999px;
-  border: 1px solid rgba(0,0,0,.12);
+  border: 1px solid rgba(0, 0, 0, .12);
   background: white;
-  cursor:pointer;
+  cursor: pointer;
   font-weight: 600;
   transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
 }
 
 /* ✨ Hover (como las cards) */
-.dayTab:hover{
+.dayTab:hover {
   transform: translateY(-4px);
-  box-shadow: 0 14px 28px rgba(0,0,0,.12);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, .12);
   z-index: 2;
 }
 
 /* ✨ Activo (un poco más firme) */
-.dayTab.active{
+.dayTab.active {
   background: var(--primary-color);
   color: white;
   border-color: transparent;
   transform: translateY(-2px);
-  box-shadow: 0 16px 32px rgba(0,0,0,.18);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, .18);
   z-index: 3;
 }
 
-.dayTabIcon{
+.dayTabIcon {
   font-size: 1rem;
   line-height: 1;
 }
