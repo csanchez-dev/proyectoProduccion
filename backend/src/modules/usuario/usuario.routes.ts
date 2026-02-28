@@ -4,7 +4,7 @@ import * as controller from './usuario.controller'
 
 const router = Router()
 
-router.post('/perfil', authMiddleware, controller.crearMiPerfil)
+router.post('/register', controller.registerUser)
 router.get('/perfil', authMiddleware, controller.obtenerPerfil)
 
 export default router
