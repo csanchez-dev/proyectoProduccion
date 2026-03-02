@@ -17,6 +17,7 @@ export default function Agenda() {
 
   const [lang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
 
+<<<<<<< Updated upstream
   const [conferencesList, setConferencesList] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -41,6 +42,18 @@ export default function Agenda() {
     };
     fetchConferences();
   }, []);
+=======
+  const [conferencesList] = useState(() => {
+  const saved = localStorage.getItem("site_conferences");
+  try {
+    return saved ? JSON.parse(saved) : initialConferences;
+  } catch {
+    localStorage.removeItem("site_conferences");
+    return initialConferences;
+  }
+});
+  
+>>>>>>> Stashed changes
 
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
@@ -112,7 +125,7 @@ export default function Agenda() {
     setCareerFilter("all")
   }
 
-  const hasActiveFilters = searchTerm || categoryFilter !== "all" || levelFilter !== "all" || careerFilter !== "all"
+  const hasActiveFilters = searchTerm || categoryFilter  !== "all" || careerFilter !== "all"
 
   const selectStyle: React.CSSProperties = {
     padding: '0.72rem 1rem',
@@ -143,21 +156,22 @@ export default function Agenda() {
               <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '1.1rem' }}>🔍</span>
               <input
                 type="text"
-                placeholder={lang === 'es' ? "Buscar por charla o ponente..." : "Search by talk or speaker..."}
+                placeholder={lang === "es" ? "Buscar por charla o ponente..." : "Search by talk or speaker..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 style={{
-                  width: '100%',
-                  padding: '0.75rem 1rem 0.75rem 2.6rem',
-                  borderRadius: '12px',
-                  border: '1.5px solid #e5e7eb',
-                  fontSize: '0.95rem',
-                  outline: 'none',
-                  transition: 'border-color 0.2s',
-                  background: 'white',
+                  width: "100%",
+                  padding: "0.75rem 1rem 0.75rem 2.6rem",
+                  borderRadius: "12px",
+                  border: "1.5px solid #e5e7eb",
+                  fontSize: "0.95rem",
+                  outline: "none",
+                  transition: "border-color 0.2s",
+                  background: "white",
+                  color: "#374151",
                 }}
-                onFocus={(e) => e.target.style.borderColor = 'var(--primary-color)'}
-                onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                onFocus={(e) => (e.currentTarget.style.borderColor = "var(--primary-color)")}
+                onBlur={(e) => (e.currentTarget.style.borderColor = "#e5e7eb")}
               />
             </div>
 
@@ -245,7 +259,7 @@ export default function Agenda() {
             </button>
           </div>
         )}
-      </div>
+    </div>
     </section>
-  )
+  );
 }
