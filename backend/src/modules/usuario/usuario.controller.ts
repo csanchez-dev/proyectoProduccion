@@ -45,3 +45,24 @@ export const obtenerPerfil = async (req: Request, res: Response) => {
   if (error) return res.status(400).json({ error: error.message })
   res.json(data)
 }
+
+export const crearPerfil = async (req: any, res: any) => {
+  try {
+    const userId = req.user.id
+    const { nombre_completo, rol } = req.body
+
+    const { error } = await admin_supabase
+      .from('usuarios')
+      .insert({
+        id: userId,
+        nombre_completo,
+        rol: rol || 'USER'
+      })
+
+    if (error) throw error
+
+    res.status(201).json({ message: 'Perfil creado correctamente' })
+  } catch (err: any) {
+    res.status(400).json({ error: err.message })
+  }
+}

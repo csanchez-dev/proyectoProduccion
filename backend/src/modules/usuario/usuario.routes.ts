@@ -1,10 +1,10 @@
 import { Router } from 'express'
-import { authMiddleware } from '../../middleware/auth.middleware'
+import { verifyToken } from '../../middleware/auth.middleware'
 import * as controller from './usuario.controller'
 
 const router = Router()
 
-router.post('/register', controller.registerUser)
-router.get('/perfil', authMiddleware, controller.obtenerPerfil)
+router.get('/perfil', verifyToken, controller.obtenerPerfil)
+router.post('/perfil', verifyToken, controller.crearPerfil)
 
 export default router

@@ -7,6 +7,7 @@ import ponencias from './modules/ponencia/ponencia.routes'
 import inscripciones from './modules/inscripcion/inscripcion.routes'
 import ponentes from './modules/ponente/ponente.routes'
 
+
 const app = express()
 
 app.use(cors())
