@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: coniiti-2026-backend
+    env: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18.0.0
+      - key: PORT
+        value: 10000
+      - fromDatabase:
+          name: coniiti-db
+          key: DATABASE_URL
+
+  - type: web
+    name: coniiti-2026-frontend
+    env: static
+    plan: free
+    rootDir: frontend/vite-project
+    buildCommand: npm install && npm run build
+    publishDir: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://coniiti-2026-backend.onrender.com/api

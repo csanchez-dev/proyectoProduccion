@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import { admin_supabase } from '../config/supabase'
 
-export const verifyToken = async (
+export const authMiddleware = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -22,7 +22,7 @@ export const verifyToken = async (
     }
 
     // Adjuntamos el usuario al request
-    ;(req as any).user = data.user
+    ; (req as any).user = data.user
 
     next()
   } catch {

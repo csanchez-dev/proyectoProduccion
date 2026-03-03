@@ -3,7 +3,8 @@ import { Link } from "react-router-dom"
 import { translations, getTranslation } from "../utils/i18n"
 import type { Language } from "../utils/i18n"
 
-import { signUp, createPerfil } from "../services/api"
+import { signIn, register } from "../services/api"
+
 
 export default function Register() {
   const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
@@ -47,26 +48,31 @@ export default function Register() {
 
     setIsLoading(true)
     try {
-      // 1. Signup en Supabase Auth
-      const { data: authData, error: authError } = await signUp(formData.email, formData.password)
+      // 1. Llamada única al backend para crear usuario y perfil
+      // Mapeamos el rol interno al valor que espera el backend
+      const mappedRole = role === "student" ? "ESTUDIANTE" : role === "professor" ? "DOCENTE" : "INVITADO";
 
-      if (authError) throw authError
-      if (!authData.user) throw new Error("No se pudo crear el usuario")
+      await register({ ...formData, rol: mappedRole })
 
-      // 2. Crear perfil en la base de datos a través de nuestra API
-      await createPerfil({
-        nombre_completo: formData.fullName,
-        rol: 'USER', // Por defecto todos son usuarios
-      })
+      // 2. Auto-login para que el usuario pueda entrar de una vez
+      const { data: authData, error: authError } = await signIn(formData.email, formData.password)
 
-      localStorage.setItem("user_session", JSON.stringify({
+      if (authError) {
+        alert("¡Cuenta creada! Por favor inicia sesión con tus credenciales.")
+        window.location.href = "/login"
+        return
+      }
+
+      const userData = {
         email: formData.email,
         fullName: formData.fullName,
-        role: 'USER',
+        role: mappedRole,
         gender: formData.gender
-      }))
+      }
 
-      alert("¡Cuenta creada exitosamente!")
+      localStorage.setItem("user_session", JSON.stringify(userData))
+
+      alert("¡Registro exitoso! Bienvenido al CONIITI 2026.")
       window.location.href = "/perfil"
     } catch (err: any) {
       console.error("Error en registro:", err)

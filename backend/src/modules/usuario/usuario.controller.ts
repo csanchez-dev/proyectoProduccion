@@ -1,42 +1,61 @@
 import { Request, Response } from 'express'
 import * as service from './usuario.service'
-import { admin_supabase} from '../../config/supabase'
+import { admin_supabase } from '../../config/supabase'
 
 
 // Registrar un usuario(CREATE)
 
 export const registerUser = async (req: Request, res: Response) => {
-  const {nombres, apellidos, universidad, email, password } = req.body
+  const { fullName, email, password, rol, career, gender, documentNumber } = req.body
 
-  //Crear usuario en auth supabase
-  const { data, error } = await admin_supabase.auth.signUp({
-    email,
-    password
-  })
-
-  if (error || !data.user) {
-    return res.status(400).json({ error: error?.message })
-  }
-
-  //Crear perfil con el id que retorna supabase
-
-  const { error: profileError } = await admin_supabase
-  .from('perfil_usuario')
-    .insert({
-      id: data.user.id,
-      nombres,
-      apellidos,
-      universidad
+  try {
+    console.log("Intentando registrar usuario:", email)
+    // 1. Crear usuario en auth supabase
+    const { data, error } = await admin_supabase.auth.signUp({
+      email,
+      password,
     })
 
+    if (error || !data.user) {
+      console.error("Error de Supabase Auth:", error)
+      return res.status(400).json({ error: error?.message || "No se pudo crear el usuario en Auth" })
+    }
+    console.log("Usuario creado en Auth:", data.user.id)
+
+    // 2. Crear perfil en la tabla perfil_usuario
+    const { error: profileError } = await admin_supabase
+      .from('perfil_usuario')
+      .insert({
+        id: data.user.id,
+        nombre_completo: fullName,
+        email: email,
+        rol: rol || 'USER', // Ahora viene del frontend o por defecto USER
+        carrera: career,
+        genero: gender,
+        documento: documentNumber
+      })
+
     if (profileError) {
-      return res.status(400).json({ error: profileError.message })
+      // Si falla el perfil, eliminamos el usuario de auth para permitir re-intento
+      await admin_supabase.auth.admin.deleteUser(data.user.id)
+      console.error("Error al crear perfil:", profileError)
+      return res.status(400).json({ error: "Error al crear el perfil: " + profileError.message })
     }
 
     return res.status(201).json({
-      message: "Usuario y perfil creados correctamente"
+      message: "Usuario y perfil creados correctamente",
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        fullName
+      }
     })
+  } catch (err: any) {
+    console.error("Error en registro server-side:", err)
+    return res.status(500).json({ error: "Error interno del servidor" })
+  }
 }
+
 
 export const obtenerPerfil = async (req: Request, res: Response) => {
   const userId = (req as any).user.id
@@ -52,7 +71,7 @@ export const crearPerfil = async (req: any, res: any) => {
     const { nombre_completo, rol } = req.body
 
     const { error } = await admin_supabase
-      .from('usuarios')
+      .from('perfil_usuario')
       .insert({
         id: userId,
         nombre_completo,

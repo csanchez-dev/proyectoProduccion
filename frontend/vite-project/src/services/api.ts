@@ -27,8 +27,9 @@ export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
     });
 
     if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: 'Error desconocido' }));
-        throw new Error(error.message || `Error: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || errorData.message || `Error: ${response.status}`;
+        throw new Error(errorMessage);
     }
 
     return response.json();
@@ -92,6 +93,12 @@ export const createPerfil = (data: any) => apiFetch('/usuarios/perfil', {
     method: 'POST',
     body: JSON.stringify(data)
 });
+
+export const register = (data: any) => apiFetch('/usuarios/register', {
+    method: 'POST',
+    body: JSON.stringify(data)
+});
+
 
 // AUTH Helpers
 export const signUp = (email: string, pass: string) => supabase.auth.signUp({ email, password: pass });
