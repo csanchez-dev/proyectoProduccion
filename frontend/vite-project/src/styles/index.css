@@ -1,0 +1,13 @@
+/* Importación de todos los estilos base */
+@import './global.css';
+
+/* Importación de Componentes */
+@import './components/utilities.css';
+@import './components/premium.css';
+
+/* Importación de Páginas */
+@import './pages/home.css';
+@import './pages/auth.css';
+@import './pages/agenda.css';
+@import './pages/profile.css';
+@import './pages/admin.css';

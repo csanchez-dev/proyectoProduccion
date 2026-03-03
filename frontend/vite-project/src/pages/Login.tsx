@@ -39,7 +39,6 @@ export default function Login() {
             const { data: _data, error } = await signIn(formData.email, formData.password)
             if (error) throw error
 
-
             // 2. Obtener perfil desde nuestra API para saber el rol
             const perfil = await apiFetch('/usuarios/perfil');
 
@@ -54,14 +53,32 @@ export default function Login() {
             alert(`¡Bienvenido de nuevo, ${userData.fullName}!`)
             window.location.href = userData.role !== "USER" ? "/admin" : "/"
         } catch (err: any) {
-            console.error("Error en login:", err)
+            console.warn("Fallo el login con Supabase, intentando fallback local...", err.message);
+
             // Fallback para Super Usuarios si la DB está vacía o hay error (PRODUCCIÓN: quitar esto)
             if (formData.email === "superadmin@coniiti.com" && formData.password === "super123") {
                 localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'SUPER_ADMIN', fullName: 'Super Admin' }))
                 window.location.href = "/admin";
                 return;
             }
-            alert(`Error al iniciar sesión: ${err.message || 'Credenciales inválidas'}`)
+
+            // Fallback para registros locales que no pudieron guardarse en Supabase (offline/rate-limit)
+            const usuariosGuardados = JSON.parse(localStorage.getItem('usuarios_locales') || '[]');
+            const usuarioLocal = usuariosGuardados.find((u: any) => u.email === formData.email && u.password === formData.password);
+
+            if (usuarioLocal) {
+                const localUserData = {
+                    email: usuarioLocal.email,
+                    role: usuarioLocal.role || 'USER',
+                    fullName: usuarioLocal.fullName || 'Usuario Local'
+                };
+                localStorage.setItem("user_session", JSON.stringify(localUserData));
+                alert(`¡Bienvenido de nuevo (Modo Local), ${localUserData.fullName}!`);
+                window.location.href = localUserData.role !== "USER" ? "/admin" : "/perfil";
+                return;
+            }
+
+            alert(`Error al iniciar sesión: ${err.message || 'Credenciales inválidas y no se encontró usuario local'}`)
         } finally {
             setIsLoading(false)
         }

@@ -1,0 +1,308 @@
+/* ── Utilidades globales ── */
+* {
+  box-sizing: border-box;
+}
+
+button,
+a,
+[role="button"] {
+  cursor: pointer;
+}
+
+/* ── Navbar links mejorados ── */
+.navbar-links a {
+  transition: var(--transition-fast);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+}
+
+.navbar-links a:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+}
+
+/* ── Badges de categoría / nivel ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.badge-primary {
+  background: var(--primary-light);
+  color: var(--primary-color);
+}
+
+.badge-accent {
+  background: #FFF7ED;
+  color: #C2410C;
+}
+
+.badge-success {
+  background: #F0FDF4;
+  color: #15803D;
+}
+
+/* ── Inputs mejorados ── */
+input,
+select,
+textarea {
+  font-family: 'Inter', sans-serif;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* ── Panel de Settings por Página ── */
+.page-settings-panel {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--card-shadow);
+}
+
+.page-settings-panel h3 {
+  font-family: 'Crimson Pro', serif;
+  font-size: 1.6rem;
+  color: var(--secondary-color);
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--primary-light);
+}
+
+.settings-subnav {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.5rem;
+  background: #F1F5F9;
+  border-radius: var(--radius-md);
+  margin-bottom: 1.5rem;
+}
+
+.settings-subnav button {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  white-space: nowrap;
+}
+
+.settings-subnav button:hover {
+  background: white;
+  color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+}
+
+.settings-subnav button.active {
+  background: white;
+  color: var(--primary-color);
+  box-shadow: 0 2px 12px rgba(37, 99, 235, 0.15);
+}
+
+/* ── Tarjeta Profile premium ── */
+.profile-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--border-color);
+  transition: var(--transition-base);
+}
+
+.profile-card:hover {
+  box-shadow: var(--card-shadow-hover);
+}
+
+/* ── Admin sidebar mejorado ── */
+.admin-sidebar button {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: var(--transition-fast);
+  border-radius: var(--radius-sm);
+}
+
+.admin-sidebar button.active {
+  background: var(--btn-gradient);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.admin-sidebar button:hover:not(.active) {
+  background: var(--primary-light);
+  color: var(--primary-color);
+}
+
+/* ── Analytics card mejorada ── */
+.analytics-card {
+  border-left: 4px solid var(--primary-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--card-shadow);
+  transition: var(--transition-base);
+}
+
+.analytics-card:hover {
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-2px);
+}
+
+/* ── Role badge premium ── */
+.role-badge {
+  background: linear-gradient(135deg, var(--secondary-color), #334155);
+  color: #FCD34D;
+  padding: 6px 16px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* ── Footer premium ── */
+footer {
+  background: var(--secondary-color);
+  color: rgba(255, 255, 255, 0.7);
+  border-top: none;
+  padding: 2.5rem;
+  margin-top: 0;
+}
+
+/* ── Scrollbar global suave ── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
+
+/* ── Animación fade-in suave ── */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.4s ease forwards;
+}
+
+/* ── prefers-reduced-motion (accesibilidad) ── */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Responsive breakpoints ── */
+@media (max-width: 768px) {
+  .admin-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-sidebar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .settings-subnav {
+    overflow-x: auto;
+  }
+
+  .agenda-controls-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dayTabs {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 18px 0 14px;
+}
+
+.dayTab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, .12);
+  background: white;
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+/* ✨ Hover (como las cards) */
+.dayTab:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, .12);
+  z-index: 2;
+}
+
+/* ✨ Activo (un poco más firme) */
+.dayTab.active {
+  background: var(--primary-color);
+  color: white;
+  border-color: transparent;
+  transform: translateY(-2px);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, .18);
+  z-index: 3;
+}
+
+.dayTabIcon {
+  font-size: 1rem;
+  line-height: 1;
+}

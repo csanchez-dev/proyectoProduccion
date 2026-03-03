@@ -1,0 +1,352 @@
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   CONIITI 2026 — Design System (by UI/UX Pro Max Skill)
+   Style: Glassmorphism | Stack: React | Industry: Academic/Congress
+   Colors: #2563EB primary | #1E293B text | #F8FAFC bg
+   Typography: Crimson Pro (headings) + Inter (body)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+h1,
+h2,
+h3 {
+  font-family: 'Crimson Pro', serif;
+  letter-spacing: -0.02em;
+}
+
+:root {
+  /* ── Colores principales (Design System: Congress Academic) ── */
+  --primary-color: #2563EB;
+  --primary-hover: #1D4ED8;
+  --primary-light: #EFF6FF;
+  --secondary-color: #1E293B;
+  --accent-color: #F97316;
+  /* CTA color from design system */
+  --accent-hover: #EA6C0A;
+
+  /* ── Gradientes ── */
+  --btn-gradient: linear-gradient(135deg, #2563EB, #1E40AF);
+  --btn-hover-gradient: linear-gradient(135deg, #1D4ED8, #1E3A8A);
+  --hero-gradient: linear-gradient(135deg, #1E293B 0%, #1E40AF 50%, #0F172A 100%);
+
+  /* ── Superficie & Glassmorphism ── */
+  --bg-page: #F8FAFC;
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.5);
+  --glass-shadow: 0 8px 32px rgba(37, 99, 235, 0.12);
+  --card-shadow: 0 4px 24px rgba(30, 41, 59, 0.08);
+  --card-shadow-hover: 0 16px 48px rgba(30, 41, 59, 0.15);
+
+  /* ── Texto ── */
+  --text-primary: #1E293B;
+  --text-secondary: #475569;
+  --text-muted: #94A3B8;
+  --text-on-primary: #ffffff;
+
+  /* ── Bordes & Radios ── */
+  --border-color: #E2E8F0;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  /* ── Espaciado ── */
+  --container-max: 1280px;
+  --section-pad: 5rem 1.5rem;
+
+  /* ── Transiciones ── */
+  --transition-fast: all 0.15s ease;
+  --transition-base: all 0.25s ease;
+  --transition-slow: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+  font-family: 'Inter', sans-serif;
+  line-height: 1.6;
+  font-weight: 400;
+  color-scheme: light;
+  color: var(--text-primary);
+  background-color: var(--bg-page);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+/* Temas por PaÃ­ses */
+body.theme-colombia {
+  --primary-color: #003893;
+  --primary-hover: #002d75;
+  --secondary-color: #f1c40f;
+  --accent-color: #ce1126;
+  --btn-gradient: linear-gradient(90deg, #f1c40f, #003893);
+  --text-on-primary: #ffffff;
+}
+
+body.theme-italy {
+  --primary-color: #008C45;
+  /* Verde Bandera */
+  --primary-hover: #005F2E;
+  --secondary-color: #CD212A;
+  /* Rojo Bandera */
+  --accent-color: #008C45;
+  --btn-gradient: linear-gradient(90deg, #008C45, #CD212A);
+  --text-on-primary: #ffffff;
+  --header-bg: #1a1a1a;
+  /* Fondo oscuro para que resalten los colores */
+}
+
+body.theme-mexico {
+  --primary-color: #006847;
+  --primary-hover: #005036;
+  --secondary-color: #ce1126;
+  --accent-color: #ce1126;
+  --btn-gradient: linear-gradient(90deg, #006847, #ce1126);
+  --text-on-primary: #ffffff;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+
+
+header {
+  display: flex;
+  margin: 0;
+  background-color: var(--secondary-color);
+  border-bottom: 3px solid var(--primary-color);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  height: 5.7rem;
+}
+
+a {
+  text-decoration: none;
+}
+
+
+.header-banner {
+  grid-row: 1 / 2;
+  grid-column: 1 / 3;
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 1.5rem;
+  background: white;
+  border-radius: 0 0 15px 0;
+  width: fit-content;
+  flex-shrink: 0;
+}
+
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 2rem;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.navbar-links {
+  list-style: none;
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Zona de Usuario arriba a la derecha */
+.user-auth-zone {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  margin-left: auto;
+  /* Forzar hacia la derecha */
+}
+
+.lang-select {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 6px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  outline: none;
+  font-weight: 600;
+  transition: var(--transition-base);
+  appearance: none;
+  /* Quitar flecha por defecto para estilizar (opcional) */
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+}
+
+.lang-select:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.btn-login-header {
+  background: var(--primary-color);
+  color: white;
+  padding: 10px 24px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: var(--transition-base);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+  border: none;
+}
+
+.btn-login-header:hover {
+  background: white;
+  color: #1f2a44;
+}
+
+.user-profile-menu {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn-profile {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.btn-logout {
+  background: #fff0f0;
+  color: #e74c3c;
+  border: 1px solid #f5dada;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-logout:hover {
+  background: #e74c3c;
+  color: white;
+}
+
+.navbar-links a {
+  text-decoration: none;
+  position: relative;
+  color: #ffffff;
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.navbar-links a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+
+  width: 100%;
+  height: 2px;
+  background-color: var(--secondary-color);
+
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.navbar-links a:hover::after {
+  transform: scaleX(1);
+}
+
+
+.main-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  min-height: 80vh;
+}
+
+
+.invitados {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  min-height: 400px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: var(--transition-slow);
+  box-shadow: var(--card-shadow);
+  height: 100%;
+  cursor: pointer;
+}
+
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--card-shadow-hover);
+  border-color: var(--primary-color);
+}
+
+
+
+/* Movido a agenda.css */
+
+
+
+/* Movido a auth.css */
+
+
+
+/* Movido a profile.css */
+
+
+
+/* Movido a admin.css */
+
+
+
+/* Movido a home.css */
+
+
+
+/* Movido a premium.css */

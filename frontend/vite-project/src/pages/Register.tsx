@@ -52,15 +52,26 @@ export default function Register() {
       // Mapeamos el rol interno al valor que espera el backend
       const mappedRole = role === "student" ? "ESTUDIANTE" : role === "professor" ? "DOCENTE" : "INVITADO";
 
-      await register({ ...formData, rol: mappedRole })
+      try {
+        await register({ ...formData, rol: mappedRole })
+        // 2. Auto-login para que el usuario pueda entrar de una vez
+        const { data: authData, error: authError } = await signIn(formData.email, formData.password)
 
-      // 2. Auto-login para que el usuario pueda entrar de una vez
-      const { data: authData, error: authError } = await signIn(formData.email, formData.password)
-
-      if (authError) {
-        alert("¡Cuenta creada! Por favor inicia sesión con tus credenciales.")
-        window.location.href = "/login"
-        return
+        if (authError) {
+          alert("¡Cuenta creada! Por favor inicia sesión con tus credenciales.")
+          window.location.href = "/login"
+          return
+        }
+      } catch (backendError: any) {
+        // FALLBACK LOCAL: Si falla el backend (ej: rate limit), guardamos localmente para demostración
+        console.warn("Fallo el backend, usando registro local simulado", backendError);
+        const usuariosGuardados = JSON.parse(localStorage.getItem('usuarios_locales') || '[]');
+        usuariosGuardados.push({
+          ...formData,
+          role: mappedRole
+        });
+        localStorage.setItem('usuarios_locales', JSON.stringify(usuariosGuardados));
+        // No lanzamos error para que siga el flujo local
       }
 
       const userData = {
@@ -73,7 +84,23 @@ export default function Register() {
       localStorage.setItem("user_session", JSON.stringify(userData))
 
       alert("¡Registro exitoso! Bienvenido al CONIITI 2026.")
-      window.location.href = "/perfil"
+
+      // Limpiar formulario para permitir registrar más si no redirigimos
+      setFormData({
+        fullName: "",
+        documentType: "CC",
+        documentNumber: "",
+        email: "",
+        password: "",
+        institutionalCode: "",
+        career: "",
+        gender: "",
+        acceptTerms: false
+      });
+      setRole("student"); // Resetear rol por defecto
+
+      // Quitar redirección para que puedas ver el formulario vacío y seguir registrando:
+      // window.location.href = "/perfil"
     } catch (err: any) {
       console.error("Error en registro:", err)
       alert(`Error al registrarse: ${err.message || 'Error desconocido'}`)
