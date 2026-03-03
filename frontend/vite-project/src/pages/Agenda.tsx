@@ -77,18 +77,10 @@ export default function Agenda() {
   const levels = ["all", "Básico", "Intermedio", "Avanzado"]
 
   const careers = [
-    "all",
-    "Administración de Empresas",
-    "Arquitectura",
-    "Derecho",
-    "Economía",
     "Ingeniería Civil",
     "Ingeniería de Sistemas",
     "Ingeniería Electrónica",
     "Ingeniería Industrial",
-    "Psicología",
-    "Diseño Gráfico",
-    "General"
   ]
 
   const filteredConferences = conferencesList.filter((conf: any) => {
@@ -177,14 +169,7 @@ export default function Agenda() {
               ))}
             </select>
 
-            {/* Filtro Nivel */}
-            <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} style={selectStyle}>
-              <option value="all">📊 {lang === 'es' ? "Todos los Niveles" : "All Levels"}</option>
-              {levels.filter(l => l !== "all").map(level => (
-                <option key={level} value={level}>{level}</option>
-              ))}
-            </select>
-
+          
             {/* Botón limpiar (solo si hay filtros activos) */}
             {hasActiveFilters && (
               <button
