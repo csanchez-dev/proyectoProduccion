@@ -67,18 +67,7 @@ export default function ConferenceCard({ conference }: Props) {
     <div className={`card ${isRegistered ? 'registered' : ''} ${isFull ? 'full' : ''}`} style={{ position: 'relative' }}>
 
       {/* 1. Badge de presencialidad movido a la esquina superior derecha */}
-      <div className={`modality-badge ${conference.type || 'presencial'}`} style={{
-        position: 'absolute',
-        top: '10px',
-        right: '10px',
-        zIndex: 10,
-        backgroundColor: '#2ecc71',
-        color: 'white',
-        padding: '5px 12px',
-        borderRadius: '20px',
-        fontSize: '0.8rem',
-        fontWeight: 'bold'
-      }}>
+      <div className={`modality-badge ${conference.type || 'presencial'}`}>
         {conference.type === 'virtual' ? '🌐 Virtual' : '📍 Presencial'}
       </div>
 
@@ -121,8 +110,8 @@ export default function ConferenceCard({ conference }: Props) {
           backgroundColor: getStockColor(),
           padding: '10px',
           borderRadius: '8px',
-          marginBottom: '15px',
-          transition: 'background-color 0.5s ease'
+          transition: 'background-color 0.5s ease',
+          margin: '1rem 2rem'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
             <span className="stock-label" style={{ fontWeight: 'bold', color: '#333' }}>Disponibilidad:</span>
