@@ -11,8 +11,11 @@
 @import './pages/agenda.css';
 @import './pages/profile.css';
 @import './pages/admin.css';
+@import './responsive.css';
+
 /* === FIX: evitar scroll horizontal en móvil === */
-html, body {
+html,
+body {
   width: 100%;
   overflow-x: hidden;
 }
@@ -22,54 +25,13 @@ html, body {
 }
 
 /* Evita que imágenes o secciones se salgan del ancho */
-img, svg, video, canvas {
+img,
+svg,
+video,
+canvas {
   max-width: 100%;
   height: auto;
 }
-/* BOTÓN HAMBURGUESA */
-.hamburger {
-  display: none;
-  font-size: 26px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: white;
-}
 
-/* MODO MÓVIL */
-@media (max-width: 768px) {
-
-  .hamburger {
-    display: block;
-    position: absolute;
-    right: 20px;
-    top: 18px;
-    z-index: 1001;
-  }
-
-  .navbar {
-    position: absolute;
-    top: 70px;
-    left: 0;
-    width: 100%;
-    background: #1e2a47;
-    display: none;
-    flex-direction: column;
-    padding: 20px 0;
-  }
-
-  .navbar.open {
-    display: flex;
-  }
-
-  .navbar-links {
-    flex-direction: column;
-    gap: 20px;
-    align-items: center;
-  }
-
-  .user-auth-zone {
-    flex-direction: column;
-    margin-top: 20px;
-  }
-}
+/* BOTÓN HAMBURGUESA - Delegado a responsive.css */
+/* MODO MÓVIL - Delegado a responsive.css */

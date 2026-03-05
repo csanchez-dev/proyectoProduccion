@@ -1,0 +1,614 @@
+/* ══════════════════════════════════════════════════════════════
+   CONIITI 2026 — Responsividad Móvil Completa
+   Cubre: header, nav, home, agenda, invitados, perfil, admin, auth
+   Breakpoints: 480px (xs), 768px (md), 992px (lg)
+══════════════════════════════════════════════════════════════ */
+
+/* ── Base global ── */
+html,
+body {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+img,
+svg,
+video,
+canvas,
+iframe {
+    max-width: 100%;
+    height: auto;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   HEADER / NAVBAR
+══════════════════════════════════════════════════════════════ */
+header {
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    flex-wrap: nowrap;
+    min-height: 60px;
+    height: auto;
+}
+
+/* Overlay oscuro al abrir el menú móvil */
+.mobile-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 149;
+}
+
+@media (max-width: 768px) {
+    header {
+        display: flex;
+        align-items: center;
+        height: 60px;
+        padding: 0;
+        position: relative;
+    }
+
+    .logo-container {
+        padding: 0.4rem 0.75rem;
+        border-radius: 0;
+        width: auto;
+        flex-shrink: 0;
+    }
+
+    .logo-event {
+        height: 44px !important;
+        max-width: 130px;
+    }
+
+    /* Botón hamburguesa */
+    .hamburger {
+        display: block !important;
+        position: absolute;
+        right: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 1002;
+        font-size: 26px;
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 6px;
+        line-height: 1;
+    }
+
+    /* Nav: oculto por defecto, despliega al abrir */
+    .navbar {
+        position: fixed;
+        top: 60px;
+        left: 0;
+        width: 85%;
+        max-width: 320px;
+        height: calc(100vh - 60px);
+        background: #1e2a47;
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1.5rem 1rem;
+        gap: 1rem;
+        overflow-y: auto;
+        display: none;
+        z-index: 150;
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.35);
+        border-radius: 0 12px 12px 0;
+    }
+
+    .navbar.open {
+        display: flex;
+    }
+
+    .navbar-links {
+        flex-direction: column;
+        gap: 0.25rem;
+        width: 100%;
+        align-items: flex-start;
+    }
+
+    .navbar-links li {
+        width: 100%;
+    }
+
+    .navbar-links a {
+        display: block;
+        width: 100%;
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-size: 1.05rem;
+        font-weight: 600;
+    }
+
+    .navbar-links a:hover {
+        background: rgba(255, 255, 255, 0.12);
+    }
+
+    /* Zona de usuario (login/perfil) al final del menú */
+    .user-auth-zone {
+        flex-direction: column;
+        align-items: flex-start;
+        margin-left: 0;
+        margin-top: 1.5rem;
+        width: 100%;
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
+        padding-top: 1.5rem;
+        gap: 0.75rem;
+    }
+
+    .lang-dropdown-wrapper {
+        width: 100%;
+    }
+
+    .lang-select {
+        width: 100%;
+    }
+
+    .user-profile-menu {
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+        gap: 0.5rem;
+    }
+
+    .btn-management,
+    .btn-profile,
+    .btn-login-header,
+    .btn-register-header,
+    .btn-logout {
+        width: 100% !important;
+        text-align: center !important;
+        display: block !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CONTENEDOR PRINCIPAL
+══════════════════════════════════════════════════════════════ */
+.main-container {
+    padding: 1.5rem 1rem;
+}
+
+@media (max-width: 480px) {
+    .main-container {
+        padding: 1rem 0.75rem;
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   HOME — Hero, grillas, secciones
+══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+    .hero-section {
+        padding: 60px 1.25rem;
+        border-radius: 0;
+        margin-bottom: 2rem;
+    }
+
+    .hero-section h1 {
+        font-size: clamp(1.8rem, 7vw, 2.6rem);
+        line-height: 1.2;
+    }
+
+    .hero-subtitle {
+        font-size: 1.1rem;
+        padding: 4px 14px;
+    }
+
+    .hero-description {
+        font-size: 1rem;
+        padding: 0 1rem;
+    }
+
+    .about-details {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        align-items: center;
+    }
+
+    .about-section-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        padding: 3rem 1.25rem;
+        text-align: center;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+    }
+
+    .stat-num {
+        font-size: 1.8rem;
+    }
+
+    .dates-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dates-section {
+        padding: 3rem 1.25rem;
+    }
+
+    .themes-section {
+        padding: 3rem 1.25rem;
+    }
+
+    .cta-home {
+        padding: 3rem 1.25rem;
+    }
+
+    .cta-home h2 {
+        font-size: 1.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .date-day {
+        font-size: 2.5rem;
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   INVITADOS — Grid de ponentes
+══════════════════════════════════════════════════════════════ */
+.invitados-page {
+    padding: 0 1rem;
+}
+
+.guests-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+@media (max-width: 768px) {
+    .guests-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .guest-card {
+        padding: 1.5rem 1rem;
+    }
+
+    .guest-image-container img {
+        width: 110px;
+        height: 110px;
+    }
+}
+
+@media (max-width: 480px) {
+    .guests-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .guest-image-container img {
+        width: 90px;
+        height: 90px;
+    }
+
+    .guest-details h3 {
+        font-size: 1.2rem;
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   AGENDA — Grid de conferencias y filtros
+══════════════════════════════════════════════════════════════ */
+.agenda {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+@media (max-width: 768px) {
+    .agenda-header-section {
+        padding: 2rem 1rem 1.5rem;
+    }
+
+    .agenda-controls-card {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 1rem;
+        gap: 0.75rem;
+    }
+
+    .agenda-controls-card select,
+    .agenda-controls-card input {
+        width: 100%;
+        min-width: unset;
+    }
+
+    .agenda {
+        grid-template-columns: 1fr;
+        padding: 1.25rem 0.75rem;
+        gap: 1.25rem;
+    }
+
+    .dayTabs {
+        gap: 6px;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 0 0.5rem;
+    }
+
+    .dayTab {
+        padding: 6px 12px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .agenda {
+        grid-template-columns: 1fr;
+        padding: 1rem 0.5rem;
+    }
+
+    .agenda-title {
+        font-size: clamp(1.5rem, 6vw, 2rem);
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   AUTH — Login y Registro
+══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+    .register-container {
+        padding: 2rem 1rem;
+        align-items: flex-start;
+    }
+
+    .register-card {
+        padding: 1.75rem 1.25rem;
+        width: 100%;
+        max-width: none;
+        border-radius: 16px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .role-selector {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .role-selector button {
+        flex: 1 1 calc(50% - 0.5rem);
+    }
+}
+
+@media (max-width: 480px) {
+
+    .register-card h2,
+    .login-header-premium h2 {
+        font-size: 1.6rem;
+    }
+
+    .role-selector button {
+        flex: 1 1 100%;
+    }
+
+    .btn-submit {
+        font-size: 1rem;
+        padding: 12px;
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PERFIL — Grid de datos y conferencias
+══════════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+    .profile-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .profile-container {
+        padding: 1.5rem 0.75rem;
+    }
+
+    .profile-card {
+        padding: 1.5rem 1rem;
+        border-radius: 14px;
+    }
+
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .conference-mini-card {
+        flex-wrap: wrap;
+    }
+
+    .btn-cancel {
+        margin-left: 0;
+        margin-top: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-container {
+        padding: 1rem 0.5rem;
+    }
+
+    .info-grid {
+        gap: 1rem;
+    }
+
+    .info-item p {
+        font-size: 1rem;
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ADMIN — Panel de administración
+══════════════════════════════════════════════════════════════ */
+@media (max-width: 992px) {
+    .admin-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-sidebar {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
+
+    .admin-sidebar button {
+        flex: 1 1 calc(50% - 0.5rem);
+        text-align: center;
+        font-size: 0.85rem;
+        padding: 10px 8px;
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-container {
+        padding: 0.75rem;
+    }
+
+    .admin-content {
+        padding: 1rem;
+        border-radius: 12px;
+    }
+
+    .view-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 1rem;
+    }
+
+    .view-header h2 {
+        font-size: 1.2rem;
+    }
+
+    /* Tablas con scroll horizontal en móvil */
+    .admin-table-container,
+    .admin-table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+    }
+
+    .admin-table th,
+    .admin-table td {
+        white-space: nowrap;
+        padding: 10px 8px;
+        font-size: 0.85rem;
+    }
+
+    .modal-content {
+        width: 95% !important;
+        max-width: none;
+        padding: 1.25rem;
+        margin: 0 auto;
+        border-radius: 14px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .contact-form {
+        padding: 1.5rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-sidebar button {
+        flex: 1 1 100%;
+    }
+
+    .guests-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .settings-subnav {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 0.25rem;
+    }
+
+    .settings-subnav button {
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   FOOTER
+══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+    footer {
+        padding: 1.5rem 1rem;
+        font-size: 0.85rem;
+        text-align: center;
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   UTILIDADES — Evitar desbordamientos comunes
+══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+    /* Tablas dentro de contenedores: scroll horizontal controlado */
+    table {
+        min-width: 500px;
+    }
+
+    /* Recharts y gráficas: sin overflow horizontal */
+    .recharts-wrapper,
+    .recharts-surface {
+        max-width: 100% !important;
+        overflow: hidden;
+    }
+
+    /* Botones no deben desbordarse */
+    .btn-add,
+    .btn-submit,
+    .btn-save,
+    .btn-update-img,
+    .btn-save-guest {
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    /* Grids de colores en admin */
+    .color-picker-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .color-picker-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .logos-edit-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Grids de estadísticas en Admin */
+    .analytics-dashboard-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
