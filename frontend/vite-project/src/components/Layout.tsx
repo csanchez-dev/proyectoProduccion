@@ -1,14 +1,46 @@
-import { useState, useEffect, type ReactNode } from "react"
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom"
 import { trackEvent } from "../utils/tracker"
 import { translations, getTranslation } from "../utils/i18n"
 import type { Language } from "../utils/i18n"
+
 
 type Props = {
   children: ReactNode
 }
 
 export default function Layout({ children }: Props) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLElement | null>(null);
+
+useEffect(() => {
+  document.body.style.overflow = menuOpen ? "hidden" : "";
+  return () => {
+    document.body.style.overflow = "";
+  };
+}, [menuOpen]);
+
+useEffect(() => {
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Escape") setMenuOpen(false);
+  };
+
+  const onClickOutside = (e: MouseEvent) => {
+    if (!menuOpen) return;
+    const target = e.target as Node;
+    if (menuRef.current && !menuRef.current.contains(target)) {
+      setMenuOpen(false);
+    }
+  };
+
+  document.addEventListener("keydown", onKeyDown);
+  document.addEventListener("mousedown", onClickOutside);
+
+  return () => {
+    document.removeEventListener("keydown", onKeyDown);
+    document.removeEventListener("mousedown", onClickOutside);
+  };
+}, [menuOpen]);
   const [user, setUser] = useState<any>(null)
   const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
   const location = useLocation()
@@ -107,7 +139,6 @@ export default function Layout({ children }: Props) {
     // Redirección con recarga completa para asegurar limpieza de memoria
     window.location.href = "/"
   }
-
   return (
     <>
       <header>
@@ -123,58 +154,137 @@ export default function Layout({ children }: Props) {
           />
         </div>
 
-        <nav className="navbar">
+        {/* BOTÓN HAMBURGUESA */}
+        <button
+          className="hamburger"
+          onClick={() => setMenuOpen((v) => !v)}
+          aria-label="Menú"
+          aria-expanded={menuOpen}
+          type="button"
+        >
+          ☰
+        </button>
+
+        {/* ✅ SOLO UN NAV (este es el real) */}
+          {menuOpen && (
+           <div className="mobile-overlay" onClick={() => setMenuOpen(false)} />
+           )}
+        <nav
+        id="mobile-nav"
+         ref={menuRef}
+        className={`navbar ${menuOpen ? "open" : ""}`}>
           <ul className="navbar-links">
-            <li><Link to="/">{t('nav_home')}</Link></li>
-            <li><Link to="/invitados">{t('nav_guests')}</Link></li>
-            <li><Link to="/conferencias">{t('nav_agenda')}</Link></li>
-            <li><a href="/#acerca-de">{t('nav_about')}</a></li>
-            <li><Link to="#contacto">{t('nav_contact')}</Link></li>
+            <li>
+              <Link to="/" onClick={() => setMenuOpen(false)}>
+                {t("nav_home")}
+              </Link>
+            </li>
+            <li>
+              <Link to="/invitados" onClick={() => setMenuOpen(false)}>
+                {t("nav_guests")}
+              </Link>
+            </li>
+            <li>
+              <Link to="/conferencias" onClick={() => setMenuOpen(false)}>
+                {t("nav_agenda")}
+              </Link>
+            </li>
+            <li>
+              <a href="/#acerca-de" onClick={() => setMenuOpen(false)}>
+                {t("nav_about")}
+              </a>
+            </li>
+            <li>
+              <Link to="#contacto" onClick={() => setMenuOpen(false)}>
+                {t("nav_contact")}
+              </Link>
+            </li>
           </ul>
 
-          <div className="user-auth-zone" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <div
+            className="user-auth-zone"
+            style={{ display: "flex", alignItems: "center", gap: "15px" }}
+          >
             <div className="lang-dropdown-wrapper">
               <select
                 value={lang}
                 onChange={(e) => handleLangChange(e.target.value as Language)}
                 className="lang-select"
               >
-                <option value="es" style={{ color: '#333' }}>🌐 Idioma: Español</option>
-                <option value="en" style={{ color: '#333' }}>🌐 Language: English</option>
+                <option value="es" style={{ color: "#333" }}>
+                  🌐 Idioma: Español
+                </option>
+                <option value="en" style={{ color: "#333" }}>
+                  🌐 Language: English
+                </option>
               </select>
             </div>
 
             {user ? (
               <div className="user-profile-menu">
-                {(user.role === "SUPER_ADMIN" || user.role === "CONTENT_MANAGER") && (
-                  <Link to="/admin" className="btn-management">{t('nav_config')}</Link>
+                {(user.role === "SUPER_ADMIN" ||
+                  user.role === "CONTENT_MANAGER") && (
+                  <Link
+                    to="/admin"
+                    className="btn-management"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {t("nav_config")}
+                  </Link>
                 )}
-                <Link to="/perfil" className="btn-profile">{t('nav_profile')}</Link>
-                <button onClick={handleLogout} className="btn-logout">{t('nav_logout')}</button>
+                <Link
+                  to="/perfil"
+                  className="btn-profile"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {t("nav_profile")}
+                </Link>
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="btn-logout"
+                  type="button"
+                >
+                  {t("nav_logout")}
+                </button>
               </div>
             ) : (
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <Link to="/login" className="btn-login-header">{t('nav_login')}</Link>
-                <Link to="/registro" className="btn-register-header" style={{
-                  padding: '8px 16px',
-                  borderRadius: '8px',
-                  textDecoration: 'none',
-                  fontWeight: '600',
-                  background: 'var(--primary-color)',
-                  color: 'white',
-                  transition: 'all 0.3s ease'
-                }}>{t('nav_register')}</Link>
+              <div style={{ display: "flex", gap: "10px" }}>
+                <Link
+                  to="/login"
+                  className="btn-login-header"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {t("nav_login")}
+                </Link>
+
+                <Link
+                  to="/registro"
+                  className="btn-register-header"
+                  onClick={() => setMenuOpen(false)}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "8px",
+                    textDecoration: "none",
+                    fontWeight: "600",
+                    background: "var(--primary-color)",
+                    color: "white",
+                    transition: "all 0.3s ease",
+                  }}
+                >
+                  {t("nav_register")}
+                </Link>
               </div>
             )}
           </div>
         </nav>
       </header>
 
-      <main className="main-container">
-        {children}
-      </main>
+      <main className="main-container">{children}</main>
 
-      <footer>{t('footer_copy')}</footer>
+      <footer>{t("footer_copy")}</footer>
     </>
-  )
+  );
 }
