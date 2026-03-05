@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react"
+﻿import React, { useState, useEffect } from "react" // v2-ui-refresh
 import { useNavigate } from "react-router-dom"
 import { conferences as initialConferences } from "../data/conference_mocks"
 import { getEvents, getGenderStats, getConferenceStats, getPageViewsStats, getLoadTimeStats, getImageLoadStats, getResourceSizeStats, getAdvancedStatsByPage, getAvailableYears } from "../utils/tracker"
@@ -61,6 +61,14 @@ export default function Admin() {
     const [selectedPerfPage, setSelectedPerfPage] = useState("/")
     const [settingsTab, setSettingsTab] = useState("general")
     const [analyticsYear, setAnalyticsYear] = useState<number>(new Date().getFullYear())
+
+    // States for Custom Theme creation
+    const [customThemes, setCustomThemes] = useState<any[]>(() => {
+        const saved = localStorage.getItem("site_custom_themes");
+        return saved ? JSON.parse(saved) : [];
+    });
+    const [isAddingTheme, setIsAddingTheme] = useState(false);
+    const [newThemeData, setNewThemeData] = useState({ name: '', primary: '#2563EB', secondary: '#1E293B', bg: '#ffffff', text: '#1b1a1a', header: '#1f2a44' });
     const navigate = useNavigate()
 
     // Gestión de Capacidad de Auditorios
@@ -1070,10 +1078,11 @@ export default function Admin() {
                                         <label>Tema por País (Colores y Estilos)</label>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginTop: '0.5rem' }}>
                                             {[
-                                                { id: 'default', name: 'Estándar', desc: 'Universidad Católica', colors: ['#2563EB', '#1E293B', '#ffffff'] },
-                                                { id: 'colombia', name: 'Colombia', desc: 'Amarillo, Azul, Rojo', colors: ['#FFD100', '#003893', '#CE1126'] },
-                                                { id: 'italy', name: 'Italia', desc: 'Verde, Blanco, Rojo', colors: ['#009246', '#ffffff', '#CE2B37'] },
-                                                { id: 'mexico', name: 'México', desc: 'Verde Oscuro, Rojo', colors: ['#006341', '#ffffff', '#C8102E'] },
+                                                { id: 'default', name: 'Estándar', desc: 'Universidad Católica', colors: ['#2563EB', '#1E293B', '#ffffff'], isPreset: true },
+                                                { id: 'colombia', name: 'Colombia', desc: 'Amarillo, Azul, Rojo', colors: ['#FFD100', '#003893', '#CE1126'], isPreset: true },
+                                                { id: 'italy', name: 'Italia', desc: 'Verde, Blanco, Rojo', colors: ['#009246', '#ffffff', '#CE2B37'], isPreset: true },
+                                                { id: 'mexico', name: 'México', desc: 'Verde Oscuro, Rojo', colors: ['#006341', '#ffffff', '#C8102E'], isPreset: true },
+                                                ...customThemes
                                             ].map(theme => {
                                                 const currentTheme = localStorage.getItem("site_theme") || "default";
                                                 const isActive = currentTheme === theme.id;
@@ -1082,7 +1091,19 @@ export default function Admin() {
                                                         key={theme.id}
                                                         onClick={() => {
                                                             localStorage.setItem("site_theme", theme.id);
-                                                            document.body.className = theme.id === "default" ? "" : `theme-${theme.id}`;
+                                                            document.body.className = (theme.id === "default" || !theme.isPreset) ? "" : `theme-${theme.id}`;
+
+                                                            if (theme.isPreset) {
+                                                                // Limpiamos colores inline custom para que se aplique la clase del tema
+                                                                ["custom_bg_color", "custom_text_color", "custom_primary_color", "custom_secondary_color", "custom_header_bg"].forEach(key => localStorage.removeItem(key));
+                                                            } else {
+                                                                // Si es tema personalizado, inyectamos sus propios colores inline
+                                                                localStorage.setItem("custom_bg_color", theme.themeData.bg);
+                                                                localStorage.setItem("custom_text_color", theme.themeData.text);
+                                                                localStorage.setItem("custom_primary_color", theme.themeData.primary);
+                                                                localStorage.setItem("custom_secondary_color", theme.themeData.secondary);
+                                                                localStorage.setItem("custom_header_bg", theme.themeData.header);
+                                                            }
                                                             dispatchUpdate();
                                                         }}
                                                         style={{
@@ -1095,16 +1116,31 @@ export default function Admin() {
                                                             boxShadow: isActive ? '0 4px 12px rgba(37, 99, 235, 0.15)' : 'none',
                                                             display: 'flex',
                                                             flexDirection: 'column',
-                                                            gap: '0.5rem'
+                                                            gap: '0.5rem',
+                                                            position: 'relative'
                                                         }}
                                                     >
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                             <strong style={{ fontSize: '1.05rem', color: '#1e293b' }}>{theme.name}</strong>
                                                             {isActive && <span style={{ color: 'var(--primary-color)', fontSize: '1.2rem' }}>✓</span>}
+                                                            {!theme.isPreset && !isActive && (
+                                                                <button
+                                                                    className="btn-delete-sm"
+                                                                    style={{ padding: '2px 6px', fontSize: '0.7rem', position: 'absolute', top: '10px', right: '10px' }}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        if (confirm("¿Eliminar este tema personalizado?")) {
+                                                                            const tms = customThemes.filter(t => t.id !== theme.id);
+                                                                            setCustomThemes(tms);
+                                                                            localStorage.setItem("site_custom_themes", JSON.stringify(tms));
+                                                                        }
+                                                                    }}
+                                                                >🗑️</button>
+                                                            )}
                                                         </div>
                                                         <span style={{ fontSize: '0.85rem', color: '#64748b' }}>{theme.desc}</span>
                                                         <div style={{ display: 'flex', height: '24px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-                                                            {theme.colors.map((color, idx) => (
+                                                            {theme.colors.map((color: string, idx: number) => (
                                                                 <div key={idx} style={{ flex: 1, backgroundColor: color }}></div>
                                                             ))}
                                                         </div>
@@ -1112,6 +1148,100 @@ export default function Admin() {
                                                 );
                                             })}
                                         </div>
+
+                                        <div style={{ marginTop: '1rem' }}>
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsAddingTheme(true)}
+                                                style={{
+                                                    background: '#f0f4ff',
+                                                    color: 'var(--primary-color)',
+                                                    border: '1px dashed var(--primary-color)',
+                                                    padding: '10px 20px',
+                                                    borderRadius: '10px',
+                                                    fontWeight: '600',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseOver={(e) => (e.currentTarget.style.background = '#e0e7ff')}
+                                                onMouseOut={(e) => (e.currentTarget.style.background = '#f0f4ff')}
+                                            >
+                                                ✨ Crear Nuevo Tema Personalizado
+                                            </button>
+                                        </div>
+
+                                        {/* Modal para Crear Tema */}
+                                        {isAddingTheme && (
+                                            <div className="modal-overlay fade-in">
+                                                <div className="modal-content" style={{ maxWidth: '540px' }}>
+                                                    <h3>🎨 Crear Nuevo Tema</h3>
+                                                    <div className="form-group" style={{ marginTop: '1rem' }}>
+                                                        <label>Nombre del Tema</label>
+                                                        <input type="text" placeholder="Ej: Tema Noche Brillante" value={newThemeData.name} onChange={e => setNewThemeData({ ...newThemeData, name: e.target.value })} />
+                                                    </div>
+                                                    <div className="color-picker-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                                        <div className="form-group">
+                                                            <label>🔵 Color Primario (Botones, Acentos)</label>
+                                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                                <input type="color" style={{ width: '40px', padding: 0 }} value={newThemeData.primary} onChange={e => setNewThemeData({ ...newThemeData, primary: e.target.value })} />
+                                                                <input type="text" value={newThemeData.primary} onChange={e => setNewThemeData({ ...newThemeData, primary: e.target.value })} style={{ flex: 1 }} />
+                                                            </div>
+                                                        </div>
+                                                        <div className="form-group">
+                                                            <label>🔵 Color Secundario (Fondos Sec.)</label>
+                                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                                <input type="color" style={{ width: '40px', padding: 0 }} value={newThemeData.secondary} onChange={e => setNewThemeData({ ...newThemeData, secondary: e.target.value })} />
+                                                                <input type="text" value={newThemeData.secondary} onChange={e => setNewThemeData({ ...newThemeData, secondary: e.target.value })} style={{ flex: 1 }} />
+                                                            </div>
+                                                        </div>
+                                                        <div className="form-group">
+                                                            <label>⚪ Fondo de Contenido</label>
+                                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                                <input type="color" style={{ width: '40px', padding: 0 }} value={newThemeData.bg} onChange={e => setNewThemeData({ ...newThemeData, bg: e.target.value })} />
+                                                                <input type="text" value={newThemeData.bg} onChange={e => setNewThemeData({ ...newThemeData, bg: e.target.value })} style={{ flex: 1 }} />
+                                                            </div>
+                                                        </div>
+                                                        <div className="form-group">
+                                                            <label>🌑 Fondo de Cabecera y Menús</label>
+                                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                                <input type="color" style={{ width: '40px', padding: 0 }} value={newThemeData.header} onChange={e => setNewThemeData({ ...newThemeData, header: e.target.value })} />
+                                                                <input type="text" value={newThemeData.header} onChange={e => setNewThemeData({ ...newThemeData, header: e.target.value })} style={{ flex: 1 }} />
+                                                            </div>
+                                                        </div>
+                                                        <div className="form-group">
+                                                            <label>📝 Color de Texto Principal</label>
+                                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                                <input type="color" style={{ width: '40px', padding: 0 }} value={newThemeData.text} onChange={e => setNewThemeData({ ...newThemeData, text: e.target.value })} />
+                                                                <input type="text" value={newThemeData.text} onChange={e => setNewThemeData({ ...newThemeData, text: e.target.value })} style={{ flex: 1 }} />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', justifyContent: 'flex-end' }}>
+                                                        <button type="button" className="btn-cancel" onClick={() => setIsAddingTheme(false)}>Cancelar</button>
+                                                        <button type="button" className="btn-submit premium-btn" onClick={() => {
+                                                            if (!newThemeData.name.trim()) return toast.error("Por favor ingresa un nombre para el tema");
+                                                            const newTheme = {
+                                                                id: `custom-${Date.now()}`,
+                                                                name: newThemeData.name,
+                                                                desc: 'Tema Personalizado',
+                                                                isPreset: false,
+                                                                colors: [newThemeData.primary, newThemeData.secondary, newThemeData.header],
+                                                                themeData: { ...newThemeData }
+                                                            };
+                                                            const updatedThemes = [...customThemes, newTheme];
+                                                            setCustomThemes(updatedThemes);
+                                                            localStorage.setItem("site_custom_themes", JSON.stringify(updatedThemes));
+                                                            setIsAddingTheme(false);
+                                                            setNewThemeData({ name: '', primary: '#2563EB', secondary: '#1E293B', bg: '#ffffff', text: '#1b1a1a', header: '#1f2a44' });
+                                                            toast.success("Tema creado correctamente");
+                                                        }}>Guardar y Añadir Tema</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="form-group">
                                         <label>Imagen de Banner (Cabecera)</label>
