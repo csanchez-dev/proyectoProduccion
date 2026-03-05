@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { translations, getTranslation } from "../utils/i18n"
 import type { Language } from "../utils/i18n"
 import { signIn, apiFetch, resetPassword } from "../services/api"
 import { toast } from "sonner"
 
 export default function Login() {
+    const navigate = useNavigate()
 
     const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
     const [isLoading, setIsLoading] = useState(false)
@@ -58,24 +59,24 @@ export default function Login() {
             }
 
             localStorage.setItem("user_session", JSON.stringify(userData))
-            window.location.href = userData.role !== "USER" ? "/admin" : "/"
+            navigate(userData.role !== "USER" ? "/admin" : "/")
         } catch (err: any) {
             console.warn("Fallo el login con Supabase, intentando fallback local...", err.message);
 
             // Fallback para Usuarios según requerimiento
             if (formData.email === "superadmin@coniiti.com" && formData.password === "super123") {
                 localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'SUPER_ADMIN', fullName: 'Super Usuario' }))
-                window.location.href = "/admin";
+                navigate("/admin")
                 return;
             }
             if (formData.email === "admin@coniiti.com" && formData.password === "admin123") {
                 localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'ADMIN', fullName: 'Administrador de Eventos' }))
-                window.location.href = "/admin";
+                navigate("/admin")
                 return;
             }
             if (formData.email === "viewer@coniiti.com" && formData.password === "viewer123") {
                 localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'VIEWER', fullName: 'Visualizador de Datos' }))
-                window.location.href = "/admin";
+                navigate("/admin")
                 return;
             }
 
@@ -90,7 +91,7 @@ export default function Login() {
                     fullName: usuarioLocal.fullName || 'Usuario Local'
                 };
                 localStorage.setItem("user_session", JSON.stringify(localUserData));
-                window.location.href = localUserData.role !== "USER" ? "/admin" : "/perfil";
+                navigate(localUserData.role !== "USER" ? "/admin" : "/perfil")
                 return;
             }
             toast.error(err.message || 'Credenciales inválidas');

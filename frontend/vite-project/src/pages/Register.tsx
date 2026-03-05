@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { translations, getTranslation } from "../utils/i18n"
 import type { Language } from "../utils/i18n"
 import { signIn, register } from "../services/api"
 import { toast } from "sonner"
 
 export default function Register() {
+  const navigate = useNavigate()
   const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
   const [showPolicyModal, setShowPolicyModal] = useState(false)
 
@@ -55,7 +56,7 @@ export default function Register() {
         const { error: authError } = await signIn(formData.email, formData.password)
 
         if (authError) {
-          window.location.href = "/login"
+          navigate("/login")
           return
         }
       } catch (backendError: any) {
@@ -95,7 +96,7 @@ export default function Register() {
         acceptTerms: false
       });
       setRole("student");
-      window.location.href = "/perfil"
+      navigate("/perfil")
     } catch (err: any) {
       toast.error(err.message || 'Error al registrarse');
     } finally {

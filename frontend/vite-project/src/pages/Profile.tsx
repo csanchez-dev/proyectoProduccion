@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react"
+import { Link, useNavigate } from "react-router-dom"
 import { updatePerfil } from "../services/api"
 import { Scanner } from '@yudiel/react-qr-scanner'
 
 export default function Profile() {
+    const navigate = useNavigate()
     const [isEditing, setIsEditing] = useState(false)
     const [userData, setUserData] = useState({
         fullName: "Cargando...",
@@ -93,7 +95,7 @@ export default function Profile() {
 
             loadUserConferences();
         } else {
-            window.location.href = "/login";
+            navigate("/login")
         }
 
         // Sincronizar cambios en tiempo real (por si se inscribe en otra pestaña)
