@@ -51,6 +51,7 @@ export default function Login() {
             }
 
             localStorage.setItem("user_session", JSON.stringify(userData))
+            sessionStorage.setItem("session_active", "1")
             window.dispatchEvent(new Event('user-session-updated'))
             navigate(userData.role !== "USER" ? "/admin" : "/")
         } catch (err: any) {
@@ -59,18 +60,21 @@ export default function Login() {
             // Fallback para Usuarios según requerimiento
             if (formData.email === "superadmin@coniiti.com" && formData.password === "super123") {
                 localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'SUPER_ADMIN', fullName: 'Super Usuario' }))
+                sessionStorage.setItem("session_active", "1")
                 window.dispatchEvent(new Event('user-session-updated'))
                 navigate("/admin")
                 return;
             }
             if (formData.email === "admin@coniiti.com" && formData.password === "admin123") {
                 localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'ADMIN', fullName: 'Administrador de Eventos' }))
+                sessionStorage.setItem("session_active", "1")
                 window.dispatchEvent(new Event('user-session-updated'))
                 navigate("/admin")
                 return;
             }
             if (formData.email === "viewer@coniiti.com" && formData.password === "viewer123") {
                 localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'VIEWER', fullName: 'Visualizador de Datos' }))
+                sessionStorage.setItem("session_active", "1")
                 window.dispatchEvent(new Event('user-session-updated'))
                 navigate("/admin")
                 return;
@@ -87,6 +91,7 @@ export default function Login() {
                     fullName: usuarioLocal.fullName || 'Usuario Local'
                 };
                 localStorage.setItem("user_session", JSON.stringify(localUserData));
+                sessionStorage.setItem("session_active", "1")
                 window.dispatchEvent(new Event('user-session-updated'))
                 navigate(localUserData.role !== "USER" ? "/admin" : "/perfil")
                 return;

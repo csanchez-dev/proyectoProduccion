@@ -83,6 +83,7 @@ export default function Register() {
         gender: formData.gender
       }
       localStorage.setItem("user_session", JSON.stringify(userData))
+      sessionStorage.setItem("session_active", "1")
       window.dispatchEvent(new Event('user-session-updated'))
 
       setFormData({

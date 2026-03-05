@@ -151,6 +151,7 @@ export default function Layout({ children }: Props) {
   const handleLogout = () => {
     // Limpieza total del almacenamiento y estado
     localStorage.removeItem("user_session")
+    sessionStorage.removeItem("session_active")
     setUser(null)
 
     // Redirección con recarga completa para asegurar limpieza de memoria

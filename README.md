@@ -13,7 +13,7 @@ asegurate de tener instalado **Node.js** (v16+) en tu sistema.
 
 Abre tu terminal (PowerShell, CMD o Bash) en la raíz del proyecto y ejecuta:
 
-```powershell
+```powershell.
 # Entrar a la carpeta del código
 cd vite-project
 
@@ -29,7 +29,6 @@ Una vez iniciado, abre la URL que aparece en pantalla (normalmente `http://local
 ---
 
 ## Funcionalidades Principales
-
 - **Panel de Control Superior**: Gestión de conferencias, invitados y papelera de reciclaje.
 - **Sincronización en Tiempo Real**: Los invitados y conferencias creados en el panel aparecen automÃ¡ticamente en la pÃ¡gina de **Inicio** y **Agenda**.
 - **Sistema de Temas Dinámicos**: Cambia el estilo visual de toda la web según el país (Colombia, México, Italia) desde el panel de configuración.
