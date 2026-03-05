@@ -9,6 +9,7 @@ import {
     PieChart, Pie, Cell, LineChart, Line, ScatterChart, Scatter, ZAxis
 } from 'recharts'
 import QRCode from 'react-qr-code'
+import { toast } from "sonner"
 
 export default function Admin() {
     const [userRole, setUserRole] = useState<string | null>(null)
@@ -248,10 +249,10 @@ export default function Admin() {
             const { deletePonencia } = await import("../services/api");
             await deletePonencia(id);
             setConferences(conferences.filter((c: any) => c.id !== id));
-            alert("Conferencia eliminada");
+            // alert("Conferencia eliminada");
         } catch (err) {
             console.error("Error deleting conference:", err);
-            alert("No se pudo eliminar de la base de datos.");
+            // alert("No se pudo eliminar de la base de datos.");
         }
     }
 
@@ -260,7 +261,7 @@ export default function Admin() {
         if (confToRestore) {
             setConferences([...conferences, confToRestore])
             setDeletedConferences(deletedConferences.filter((c: any) => c.id !== id))
-            alert("Conferencia restaurada")
+            // alert("Conferencia restaurada")
         }
     }
 
@@ -391,12 +392,12 @@ export default function Admin() {
             setConferences(updatedConfs);
             localStorage.setItem("site_conferences", JSON.stringify(updatedConfs));
 
-            alert("¡Conferencia guardada!");
+            // alert("¡Conferencia guardada!");
             setShowConfForm(false);
             setNewConf({ ...newConf, title: "", description: "" });
         } catch (err: any) {
             console.error("Error saving conference:", err);
-            alert(`Error: ${err.message}`);
+            // alert(`Error: ${err.message}`);
         } finally {
             setIsLoading(false);
         }
@@ -418,10 +419,10 @@ export default function Admin() {
             }
 
             setEditingConf(null)
-            alert("Cambios guardados correctamente")
+            toast.success("Cambios guardados correctamente")
         } catch (err) {
             console.error("Error al guardar cambios:", err);
-            alert("No se pudieron guardar los cambios");
+            // alert("No se pudieron guardar los cambios");
         }
     }
 
@@ -517,10 +518,10 @@ export default function Admin() {
             setConferences([...conferences, simulatedConf]);
             setShowGuestForm(false);
             setNewGuest({ name: "", organization: "", bio: "", avatar: "" });
-            alert("¡Invitado agregado exitosamente! Ya aparece en la lista de configuración.");
+            // alert("¡Invitado agregado exitosamente!");
         } catch (err) {
             console.error("Error al agregar invitado:", err);
-            alert("No se pudo agregar el invitado.");
+            // alert("No se pudo agregar el invitado.");
         } finally {
             setIsLoading(false);
         }
@@ -551,7 +552,7 @@ export default function Admin() {
         setConferences(updatedConfs);
 
         setEditingSpeaker(null);
-        alert("✅ Información del invitado actualizada.");
+        // alert("✅ Información del invitado actualizada.");
     };
 
     if (!userRole) return <div className="loading">{lang === 'es' ? 'Cargando panel...' : 'Loading panel...'}</div>
@@ -1073,12 +1074,12 @@ export default function Admin() {
                                                     onChange={(e) => {
                                                         const file = e.target.files?.[0];
                                                         if (file) {
-                                                            if (file.size > 1500000) { alert("La imagen es muy pesada (máx 1.5MB)."); return; }
+                                                            if (file.size > 1500000) { toast.error("La imagen es muy pesada (máx 1.5MB)."); return; }
                                                             const reader = new FileReader();
                                                             reader.onloadend = () => {
                                                                 if (reader.result) {
                                                                     try { localStorage.setItem("site_banner", reader.result as string); dispatchUpdate(); }
-                                                                    catch { alert("La imagen sigue siendo muy grande para el navegador."); }
+                                                                    catch { toast.error("La imagen sigue siendo muy grande."); }
                                                                 }
                                                             };
                                                             reader.readAsDataURL(file);
@@ -1161,7 +1162,7 @@ export default function Admin() {
                                         <input type="checkbox" />
                                     </div>
                                     <div className="admin-actions-footer">
-                                        <button type="button" className="btn-submit" onClick={() => alert("Configuración global guardada correctamente")}>
+                                        <button type="button" className="btn-submit" onClick={() => toast.success("Configuración global guardada correctamente")}>
                                             Guardar Cambios Globales
                                         </button>
                                         <button type="button" className="btn-logout" style={{ marginLeft: '1rem', background: '#e74c3c' }}
@@ -1208,7 +1209,7 @@ export default function Admin() {
                                             <input type="text" defaultValue={localStorage.getItem("home_btn_text") || "Ver Agenda"}
                                                 onChange={e => localStorage.setItem("home_btn_text", e.target.value)} />
                                         </div>
-                                        <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); alert("Cambios de Inicio guardados."); }}>
+                                        <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); toast.success("Cambios de Inicio guardados."); }}>
                                             Guardar Cambios
                                         </button>
                                     </div>
@@ -1237,7 +1238,7 @@ export default function Admin() {
                                             <input type="checkbox" defaultChecked={localStorage.getItem("guests_show_org") !== "false"}
                                                 onChange={e => localStorage.setItem("guests_show_org", String(e.target.checked))} />
                                         </div>
-                                        <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); alert("Cambios de Invitados guardados."); }}>
+                                        <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); toast.success("Cambios de Invitados guardados."); }}>
                                             Guardar Cambios
                                         </button>
 
@@ -1465,7 +1466,7 @@ export default function Admin() {
                                             </div>
                                         </div>
 
-                                        <button className="btn-submit" style={{ marginTop: '1.5rem', width: '100%' }} onClick={() => { dispatchUpdate(); alert("Configuración de Agenda y Días guardada."); }}>
+                                        <button className="btn-submit" style={{ marginTop: '1.5rem', width: '100%' }} onClick={() => { dispatchUpdate(); toast.success("Configuración de Agenda y Días guardada."); }}>
                                             Guardar Cambios de Agenda
                                         </button>
                                     </div>
@@ -1497,7 +1498,7 @@ export default function Admin() {
                                             <input type="text" defaultValue={localStorage.getItem("about_location") || "Universidad Católica"}
                                                 onChange={e => localStorage.setItem("about_location", e.target.value)} />
                                         </div>
-                                        <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); alert("Cambios de 'Acerca de' guardados."); }}>
+                                        <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); toast.success("Cambios de 'Acerca de' guardados."); }}>
                                             Guardar Cambios
                                         </button>
                                     </div>
@@ -1534,7 +1535,7 @@ export default function Admin() {
                                             <textarea rows={3} defaultValue={localStorage.getItem("contact_form_msg") || "¿Tienes dudas? Escríbenos y te responderemos a la brevedad."}
                                                 onChange={e => localStorage.setItem("contact_form_msg", e.target.value)}></textarea>
                                         </div>
-                                        <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); alert("Cambios de Contacto guardados."); }}>
+                                        <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); toast.success("Cambios de Contacto guardados."); }}>
                                             Guardar Cambios
                                         </button>
                                     </div>
@@ -1664,9 +1665,9 @@ export default function Admin() {
                                                                 [nameInput.value.trim()]: parseInt(capInput.value) || 0
                                                             });
                                                             nameInput.value = "";
-                                                            alert("¡Sitio añadido! Ahora aparecerá en la lista y en el formulario de conferencias.");
+                                                            // alert("¡Sitio añadido!");
                                                         } else {
-                                                            alert("Por favor ingresa un nombre para el sitio.");
+                                                            // alert("Por favor ingresa un nombre para el sitio.");
                                                         }
                                                     }}
                                                 >
@@ -1693,7 +1694,7 @@ export default function Admin() {
                                             </button>
                                         </div>
 
-                                        <button className="btn-submit" style={{ marginTop: '2rem', width: '100%' }} onClick={() => { dispatchUpdate(); alert("Configuración de aforos guardada."); }}>
+                                        <button className="btn-submit" style={{ marginTop: '2rem', width: '100%' }} onClick={() => { dispatchUpdate(); toast.success("Configuración de aforos guardada."); }}>
                                             Guardar y Aplicar a Toda la Agenda
                                         </button>
                                     </div>

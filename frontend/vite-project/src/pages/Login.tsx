@@ -3,6 +3,7 @@ import { Link } from "react-router-dom"
 import { translations, getTranslation } from "../utils/i18n"
 import type { Language } from "../utils/i18n"
 import { signIn, apiFetch, resetPassword } from "../services/api"
+import { toast } from "sonner"
 
 export default function Login() {
 
@@ -57,8 +58,6 @@ export default function Login() {
             }
 
             localStorage.setItem("user_session", JSON.stringify(userData))
-
-            alert(`¡Bienvenido de nuevo, ${userData.fullName}!`)
             window.location.href = userData.role !== "USER" ? "/admin" : "/"
         } catch (err: any) {
             console.warn("Fallo el login con Supabase, intentando fallback local...", err.message);
@@ -91,12 +90,10 @@ export default function Login() {
                     fullName: usuarioLocal.fullName || 'Usuario Local'
                 };
                 localStorage.setItem("user_session", JSON.stringify(localUserData));
-                alert(`¡Bienvenido de nuevo (Modo Local), ${localUserData.fullName}!`);
                 window.location.href = localUserData.role !== "USER" ? "/admin" : "/perfil";
                 return;
             }
-
-            alert(`Error al iniciar sesión: ${err.message || 'Credenciales inválidas y no se encontró usuario local'}`)
+            toast.error(err.message || 'Credenciales inválidas');
         } finally {
             setIsLoading(false)
         }
@@ -109,10 +106,10 @@ export default function Login() {
         try {
             const { error } = await resetPassword(email);
             if (error) throw error;
-            alert("Si el correo electrónico existe en nuestro sistema, recibirás un enlace para restablecer tu contraseña.");
+            toast.success("Enlace enviado si el correo existe.");
         } catch (err: any) {
             console.error("Error reseteando contraseña", err);
-            alert(`Error al solicitar restablecimiento: ${err.message}`);
+            toast.error("Error al solicitar el enlace.");
         }
     }
 
