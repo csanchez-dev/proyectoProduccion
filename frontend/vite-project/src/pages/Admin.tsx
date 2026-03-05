@@ -2285,6 +2285,112 @@ export default function Admin() {
 
                 </main>
             </div>
+
+            {/* ── MODAL: EDITAR INVITADO ── */}
+            {editingSpeaker && (
+                <div className="modal-overlay" style={{
+                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+                    zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
+                }}>
+                    <div className="modal-content fade-in" style={{
+                        background: 'white', borderRadius: '16px', padding: '2rem',
+                        width: '100%', maxWidth: '520px', boxShadow: '0 20px 50px rgba(0,0,0,0.3)'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h3 style={{ margin: 0, fontSize: '1.3rem', color: '#1e293b' }}>✏️ Editar Invitado</h3>
+                            <button onClick={() => setEditingSpeaker(null)} style={{
+                                background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#94a3b8'
+                            }}>✕</button>
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+                            <img
+                                src={editingSpeaker.avatar_url || editingSpeaker.avatar || '/default-avatar.png'}
+                                alt="Preview"
+                                style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #2563eb' }}
+                            />
+                        </div>
+
+                        <form onSubmit={handleSaveSpeakerEdit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div className="form-group">
+                                <label style={{ fontWeight: '600', color: '#374151', fontSize: '0.9rem' }}>Nombre Completo</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={editingSpeaker.nombre || editingSpeaker.name || ''}
+                                    onChange={(e) => setEditingSpeaker({ ...editingSpeaker, nombre: e.target.value, name: e.target.value })}
+                                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem' }}
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label style={{ fontWeight: '600', color: '#374151', fontSize: '0.9rem' }}>Organización / Universidad</label>
+                                <input
+                                    type="text"
+                                    value={editingSpeaker.organizacion || editingSpeaker.organization || ''}
+                                    onChange={(e) => setEditingSpeaker({ ...editingSpeaker, organizacion: e.target.value, organization: e.target.value })}
+                                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem' }}
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label style={{ fontWeight: '600', color: '#374151', fontSize: '0.9rem' }}>Bio / Perfil Profesional</label>
+                                <textarea
+                                    rows={3}
+                                    value={editingSpeaker.bio || ''}
+                                    onChange={(e) => setEditingSpeaker({ ...editingSpeaker, bio: e.target.value })}
+                                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem', resize: 'vertical' }}
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label style={{ fontWeight: '600', color: '#374151', fontSize: '0.9rem' }}>Foto del Invitado (cambiar)</label>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            if (file.size > 1500000) { toast.error("La imagen es muy pesada (máx 1.5MB)."); return; }
+                                            const reader = new FileReader();
+                                            reader.onloadend = () => {
+                                                if (reader.result) {
+                                                    setEditingSpeaker({ ...editingSpeaker, avatar_url: reader.result as string, avatar: reader.result as string });
+                                                }
+                                            };
+                                            reader.readAsDataURL(file);
+                                        }
+                                    }}
+                                    style={{ width: '100%' }}
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setEditingSpeaker(null)}
+                                    style={{
+                                        flex: 1, padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px',
+                                        background: 'white', cursor: 'pointer', fontWeight: '600', color: '#6b7280'
+                                    }}
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    style={{
+                                        flex: 2, padding: '10px', border: 'none', borderRadius: '8px',
+                                        background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', color: 'white',
+                                        cursor: 'pointer', fontWeight: '700', fontSize: '1rem'
+                                    }}
+                                >
+                                    💾 Guardar Cambios
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
