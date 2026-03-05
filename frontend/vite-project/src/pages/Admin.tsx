@@ -1068,21 +1068,50 @@ export default function Admin() {
                                     </div>
                                     <div className="form-group">
                                         <label>Tema por País (Colores y Estilos)</label>
-                                        <select
-                                            defaultValue={localStorage.getItem("site_theme") || "default"}
-                                            onChange={(e) => {
-                                                const theme = e.target.value;
-                                                localStorage.setItem("site_theme", theme);
-                                                document.body.className = theme === "default" ? "" : `theme-${theme}`;
-                                                dispatchUpdate();
-                                            }}
-                                            className="theme-select"
-                                        >
-                                            <option value="default">Estándar (Universidad Católica)</option>
-                                            <option value="colombia">Colombia (Amarillo, Azul y Rojo)</option>
-                                            <option value="italy">Italia (Verde, Blanco y Rojo)</option>
-                                            <option value="mexico">México (Verde y Rojo)</option>
-                                        </select>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginTop: '0.5rem' }}>
+                                            {[
+                                                { id: 'default', name: 'Estándar', desc: 'Universidad Católica', colors: ['#2563EB', '#1E293B', '#ffffff'] },
+                                                { id: 'colombia', name: 'Colombia', desc: 'Amarillo, Azul, Rojo', colors: ['#FFD100', '#003893', '#CE1126'] },
+                                                { id: 'italy', name: 'Italia', desc: 'Verde, Blanco, Rojo', colors: ['#009246', '#ffffff', '#CE2B37'] },
+                                                { id: 'mexico', name: 'México', desc: 'Verde Oscuro, Rojo', colors: ['#006341', '#ffffff', '#C8102E'] },
+                                            ].map(theme => {
+                                                const currentTheme = localStorage.getItem("site_theme") || "default";
+                                                const isActive = currentTheme === theme.id;
+                                                return (
+                                                    <div
+                                                        key={theme.id}
+                                                        onClick={() => {
+                                                            localStorage.setItem("site_theme", theme.id);
+                                                            document.body.className = theme.id === "default" ? "" : `theme-${theme.id}`;
+                                                            dispatchUpdate();
+                                                        }}
+                                                        style={{
+                                                            padding: '1rem',
+                                                            borderRadius: '12px',
+                                                            border: isActive ? '2px solid var(--primary-color)' : '2px solid #e2e8f0',
+                                                            background: isActive ? '#f8fafc' : 'white',
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s ease',
+                                                            boxShadow: isActive ? '0 4px 12px rgba(37, 99, 235, 0.15)' : 'none',
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            gap: '0.5rem'
+                                                        }}
+                                                    >
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                            <strong style={{ fontSize: '1.05rem', color: '#1e293b' }}>{theme.name}</strong>
+                                                            {isActive && <span style={{ color: 'var(--primary-color)', fontSize: '1.2rem' }}>✓</span>}
+                                                        </div>
+                                                        <span style={{ fontSize: '0.85rem', color: '#64748b' }}>{theme.desc}</span>
+                                                        <div style={{ display: 'flex', height: '24px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                                                            {theme.colors.map((color, idx) => (
+                                                                <div key={idx} style={{ flex: 1, backgroundColor: color }}></div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                     <div className="form-group">
                                         <label>Imagen de Banner (Cabecera)</label>
