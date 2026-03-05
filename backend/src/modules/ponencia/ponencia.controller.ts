@@ -19,3 +19,10 @@ export const deletePonencia = async (req: Request, res: Response) => {
   if (error) return res.status(400).json({ error: error.message })
   res.status(204).send()
 }
+
+export const putPonencia = async (req: Request, res: Response) => {
+  const { id } = req.params
+  const { data, error } = await service.actualizarPonencia(id as string, req.body)
+  if (error) return res.status(403).json({ error: error.message })
+  res.status(200).json(data)
+}

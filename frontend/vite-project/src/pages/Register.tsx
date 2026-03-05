@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { translations, getTranslation } from "../utils/i18n"
 import type { Language } from "../utils/i18n"
-
 import { signIn, register } from "../services/api"
-
+import { toast } from "sonner"
 
 export default function Register() {
+  const navigate = useNavigate()
   const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
+  const [showPolicyModal, setShowPolicyModal] = useState(false)
 
   useEffect(() => {
     const updateLang = () => setLang((localStorage.getItem("app_lang") as Language) || 'es');
@@ -42,36 +43,37 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.acceptTerms) {
-      alert("Debes aceptar la política de tratamiento de datos para continuar.")
+      toast.warning("Debes aceptar la política de tratamiento de datos.");
       return
     }
 
     setIsLoading(true)
     try {
-      // 1. Llamada única al backend para crear usuario y perfil
-      // Mapeamos el rol interno al valor que espera el backend
       const mappedRole = role === "student" ? "ESTUDIANTE" : role === "professor" ? "DOCENTE" : "INVITADO";
 
       try {
         await register({ ...formData, rol: mappedRole })
-        // 2. Auto-login para que el usuario pueda entrar de una vez
-        const { data: authData, error: authError } = await signIn(formData.email, formData.password)
+        const { error: authError } = await signIn(formData.email, formData.password)
 
         if (authError) {
-          alert("¡Cuenta creada! Por favor inicia sesión con tus credenciales.")
-          window.location.href = "/login"
+          navigate("/login")
           return
         }
       } catch (backendError: any) {
-        // FALLBACK LOCAL: Si falla el backend (ej: rate limit), guardamos localmente para demostración
-        console.warn("Fallo el backend, usando registro local simulado", backendError);
+        const errorMsg = backendError.message || "";
+        if (errorMsg.includes("documento") || errorMsg.includes("código institucional") || errorMsg.includes("registrado")) {
+          throw new Error(errorMsg);
+        }
+
         const usuariosGuardados = JSON.parse(localStorage.getItem('usuarios_locales') || '[]');
-        usuariosGuardados.push({
-          ...formData,
-          role: mappedRole
-        });
+        const existsCC = usuariosGuardados.some((u: any) => u.documentNumber === formData.documentNumber);
+        const existsCode = mappedRole === 'ESTUDIANTE' && usuariosGuardados.some((u: any) => u.institutionalCode === formData.institutionalCode);
+
+        if (existsCC) throw new Error("El número de documento ya se encuentra registrado (Local).");
+        if (existsCode) throw new Error("El código institucional ya se encuentra registrado por otro estudiante (Local).");
+
+        usuariosGuardados.push({ ...formData, role: mappedRole });
         localStorage.setItem('usuarios_locales', JSON.stringify(usuariosGuardados));
-        // No lanzamos error para que siga el flujo local
       }
 
       const userData = {
@@ -80,12 +82,8 @@ export default function Register() {
         role: mappedRole,
         gender: formData.gender
       }
-
       localStorage.setItem("user_session", JSON.stringify(userData))
 
-      alert("¡Registro exitoso! Bienvenido al CONIITI 2026.")
-
-      // Limpiar formulario para permitir registrar más si no redirigimos
       setFormData({
         fullName: "",
         documentType: "CC",
@@ -97,13 +95,10 @@ export default function Register() {
         gender: "",
         acceptTerms: false
       });
-      setRole("student"); // Resetear rol por defecto
-
-      // Quitar redirección para que puedas ver el formulario vacío y seguir registrando:
-      // window.location.href = "/perfil"
+      setRole("student");
+      navigate("/perfil")
     } catch (err: any) {
-      console.error("Error en registro:", err)
-      alert(`Error al registrarse: ${err.message || 'Error desconocido'}`)
+      toast.error(err.message || 'Error al registrarse');
     } finally {
       setIsLoading(false)
     }
@@ -122,67 +117,25 @@ export default function Register() {
           <div className="form-group">
             <label>¿Quién eres?</label>
             <div className="role-selector">
-              <button
-                type="button"
-                className={role === "student" ? "active" : ""}
-                onClick={() => setRole("student")}
-              >
-                Estudiante
-              </button>
-              <button
-                type="button"
-                className={role === "professor" ? "active" : ""}
-                onClick={() => setRole("professor")}
-              >
-                Profesor
-              </button>
-              <button
-                type="button"
-                className={role === "guest" ? "active" : ""}
-                onClick={() => setRole("guest")}
-              >
-                Invitado
-              </button>
+              <button type="button" className={role === "student" ? "active" : ""} onClick={() => setRole("student")}>Estudiante</button>
+              <button type="button" className={role === "professor" ? "active" : ""} onClick={() => setRole("professor")}>Profesor</button>
+              <button type="button" className={role === "guest" ? "active" : ""} onClick={() => setRole("guest")}>Invitado</button>
             </div>
           </div>
 
           <div className="form-group">
             <label htmlFor="fullName">Nombres y Apellidos Completos</label>
-            <input
-              type="text"
-              id="fullName"
-              name="fullName"
-              required
-              value={formData.fullName}
-              onChange={handleInputChange}
-              placeholder="Ej: Juan Pérez"
-            />
+            <input type="text" id="fullName" name="fullName" required value={formData.fullName} onChange={handleInputChange} />
           </div>
 
           <div className="form-group">
             <label htmlFor="email">Correo Electrónico</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              required
-              value={formData.email}
-              onChange={handleInputChange}
-              placeholder="ejemplo@correo.com"
-            />
+            <input type="email" id="email" name="email" required value={formData.email} onChange={handleInputChange} />
           </div>
 
           <div className="form-group">
             <label htmlFor="password">Contraseña</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              required
-              value={formData.password}
-              onChange={handleInputChange}
-              placeholder="********"
-            />
+            <input type="password" id="password" name="password" required value={formData.password} onChange={handleInputChange} />
           </div>
 
           {role && (
@@ -190,26 +143,14 @@ export default function Register() {
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="documentType">Tipo de Documento</label>
-                  <select
-                    id="documentType"
-                    name="documentType"
-                    value={formData.documentType}
-                    onChange={handleInputChange}
-                  >
+                  <select id="documentType" name="documentType" value={formData.documentType} onChange={handleInputChange}>
                     <option value="CC">Cédula de Ciudadanía</option>
                     <option value="CE">Cédula de Extranjería</option>
                   </select>
                 </div>
                 <div className="form-group">
                   <label htmlFor="documentNumber">Número</label>
-                  <input
-                    type="text"
-                    id="documentNumber"
-                    name="documentNumber"
-                    required
-                    value={formData.documentNumber}
-                    onChange={handleInputChange}
-                  />
+                  <input type="text" id="documentNumber" name="documentNumber" required value={formData.documentNumber} onChange={handleInputChange} />
                 </div>
               </div>
 
@@ -217,24 +158,11 @@ export default function Register() {
                 <div className="form-row fade-in">
                   <div className="form-group">
                     <label htmlFor="institutionalCode">Código</label>
-                    <input
-                      type="text"
-                      id="institutionalCode"
-                      name="institutionalCode"
-                      required
-                      value={formData.institutionalCode}
-                      onChange={handleInputChange}
-                    />
+                    <input type="text" id="institutionalCode" name="institutionalCode" required value={formData.institutionalCode} onChange={handleInputChange} />
                   </div>
                   <div className="form-group">
                     <label htmlFor="career">Carrera</label>
-                    <select
-                      id="career"
-                      name="career"
-                      required
-                      value={formData.career}
-                      onChange={handleInputChange}
-                    >
+                    <select id="career" name="career" required value={formData.career} onChange={handleInputChange}>
                       <option value="">Selecciona tu carrera</option>
                       <option value="Administración de Empresas">Administración de Empresas</option>
                       <option value="Arquitectura">Arquitectura</option>
@@ -254,14 +182,7 @@ export default function Register() {
 
           <div className="form-group" style={{ marginTop: '1rem' }}>
             <label htmlFor="gender">{t('register_gender')}</label>
-            <select
-              id="gender"
-              name="gender"
-              required
-              value={formData.gender}
-              onChange={handleInputChange}
-              style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #ddd' }}
-            >
+            <select id="gender" name="gender" required value={formData.gender} onChange={handleInputChange} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #ddd' }}>
               <option value="">{lang === 'es' ? "Selecciona tu género" : "Select your gender"}</option>
               <option value="Masculino">{t('register_gender_male')}</option>
               <option value="Femenino">{t('register_gender_female')}</option>
@@ -270,34 +191,33 @@ export default function Register() {
           </div>
 
           <div className="form-group checkbox-group fade-in">
-            <input
-              type="checkbox"
-              id="acceptTerms"
-              name="acceptTerms"
-              required
-              checked={formData.acceptTerms}
-              onChange={handleInputChange}
-            />
+            <input type="checkbox" id="acceptTerms" name="acceptTerms" required checked={formData.acceptTerms} onChange={handleInputChange} />
             <label htmlFor="acceptTerms">
-              Acepto la <a href="#politica" onClick={(e) => { e.preventDefault(); alert("Política de Tratamiento de Datos: Sus datos serán usados exclusivamente para fines académicos y de gestión del CONIITI 2026 de acuerdo con la Ley 1581 de 2012.") }}>política de tratamiento de datos personales</a> y términos y condiciones.
+              Acepto la <a href="#politica" onClick={(e) => { e.preventDefault(); setShowPolicyModal(true); }}>política de tratamiento de datos personales</a> y términos y condiciones.
             </label>
           </div>
 
           <button type="submit" className="btn-submit premium-btn" disabled={isLoading}>
             {isLoading ? (lang === 'es' ? "Registrando..." : "Registering...") : t('register_submit')}
           </button>
-
         </form>
 
         <div className="auth-footer">
-          <p>
-            {lang === 'es' ? "¿Ya tienes una cuenta?" : "Already have an account?"}{" "}
-            <Link to="/login" className="accent-link">
-              {lang === 'es' ? "Inicia sesión" : "Login here"}
-            </Link>
-          </p>
+          <p>{lang === 'es' ? "¿Ya tienes una cuenta?" : "Already have an account?"}{" "} <Link to="/login" className="accent-link">{lang === 'es' ? "Inicia sesión" : "Login here"}</Link></p>
         </div>
       </div>
+
+      {showPolicyModal && (
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
+          <div className="modal-content" style={{ maxWidth: '400px', textAlign: 'left' }}>
+            <h3 style={{ color: '#1f2a44', marginBottom: '1rem' }}>Política de Datos</h3>
+            <p style={{ fontSize: '0.9rem', color: '#666', lineHeight: '1.5' }}>
+              Sus datos serán usados exclusivamente para fines académicos y de gestión del CONIITI 2026 de acuerdo con la Ley 1581 de 2012.
+            </p>
+            <button className="btn-submit" onClick={() => setShowPolicyModal(false)} style={{ marginTop: '1.5rem' }}>Entendido</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

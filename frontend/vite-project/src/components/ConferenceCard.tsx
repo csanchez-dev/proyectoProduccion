@@ -12,7 +12,13 @@ export default function ConferenceCard({ conference }: Props) {
     return capacities[conference.location] || 150;
   });
 
-  const [isRegistered, setIsRegistered] = useState(false)
+  const [isRegistered, setIsRegistered] = useState(() => {
+    const sessionData = localStorage.getItem("user_session");
+    if (!sessionData) return false;
+    const currentUser = JSON.parse(sessionData);
+    const userRegs = JSON.parse(localStorage.getItem(`registrations_${currentUser.email}`) || '[]');
+    return userRegs.some((r: any) => r.id === conference.id);
+  })
   const [isLoading, setIsLoading] = useState(false)
 
   const [availableSeats, setAvailableSeats] = useState(() => {
@@ -50,16 +56,51 @@ export default function ConferenceCard({ conference }: Props) {
 
   const handleRegister = () => {
     if (isRegistered || isFull) return;
+
+    const sessionData = localStorage.getItem("user_session");
+    if (!sessionData) {
+      alert("Debes iniciar sesión para inscribirte en conferencias.");
+      window.location.href = "/login";
+      return;
+    }
+
+    const currentUser = JSON.parse(sessionData);
     setIsLoading(true);
+
     setTimeout(() => {
       setIsLoading(false);
       setIsRegistered(true);
       setAvailableSeats((prev: number) => prev - 1);
+
+      // 1. Actualizar estadísticas globales (cupos)
       const stats = JSON.parse(localStorage.getItem('conf_stats') || '[]');
       const confIndex = stats.findIndex((s: any) => s.name === conference.title);
       if (confIndex >= 0) { stats[confIndex].value += 1; }
       else { stats.push({ name: conference.title, value: 1 }); }
       localStorage.setItem('conf_stats', JSON.stringify(stats));
+
+      // 2. Guardar inscripción para el perfil del usuario
+      const userRegKey = `registrations_${currentUser.email}`;
+      const userRegs = JSON.parse(localStorage.getItem(userRegKey) || '[]');
+
+      const normalized = {
+        ...conference,
+        id: conference.id || (conference as any).id_ponencia || Date.now().toString(),
+        title: conference.title || (conference as any).titulo || 'Sin título',
+        startTime: conference.startTime || (conference as any).hora_inicio || '',
+        endTime: conference.endTime || (conference as any).hora_fin || '',
+        location: conference.location || (conference as any).sala?.nombre || (conference as any).ubicacion || 'Pendiente',
+        dayId: conference.dayId || ((conference as any).dia_id ? `day${(conference as any).dia_id}` : 'day1'),
+        attended: (conference as any).attended || false
+      };
+
+      if (!userRegs.some((r: any) => String(r.id) === String(normalized.id) || r.title === normalized.title)) {
+        userRegs.push(normalized);
+        localStorage.setItem(userRegKey, JSON.stringify(userRegs));
+        window.dispatchEvent(new Event('storage'));
+      }
+
+      alert("🎉 ¡Inscripción exitosa! Puedes verla en tu perfil.");
     }, 1500);
   }
 
@@ -67,7 +108,20 @@ export default function ConferenceCard({ conference }: Props) {
     <div className={`card ${isRegistered ? 'registered' : ''} ${isFull ? 'full' : ''}`} style={{ position: 'relative' }}>
 
       {/* 1. Badge de presencialidad movido a la esquina superior derecha */}
-      <div className={`modality-badge ${conference.type || 'presencial'}`}>
+      <div className={`modality-badge ${conference.type || 'presencial'}`} style={{
+        position: 'absolute',
+        top: '10px',
+        right: '10px',
+        bottom: 'auto',
+        width: 'fit-content',
+        zIndex: 10,
+        backgroundColor: '#2ecc71',
+        color: 'white',
+        padding: '5px 12px',
+        borderRadius: '20px',
+        fontSize: '0.8rem',
+        fontWeight: 'bold'
+      }}>
         {conference.type === 'virtual' ? '🌐 Virtual' : '📍 Presencial'}
       </div>
 
@@ -110,8 +164,8 @@ export default function ConferenceCard({ conference }: Props) {
           backgroundColor: getStockColor(),
           padding: '10px',
           borderRadius: '8px',
-          transition: 'background-color 0.5s ease',
-          margin: '1rem 2rem'
+          marginBottom: '15px',
+          transition: 'background-color 0.5s ease'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
             <span className="stock-label" style={{ fontWeight: 'bold', color: '#333' }}>Disponibilidad:</span>
@@ -135,9 +189,39 @@ export default function ConferenceCard({ conference }: Props) {
         <p className="description">{conference.description}</p>
 
         <div className="info" style={{ marginTop: '10px' }}>
-          <div className="info-row"><span>🕒 {new Date(conference.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div>
+          <div className="info-row">
+            <span>
+              🕒 {conference.startTime.includes(':') && conference.startTime.length <= 5
+                ? conference.startTime
+                : new Date(conference.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {conference.endTime && ` - ${conference.endTime.includes(':') && conference.endTime.length <= 5 ? conference.endTime : new Date(conference.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+            </span>
+          </div>
           <div className="info-row"><span style={{ fontWeight: 600 }}>📍 {conference.type === 'virtual' ? 'Plataforma Virtual' : conference.location}</span></div>
           <div className="info-row"><span>👤 {conference.speaker.name}</span></div>
+          {(conference.documentUrl || conference.documentFile) && (
+            <div className="info-row" style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {conference.documentUrl && (
+                <a
+                  href={conference.documentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: 'var(--primary-color)', fontWeight: 'bold', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.9rem' }}
+                >
+                  🔗 Enlace al Material
+                </a>
+              )}
+              {conference.documentFile && (
+                <a
+                  href={conference.documentFile}
+                  download={`Material-${conference.title.replace(/\s+/g, '-')}`}
+                  style={{ color: '#27ae60', fontWeight: 'bold', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.9rem' }}
+                >
+                  📁 Descargar Documento
+                </a>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

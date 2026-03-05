@@ -67,6 +67,7 @@ export const getPonencias = async () => {
 
 export const getEventos = () => apiFetch('/eventos');
 export const getPonentes = () => apiFetch('/ponentes');
+export const getUsuarios = () => apiFetch('/usuarios');
 
 // POSTers (Guardado)
 export const createPonencia = (data: any) => apiFetch('/ponencias', {
@@ -83,6 +84,11 @@ export const deletePonencia = (id: string) => apiFetch(`/ponencias/${id}`, {
     method: 'DELETE'
 });
 
+export const updatePonencia = (id: string, data: any) => apiFetch(`/ponencias/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data)
+});
+
 export const createEvento = (data: any) => apiFetch('/eventos', {
     method: 'POST',
     body: JSON.stringify(data)
@@ -91,6 +97,11 @@ export const createEvento = (data: any) => apiFetch('/eventos', {
 
 export const createPerfil = (data: any) => apiFetch('/usuarios/perfil', {
     method: 'POST',
+    body: JSON.stringify(data)
+});
+
+export const updatePerfil = (data: any) => apiFetch('/usuarios/perfil', {
+    method: 'PUT',
     body: JSON.stringify(data)
 });
 
@@ -104,3 +115,7 @@ export const register = (data: any) => apiFetch('/usuarios/register', {
 export const signUp = (email: string, pass: string) => supabase.auth.signUp({ email, password: pass });
 export const signIn = (email: string, pass: string) => supabase.auth.signInWithPassword({ email, password: pass });
 export const signOut = () => supabase.auth.signOut();
+export const resetPassword = (email: string) => supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/actualizar-password`,
+});
+export const updatePassword = (newPassword: string) => supabase.auth.updateUser({ password: newPassword });

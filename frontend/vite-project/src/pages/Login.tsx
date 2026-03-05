@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { translations, getTranslation } from "../utils/i18n"
 import type { Language } from "../utils/i18n"
-import { signIn, apiFetch } from "../services/api"
+import { signIn, apiFetch, resetPassword } from "../services/api"
+import { toast } from "sonner"
 
 export default function Login() {
+    const navigate = useNavigate()
 
     const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
     const [isLoading, setIsLoading] = useState(false)
@@ -12,6 +14,14 @@ export default function Login() {
     useEffect(() => {
         const updateLang = () => setLang((localStorage.getItem("app_lang") as Language) || 'es');
         window.addEventListener('app-lang-updated', updateLang);
+
+        // Pre-llenar el formulario con el último usuario local creado (solo para agilizar pruebas)
+        const usuariosGuardados = JSON.parse(localStorage.getItem('usuarios_locales') || '[]');
+        if (usuariosGuardados.length > 0) {
+            const ultimoUsuario = usuariosGuardados[usuariosGuardados.length - 1];
+            setFormData({ email: ultimoUsuario.email, password: ultimoUsuario.password });
+        }
+
         return () => window.removeEventListener('app-lang-updated', updateLang);
     }, []);
 
@@ -49,16 +59,24 @@ export default function Login() {
             }
 
             localStorage.setItem("user_session", JSON.stringify(userData))
-
-            alert(`¡Bienvenido de nuevo, ${userData.fullName}!`)
-            window.location.href = userData.role !== "USER" ? "/admin" : "/"
+            navigate(userData.role !== "USER" ? "/admin" : "/")
         } catch (err: any) {
             console.warn("Fallo el login con Supabase, intentando fallback local...", err.message);
 
-            // Fallback para Super Usuarios si la DB está vacía o hay error (PRODUCCIÓN: quitar esto)
+            // Fallback para Usuarios según requerimiento
             if (formData.email === "superadmin@coniiti.com" && formData.password === "super123") {
-                localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'SUPER_ADMIN', fullName: 'Super Admin' }))
-                window.location.href = "/admin";
+                localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'SUPER_ADMIN', fullName: 'Super Usuario' }))
+                navigate("/admin")
+                return;
+            }
+            if (formData.email === "admin@coniiti.com" && formData.password === "admin123") {
+                localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'ADMIN', fullName: 'Administrador de Eventos' }))
+                navigate("/admin")
+                return;
+            }
+            if (formData.email === "viewer@coniiti.com" && formData.password === "viewer123") {
+                localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'VIEWER', fullName: 'Visualizador de Datos' }))
+                navigate("/admin")
                 return;
             }
 
@@ -73,14 +91,26 @@ export default function Login() {
                     fullName: usuarioLocal.fullName || 'Usuario Local'
                 };
                 localStorage.setItem("user_session", JSON.stringify(localUserData));
-                alert(`¡Bienvenido de nuevo (Modo Local), ${localUserData.fullName}!`);
-                window.location.href = localUserData.role !== "USER" ? "/admin" : "/perfil";
+                navigate(localUserData.role !== "USER" ? "/admin" : "/perfil")
                 return;
             }
-
-            alert(`Error al iniciar sesión: ${err.message || 'Credenciales inválidas y no se encontró usuario local'}`)
+            toast.error(err.message || 'Credenciales inválidas');
         } finally {
             setIsLoading(false)
+        }
+    }
+
+    const handleForgotPassword = async () => {
+        const email = prompt("Ingresa el correo electrónico asociado a tu cuenta:");
+        if (!email) return;
+
+        try {
+            const { error } = await resetPassword(email);
+            if (error) throw error;
+            toast.success("Enlace enviado si el correo existe.");
+        } catch (err: any) {
+            console.error("Error reseteando contraseña", err);
+            toast.error("Error al solicitar el enlace.");
         }
     }
 
@@ -103,7 +133,6 @@ export default function Login() {
                             required
                             value={formData.email}
                             onChange={handleInputChange}
-                            placeholder="admin@coniiti.com"
                         />
                     </div>
 
@@ -116,7 +145,6 @@ export default function Login() {
                             required
                             value={formData.password}
                             onChange={handleInputChange}
-                            placeholder="********"
                         />
                     </div>
 
@@ -125,6 +153,12 @@ export default function Login() {
                     </button>
 
                 </form>
+
+                <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+                    <a href="#" className="accent-link" onClick={(e) => { e.preventDefault(); handleForgotPassword(); }} style={{ fontSize: '0.9rem' }}>
+                        {lang === 'es' ? "¿Olvidaste tu contraseña?" : "Forgot your password?"}
+                    </a>
+                </div>
 
                 <div className="auth-footer">
                     <p>

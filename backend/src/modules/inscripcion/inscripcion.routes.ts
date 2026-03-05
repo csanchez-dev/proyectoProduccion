@@ -1,10 +1,10 @@
 import { Router } from 'express'
-import { verifyToken } from '../../middleware/auth.middleware'
+import { authMiddleware } from '../../middleware/auth.middleware'
 import * as controller from './inscripcion.controller'
 
 const router = Router()
 
-router.post('/', verifyToken, controller.inscribirse)
-router.get('/mis-inscripciones', verifyToken, controller.misInscripciones)
+router.post('/', authMiddleware, controller.inscribirse)
+router.get('/mis-inscripciones', authMiddleware, controller.misInscripciones)
 
 export default router

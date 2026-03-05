@@ -6,10 +6,37 @@ import { admin_supabase } from '../../config/supabase'
 // Registrar un usuario(CREATE)
 
 export const registerUser = async (req: Request, res: Response) => {
-  const { fullName, email, password, rol, career, gender, documentNumber } = req.body
+  const { fullName, email, password, rol, career, gender, documentNumber, institutionalCode } = req.body
 
   try {
     console.log("Intentando registrar usuario:", email)
+
+    // Validar en la BD que no exista ya el documento de identidad
+    if (documentNumber) {
+      const { data: docExists } = await admin_supabase
+        .from('perfil_usuario')
+        .select('id')
+        .eq('documento', documentNumber)
+        .maybeSingle()
+
+      if (docExists) {
+        return res.status(400).json({ error: "El número de documento ya se encuentra registrado." })
+      }
+    }
+
+    // Validar en la BD que no exista ya el código institucional
+    if (rol === 'ESTUDIANTE' && institutionalCode) {
+      const { data: codeExists } = await admin_supabase
+        .from('perfil_usuario')
+        .select('id')
+        .eq('codigo_institucional', institutionalCode)
+        .maybeSingle()
+
+      if (codeExists) {
+        return res.status(400).json({ error: "El código institucional ya se encuentra registrado por otro estudiante." })
+      }
+    }
+
     // 1. Crear usuario en auth supabase
     const { data, error } = await admin_supabase.auth.signUp({
       email,
@@ -32,7 +59,8 @@ export const registerUser = async (req: Request, res: Response) => {
         rol: rol || 'USER', // Ahora viene del frontend o por defecto USER
         carrera: career,
         genero: gender,
-        documento: documentNumber
+        documento: documentNumber,
+        codigo_institucional: institutionalCode
       })
 
     if (profileError) {
@@ -81,6 +109,42 @@ export const crearPerfil = async (req: any, res: any) => {
     if (error) throw error
 
     res.status(201).json({ message: 'Perfil creado correctamente' })
+  } catch (err: any) {
+    res.status(400).json({ error: err.message })
+  }
+}
+
+export const actualizarPerfil = async (req: any, res: any) => {
+  try {
+    const userId = req.user.id
+    const { nombre_completo, carrera } = req.body
+
+    const { error } = await admin_supabase
+      .from('perfil_usuario')
+      .update({
+        nombre_completo,
+        carrera
+      })
+      .eq('id', userId)
+
+    if (error) throw error
+
+    res.json({ message: 'Perfil actualizado correctamente' })
+  } catch (err: any) {
+    res.status(400).json({ error: err.message })
+  }
+}
+
+export const obtenerUsuarios = async (req: any, res: any) => {
+  try {
+    const { data, error } = await admin_supabase
+      .from('perfil_usuario')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+
+    res.json(data)
   } catch (err: any) {
     res.status(400).json({ error: err.message })
   }

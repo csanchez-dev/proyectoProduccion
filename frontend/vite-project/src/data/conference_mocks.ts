@@ -11,6 +11,8 @@ export const conferences: Conference[] = [
     category: "IA",
     level: "Intermedio",
     type: "presencial",
+    dayId: "day1",
+    documentUrl: "https://ejemplo.com/slides-ia",
     speaker: {
       name: "Laura Gómez",
       bio: "Ingeniera en Machine Learning",
@@ -28,6 +30,7 @@ export const conferences: Conference[] = [
     category: "Seguridad",
     level: "Avanzado",
     type: "presencial",
+    dayId: "day1",
     speaker: {
       name: "Andrés Martínez",
       bio: "Especialista en ciberseguridad y auditorías de sistemas",
@@ -45,6 +48,8 @@ export const conferences: Conference[] = [
     category: "Blockchain",
     level: "Intermedio",
     type: "presencial",
+    dayId: "day1",
+    documentUrl: "https://ejemplo.com/blockchain-whitepaper",
     speaker: {
       name: "Carolina Ruiz",
       bio: "Consultora en tecnología financiera y blockchain",
@@ -62,6 +67,7 @@ export const conferences: Conference[] = [
     category: "Robótica",
     level: "Avanzado",
     type: "virtual",
+    dayId: "day1",
     virtualLink: "https://zoom.us/j/123456789",
     speaker: {
       name: "Diego Vargas",
@@ -80,6 +86,7 @@ export const conferences: Conference[] = [
     category: "Sostenibilidad",
     level: "Básico",
     type: "presencial",
+    dayId: "day2",
     speaker: {
       name: "Mariana López",
       bio: "Investigadora en tecnologías sostenibles",
