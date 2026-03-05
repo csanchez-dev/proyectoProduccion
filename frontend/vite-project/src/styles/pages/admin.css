@@ -70,14 +70,31 @@
 
 .view-header {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, #1f2a44 0%, #2d3f6e 100%);
+  border-radius: 12px;
+  color: white;
+}
+
+.view-header h2 {
   margin: 0;
-  background-color: #1f2a44;
-  border-bottom: 5px solid var(--primary-color);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  color: white;
+  font-size: 1.4rem;
+}
+
+.view-header p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.9rem;
+}
+
+.admin-view {
+  padding: 1rem 0;
 }
 
 .btn-add {
@@ -129,17 +146,25 @@
 
 .guests-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.5rem;
   padding: 1rem 0;
+  align-items: start;
 }
-
 
 .guest-admin-card {
   text-align: center;
-  padding: 1.5rem;
-  border: 1px solid #eee;
-  border-radius: 12px;
+  padding: 1.5rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.guest-admin-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .guest-admin-card img {
@@ -147,7 +172,24 @@
   height: 80px;
   border-radius: 50%;
   object-fit: cover;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
+  border: 3px solid var(--primary-color, #2563EB);
+}
+
+.guest-info h4 {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+  color: #1e293b;
+}
+
+.guest-info p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.guest-actions {
+  margin-top: 1rem;
 }
 
 /* BotÃ³n de GestiÃ³n en Header (Discreto) */

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import DayTabs, { type DayOption } from "../components/DayTabs";
 import ConferenceCard from "../components/ConferenceCard"
 import { conferences as initialConferences } from "../data/conference_mocks"
@@ -6,14 +6,16 @@ import type { Language } from "../utils/i18n"
 import { getPonencias } from "../services/api";
 
 export default function Agenda() {
+  const [days, setDays] = useState<DayOption[]>(() => {
+    const saved = localStorage.getItem("agenda_days_info");
+    return saved ? JSON.parse(saved) : [
+      { id: "day1", label: "Día 1" },
+      { id: "day2", label: "Día 2" },
+      { id: "day3", label: "Día 3" },
+    ];
+  });
 
-  const days: DayOption[] = [
-    { id: "day1", label: "Día 1" },
-    { id: "day2", label: "Día 2" },
-    { id: "day3", label: "Día 3" },
-  ];
-
-  const [activeDayId, setActiveDayId] = useState<string>(days[0].id);
+  const [activeDayId, setActiveDayId] = useState<string>(days[0]?.id || "day1");
 
   const [lang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
 
@@ -43,10 +45,47 @@ export default function Agenda() {
   }, []);
 
   const [searchTerm, setSearchTerm] = useState("")
-  const [categoryFilter, setCategoryFilter] = useState("all")
-  const [levelFilter, setLevelFilter] = useState("all")
-  const [careerFilter, setCareerFilter] = useState("all")
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({})
 
+  const [filterConfig, setFilterConfig] = useState<any[]>(() => {
+    const saved = localStorage.getItem("agenda_filters_config");
+    if (saved) return JSON.parse(saved);
+
+    // Configuración inicial por defecto basada en el pedido del usuario
+    return [
+      {
+        id: "modality",
+        label: "Modalidad",
+        property: "type",
+        icon: "📍",
+        options: [
+          { value: "all", label: "Todas las Modalidades" },
+          { value: "presencial", label: "Presencial" },
+          { value: "virtual", label: "Virtual" }
+        ]
+      },
+      {
+        id: "career",
+        label: "Carrera",
+        property: "career",
+        icon: "🎓",
+        options: [
+          { value: "all", label: "Todas las Carreras" },
+          { value: "Administración de Empresas", label: "Administración de Empresas" },
+          { value: "Arquitectura", label: "Arquitectura" },
+          { value: "Derecho", label: "Derecho" },
+          { value: "Economía", label: "Economía" },
+          { value: "Ingeniería Civil", label: "Ingeniería Civil" },
+          { value: "Ingeniería de Sistemas", label: "Ingeniería de Sistemas" },
+          { value: "Ingeniería Electrónica", label: "Ingeniería Electrónica" },
+          { value: "Ingeniería Industrial", label: "Ingeniería Industrial" },
+          { value: "Psicología", label: "Psicología" },
+          { value: "Diseño Gráfico", label: "Diseño Gráfico" },
+          { value: "General", label: "General" }
+        ]
+      }
+    ];
+  });
 
   const [config, setConfig] = useState({
     title: localStorage.getItem("agenda_title") || (lang === 'es' ? '📅 Agenda CONIITI 2026' : '📅 CONIITI 2026 Agenda'),
@@ -62,6 +101,11 @@ export default function Agenda() {
       showFilters: localStorage.getItem("agenda_show_filters") !== "false",
       columns: localStorage.getItem("agenda_cols") || "auto"
     });
+    const savedDays = localStorage.getItem("agenda_days_info");
+    if (savedDays) setDays(JSON.parse(savedDays));
+
+    const savedFilters = localStorage.getItem("agenda_filters_config");
+    if (savedFilters) setFilterConfig(JSON.parse(savedFilters));
   };
 
   useEffect(() => {
@@ -69,50 +113,30 @@ export default function Agenda() {
     return () => window.removeEventListener('site-config-updated', refreshConfig);
   }, [lang]);
 
-  const categories = useMemo(() => {
-    const cats = new Set(conferencesList.map((c: any) => c.category).filter(Boolean))
-    return ["all", ...Array.from(cats)] as string[]
-  }, [conferencesList])
-
-  const levels = ["all", "Básico", "Intermedio", "Avanzado"]
-
-  const careers = [
-    "all",
-    "Administración de Empresas",
-    "Arquitectura",
-    "Derecho",
-    "Economía",
-    "Ingeniería Civil",
-    "Ingeniería de Sistemas",
-    "Ingeniería Electrónica",
-    "Ingeniería Industrial",
-    "Psicología",
-    "Diseño Gráfico",
-    "General"
-  ]
-
   const filteredConferences = conferencesList.filter((conf: any) => {
     const matchesSearch =
       conf.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       conf.speaker.name.toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesCategory = categoryFilter === "all" || conf.category === categoryFilter
-    const matchesLevel = levelFilter === "all" || conf.level === levelFilter
-    const matchesCareer = careerFilter === "all" || conf.career === careerFilter
+    // Lógica de filtrado dinámica
+    const matchesDynamicFilters = filterConfig.every(filter => {
+      const selectedValue = activeFilters[filter.id] || "all";
+      if (selectedValue === "all") return true;
+      return conf[filter.property] === selectedValue;
+    });
 
     const confDayId = conf.dayId ?? conf.day ?? conf.day_id ?? conf.dayNumber ?? conf.date
     const matchesDay = !confDayId || confDayId === activeDayId
-    return matchesSearch && matchesCategory && matchesLevel && matchesCareer && matchesDay
+
+    return matchesSearch && matchesDynamicFilters && matchesDay
   })
 
   const clearFilters = () => {
     setSearchTerm("")
-    setCategoryFilter("all")
-    setLevelFilter("all")
-    setCareerFilter("all")
+    setActiveFilters({})
   }
 
-  const hasActiveFilters = searchTerm || categoryFilter !== "all" || levelFilter !== "all" || careerFilter !== "all"
+  const hasActiveFilters = searchTerm || Object.values(activeFilters).some(v => v !== "all" && v !== "")
 
   const selectStyle: React.CSSProperties = {
     padding: '0.72rem 1rem',
@@ -161,29 +185,21 @@ export default function Agenda() {
               />
             </div>
 
-            {/* Filtro Carrera */}
-            <select value={careerFilter} onChange={(e) => setCareerFilter(e.target.value)} style={selectStyle}>
-              <option value="all">🎓 {lang === 'es' ? "Todas las Carreras" : "All Careers"}</option>
-              {careers.filter(c => c !== "all").map(career => (
-                <option key={career} value={career}>{career}</option>
-              ))}
-            </select>
-
-            {/* Filtro Categoría */}
-            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} style={selectStyle}>
-              <option value="all">🏷️ {lang === 'es' ? "Todas las Categorías" : "All Categories"}</option>
-              {categories.filter(c => c !== "all").map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-
-            {/* Filtro Nivel */}
-            <select value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)} style={selectStyle}>
-              <option value="all">📊 {lang === 'es' ? "Todos los Niveles" : "All Levels"}</option>
-              {levels.filter(l => l !== "all").map(level => (
-                <option key={level} value={level}>{level}</option>
-              ))}
-            </select>
+            {/* Filtros Dinámicos */}
+            {filterConfig.map(filter => (
+              <select
+                key={filter.id}
+                value={activeFilters[filter.id] || "all"}
+                onChange={(e) => setActiveFilters({ ...activeFilters, [filter.id]: e.target.value })}
+                style={selectStyle}
+              >
+                {filter.options.map((opt: any) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.value === "all" ? `${filter.icon} ${opt.label}` : opt.label}
+                  </option>
+                ))}
+              </select>
+            ))}
 
             {/* Botón limpiar (solo si hay filtros activos) */}
             {hasActiveFilters && (

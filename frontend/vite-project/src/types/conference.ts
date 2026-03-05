@@ -18,4 +18,8 @@ export type Conference = {
   career?: string
   type?: 'presencial' | 'virtual'
   virtualLink?: string
+  dayId?: string
+  documentUrl?: string
+  documentFile?: string
+  attended?: boolean
 }

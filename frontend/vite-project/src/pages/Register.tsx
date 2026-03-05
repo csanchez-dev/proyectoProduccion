@@ -58,14 +58,28 @@ export default function Register() {
         const { data: authData, error: authError } = await signIn(formData.email, formData.password)
 
         if (authError) {
-          alert("¡Cuenta creada! Por favor inicia sesión con tus credenciales.")
+          alert("¡Cuenta creada! Por favor REVISA TU CORREO ELECTRÓNICO para confirmar tu cuenta y luego inicia sesión.")
           window.location.href = "/login"
           return
         }
       } catch (backendError: any) {
+        const errorMsg = backendError.message || "";
+
+        // Bloquear si el servidor detecta que la cédula o el código institucional ya está duplicado real
+        if (errorMsg.includes("documento") || errorMsg.includes("código institucional") || errorMsg.includes("registrado")) {
+          throw new Error(errorMsg);
+        }
+
         // FALLBACK LOCAL: Si falla el backend (ej: rate limit), guardamos localmente para demostración
         console.warn("Fallo el backend, usando registro local simulado", backendError);
         const usuariosGuardados = JSON.parse(localStorage.getItem('usuarios_locales') || '[]');
+
+        // Chequear duplicados también en local
+        const existsCC = usuariosGuardados.some((u: any) => u.documentNumber === formData.documentNumber);
+        const existsCode = mappedRole === 'ESTUDIANTE' && usuariosGuardados.some((u: any) => u.institutionalCode === formData.institutionalCode);
+
+        if (existsCC) throw new Error("El número de documento ya se encuentra registrado (Local).");
+        if (existsCode) throw new Error("El código institucional ya se encuentra registrado por otro estudiante (Local).");
         usuariosGuardados.push({
           ...formData,
           role: mappedRole
@@ -83,7 +97,7 @@ export default function Register() {
 
       localStorage.setItem("user_session", JSON.stringify(userData))
 
-      alert("¡Registro exitoso! Bienvenido al CONIITI 2026.")
+      alert("¡Registro exitoso! Por favor, hemos enviado un enlace de confirmación a tu correo (Verifica también Spam/Deseados).")
 
       // Limpiar formulario para permitir registrar más si no redirigimos
       setFormData({

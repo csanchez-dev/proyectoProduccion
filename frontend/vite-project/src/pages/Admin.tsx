@@ -1,13 +1,14 @@
 ﻿import React, { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { conferences as initialConferences } from "../data/conference_mocks"
-import { getEvents, getGenderStats, getConferenceStats, getPageViewsStats } from "../utils/tracker"
+import { getEvents, getGenderStats, getConferenceStats, getPageViewsStats, getLoadTimeStats, getImageLoadStats, getResourceSizeStats, getAdvancedStatsByPage } from "../utils/tracker"
 import { translations, getTranslation } from "../utils/i18n"
 import type { Language } from "../utils/i18n"
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     PieChart, Pie, Cell, LineChart, Line, ScatterChart, Scatter, ZAxis
 } from 'recharts'
+import QRCode from 'react-qr-code'
 
 export default function Admin() {
     const [userRole, setUserRole] = useState<string | null>(null)
@@ -27,25 +28,6 @@ export default function Admin() {
         return saved ? JSON.parse(saved) : []
     })
 
-    useEffect(() => {
-        const fetchConferences = async () => {
-            try {
-                const { getPonencias } = await import("../services/api");
-                const data = await getPonencias();
-                if (data && data.length > 0) {
-                    setConferences(data);
-                } else {
-                    const saved = localStorage.getItem("site_conferences")
-                    setConferences(saved ? JSON.parse(saved) : initialConferences);
-                }
-            } catch (err) {
-                console.error("Error loading conferences in Admin:", err);
-                const saved = localStorage.getItem("site_conferences")
-                setConferences(saved ? JSON.parse(saved) : initialConferences);
-            }
-        };
-        fetchConferences();
-    }, []);
     const [activeTab, setActiveTab] = useState("conferences")
     const [bannerPreview, setBannerPreview] = useState(localStorage.getItem("site_banner") || "/banner-header.png")
     const [logoUniPreview, setLogoUniPreview] = useState(localStorage.getItem("site_logo_uni") || "/ucatolica-logo.png")
@@ -72,8 +54,10 @@ export default function Admin() {
     const [chartTypes, setChartTypes] = useState<any>({
         views: 'bar',
         gender: 'pie',
-        conferences: 'bar'
+        conferences: 'bar',
+        performance: 'bar'
     })
+    const [selectedPerfPage, setSelectedPerfPage] = useState("/")
     const [settingsTab, setSettingsTab] = useState("general")
     const navigate = useNavigate()
 
@@ -101,7 +85,7 @@ export default function Admin() {
         const session = localStorage.getItem("user_session")
         if (session) {
             const user = JSON.parse(session)
-            if (user.role === "SUPER_ADMIN" || user.role === "CONTENT_MANAGER") {
+            if (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "VIEWER" || user.role === "CONTENT_MANAGER") {
                 setUserRole(user.role)
             } else {
                 navigate("/") // No tiene permisos
@@ -111,23 +95,125 @@ export default function Admin() {
         }
     }, [navigate])
 
-    const [speakers, setSpeakers] = useState<any[]>([])
+    const [speakers, setSpeakers] = useState<any[]>(() => {
+        // Inicializar con los datos de los mocks + locales para que nunca esté vacía la lista
+        const conferenceSource = (() => {
+            try {
+                const saved = JSON.parse(localStorage.getItem("site_conferences") || '[]');
+                return saved.length > 0 ? saved : initialConferences;
+            } catch { return initialConferences; }
+        })();
+        const seedSpeakers: any[] = [];
+        const seen = new Set<string>();
+        conferenceSource.forEach((c: any) => {
+            const name = c.speaker?.name || c.speaker?.nombre;
+            if (name && !seen.has(name)) {
+                seedSpeakers.push({
+                    id: `seed-${c.id}`,
+                    nombre: name,
+                    organizacion: c.speaker.organization || c.speaker.organizacion || '',
+                    bio: c.speaker.bio || '',
+                    avatar_url: c.speaker.avatar || c.speaker.avatar_url || '/default-avatar.png'
+                });
+                seen.add(name);
+            }
+        });
+        // Agregar también los guardados localmente
+        try {
+            const local = JSON.parse(localStorage.getItem('site_speakers') || '[]');
+            local.forEach((ls: any) => {
+                const lsName = ls.nombre || ls.name;
+                if (lsName && !seen.has(lsName)) {
+                    seedSpeakers.push(ls);
+                    seen.add(lsName);
+                }
+            });
+        } catch { /* sin datos locales */ }
+        return seedSpeakers;
+    })
+    const [registeredUsers, setRegisteredUsers] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(false)
 
     const fetchAllData = async () => {
         setIsLoading(true);
-        try {
-            const { getPonencias, getPonentes } = await import("../services/api");
-            const [ponenciasData, ponentesData] = await Promise.all([
-                getPonencias(),
-                getPonentes()
-            ]);
+        let ponenciasData: any[] = [];
+        let ponentesData: any[] = [];
+        let usuariosData: any[] = [];
 
-            setConferences(ponenciasData.length > 0 ? ponenciasData : initialConferences);
-            setSpeakers(ponentesData);
+        try {
+            const { getPonencias, getPonentes, getUsuarios } = await import("../services/api");
+
+            // Intentos individuales para no fallar si un endpoint está caído
+            try { ponenciasData = await getPonencias(); } catch (e) { console.warn("API Ponencias falló"); }
+            try { ponentesData = await getPonentes(); } catch (e) { console.warn("API Ponentes falló"); }
+            try { usuariosData = await getUsuarios(); } catch (e) { console.warn("API Usuarios falló"); }
+
+            // 1. Unificar Conferencias (Agenda)
+            const savedConfs = JSON.parse(localStorage.getItem("site_conferences") || '[]');
+            const finalConfs = ponenciasData.length > 0 ? ponenciasData : (savedConfs.length > 0 ? savedConfs : initialConferences);
+            setConferences(finalConfs);
+
+            // 2. Unificar Ponentes/Invitados
+            const finalSpeakers = [...ponentesData];
+            const speakerNames = new Set(finalSpeakers.map(s => (s.nombre || s.name)));
+
+            // Extraer de conferencias actuales (asegura que los invitados de mocks aparezcan)
+            finalConfs.forEach((c: any) => {
+                const cSpeakerName = c.speaker?.name || c.speaker?.nombre;
+                if (cSpeakerName && !speakerNames.has(cSpeakerName)) {
+                    finalSpeakers.push({
+                        id: `sp-auto-${c.id}`,
+                        nombre: cSpeakerName,
+                        organizacion: c.speaker.organization || c.speaker.organizacion || "Independiente",
+                        bio: c.speaker.bio || "Invitado experto",
+                        avatar_url: c.speaker.avatar || c.speaker.avatar_url || "/default-avatar.png"
+                    });
+                    speakerNames.add(cSpeakerName);
+                }
+            });
+
+            // Sumar los creados localmente
+            const localSpeakers = JSON.parse(localStorage.getItem('site_speakers') || '[]');
+            localSpeakers.forEach((ls: any) => {
+                const lsName = ls.nombre || ls.name;
+                if (lsName && !speakerNames.has(lsName)) {
+                    finalSpeakers.push(ls);
+                    speakerNames.add(lsName);
+                }
+            });
+
+            setSpeakers(finalSpeakers);
+
+            // 3. Unificar Usuarios
+            const localUsers = JSON.parse(localStorage.getItem('usuarios_locales') || '[]');
+            const transformedLocal = localUsers.map((u: any) => ({
+                id: u.documentNumber || `local-${u.email}`,
+                nombre_completo: u.fullName,
+                email: u.email,
+                rol: u.role,
+                carrera: u.career,
+                created_at: new Date().toISOString()
+            }));
+
+            const dbEmails = new Set(usuariosData.map((u: any) => u.email));
+            const uniqueLocals = transformedLocal.filter((u: any) => !dbEmails.has(u.email));
+            setRegisteredUsers([...usuariosData, ...uniqueLocals]);
+
         } catch (err) {
-            console.error("Error loading admin data:", err);
+            console.error("Error crítico en fetchAllData:", err);
             setConferences(initialConferences);
+            // Fallback mínimo para no dejar vacía la lista de invitados
+            const fallbackSpeakers = Array.from(new Set(initialConferences.map(c => c.speaker.name))).map(name => {
+                const conf = initialConferences.find(c => c.speaker.name === name);
+                return {
+                    id: `fb-${name}`,
+                    nombre: name,
+                    organizacion: conf?.speaker.organization || '',
+                    bio: conf?.speaker.bio || '',
+                    avatar_url: conf?.speaker.avatar || ''
+                };
+            });
+            setSpeakers(fallbackSpeakers);
         } finally {
             setIsLoading(false);
         }
@@ -145,7 +231,15 @@ export default function Admin() {
     useEffect(() => {
         localStorage.setItem("site_deleted_conferences", JSON.stringify(deletedConferences))
     }, [deletedConferences])
+
+    useEffect(() => {
+        if (speakers.length > 0) {
+            localStorage.setItem("site_speakers", JSON.stringify(speakers))
+        }
+    }, [speakers])
+
     const [editingConf, setEditingConf] = useState<any | null>(null)
+    const [editingSpeaker, setEditingSpeaker] = useState<any | null>(null)
 
     const handleDeleteConference = async (id: string) => {
         if (!confirm("¿Estás seguro de eliminar esta conferencia?")) return;
@@ -174,17 +268,79 @@ export default function Admin() {
         setEditingConf({ ...conf })
     }
 
+    // Gestión de Días de la Agenda
+    const [agendaDays, setAgendaDays] = useState<{ id: string, label: string }[]>(() => {
+        const saved = localStorage.getItem("agenda_days_info");
+        if (saved) return JSON.parse(saved);
+        return [
+            { id: "day1", label: "Día 1" },
+            { id: "day2", label: "Día 2" },
+            { id: "day3", label: "Día 3" }
+        ];
+    });
+
+    useEffect(() => {
+        localStorage.setItem("agenda_days_info", JSON.stringify(agendaDays));
+        localStorage.setItem("agenda_num_days", String(agendaDays.length));
+    }, [agendaDays]);
+
+    // Gestión de Filtros de la Agenda
+    const [agendaFilters, setAgendaFilters] = useState<any[]>(() => {
+        const saved = localStorage.getItem("agenda_filters_config");
+        if (saved) return JSON.parse(saved);
+        return [
+            {
+                id: "modality",
+                label: "Modalidad",
+                property: "type",
+                icon: "📍",
+                options: [
+                    { value: "all", label: "Todas las Modalidades" },
+                    { value: "presencial", label: "Presencial" },
+                    { value: "virtual", label: "Virtual" }
+                ]
+            },
+            {
+                id: "career",
+                label: "Carrera",
+                property: "career",
+                icon: "🎓",
+                options: [
+                    { value: "all", label: "Todas las Carreras" },
+                    { value: "Administración de Empresas", label: "Administración de Empresas" },
+                    { value: "Arquitectura", label: "Arquitectura" },
+                    { value: "Derecho", label: "Derecho" },
+                    { value: "Economía", label: "Economía" },
+                    { value: "Ingeniería Civil", label: "Ingeniería Civil" },
+                    { value: "Ingeniería de Sistemas", label: "Ingeniería de Sistemas" },
+                    { value: "Ingeniería Electrónica", label: "Ingeniería Electrónica" },
+                    { value: "Ingeniería Industrial", label: "Ingeniería Industrial" },
+                    { value: "Psicología", label: "Psicología" },
+                    { value: "Diseño Gráfico", label: "Diseño Gráfico" },
+                    { value: "General", label: "General" }
+                ]
+            }
+        ];
+    });
+
+    useEffect(() => {
+        localStorage.setItem("agenda_filters_config", JSON.stringify(agendaFilters));
+    }, [agendaFilters]);
+
     const [showConfForm, setShowConfForm] = useState(false)
     const [newConf, setNewConf] = useState({
         title: "",
         location: "Auditorio Paraninfo",
         description: "",
         speakerName: "",
-        startTime: "",
-        endTime: "",
-        career: "",
+        dayId: "day1",
+        startTime: "09:00",
+        endTime: "10:00",
+        career: "Ingeniería de Sistemas",
         type: "presencial",
-        virtualLink: ""
+        virtualLink: "",
+        documentUrl: "",
+        documentFile: ""
     })
 
     const handleAddConference = async (e: React.FormEvent) => {
@@ -214,18 +370,30 @@ export default function Admin() {
             const ponenciaData = {
                 titulo: newConf.title,
                 descripcion: newConf.description,
-                hora_inicio: newConf.startTime || "09:00",
-                hora_fin: newConf.endTime || "10:00",
-                sala_id: 1, // Por ahora hardcoded
-                dia_id: 1,  // Por ahora hardcoded
-                // Nota: faltaría manejar la relación ponencia_ponente en el backend
+                hora_inicio: newConf.startTime,
+                hora_fin: newConf.endTime,
+                sala_id: 1,
+                dia_id: parseInt(newConf.dayId.replace("day", "")) || 1,
+                dayId: newConf.dayId, // Para compatibilidad con el frontend
+                documentUrl: newConf.documentUrl,
+                documentFile: newConf.documentFile,
+                speaker: { name: finalSpeaker.name, organization: finalSpeaker.organization, avatar: "/default-avatar.png", bio: "" }
             };
 
-            await createPonencia(ponenciaData);
+            try {
+                await createPonencia(ponenciaData);
+            } catch (apiErr) {
+                console.warn("API fallida, guardando localmente:", apiErr);
+            }
 
-            alert("¡Conferencia guardada en la base de datos!");
+            // Actualizar localmente para respuesta inmediata
+            const updatedConfs = [...conferences, { ...ponenciaData, id: Date.now().toString() }];
+            setConferences(updatedConfs);
+            localStorage.setItem("site_conferences", JSON.stringify(updatedConfs));
+
+            alert("¡Conferencia guardada!");
             setShowConfForm(false);
-            fetchAllData(); // Recargar todo
+            setNewConf({ ...newConf, title: "", description: "" });
         } catch (err: any) {
             console.error("Error saving conference:", err);
             alert(`Error: ${err.message}`);
@@ -234,14 +402,54 @@ export default function Admin() {
         }
     }
 
-    const handleSaveEdit = (e: React.FormEvent) => {
+    const handleSaveEdit = async (e: React.FormEvent) => {
         e.preventDefault()
-        setConferences(conferences.map((c: { id: string }) => c.id === editingConf.id ? editingConf : c))
-        setEditingConf(null)
-        alert("Cambios guardados correctamente")
+        try {
+            const updatedConfs = conferences.map((c: any) => c.id === editingConf.id ? editingConf : c);
+            setConferences(updatedConfs);
+            localStorage.setItem("site_conferences", JSON.stringify(updatedConfs));
+
+            // Intentar actualizar en API si tenemos endpoint (opcional según el backend actual)
+            try {
+                const { updatePonencia } = await import("../services/api");
+                if (updatePonencia) await updatePonencia(editingConf.id, editingConf);
+            } catch (apiErr) {
+                console.warn("No se pudo actualizar en API (posible endpoint inexistente), cambios guardados localmente");
+            }
+
+            setEditingConf(null)
+            alert("Cambios guardados correctamente")
+        } catch (err) {
+            console.error("Error al guardar cambios:", err);
+            alert("No se pudieron guardar los cambios");
+        }
     }
 
     const [showGuestForm, setShowGuestForm] = useState(false)
+    const [qrModalConf, setQrModalConf] = useState<any | null>(null)
+
+    const downloadQR = () => {
+        const svg = document.getElementById(`qr-code-svg-${qrModalConf?.id}`);
+        if (!svg) return;
+        const svgData = new XMLSerializer().serializeToString(svg);
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const img = new Image();
+        img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            if (ctx) {
+                ctx.fillStyle = "white";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+                const a = document.createElement("a");
+                a.download = `Asistencia-${qrModalConf?.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.png`;
+                a.href = canvas.toDataURL("image/png");
+                a.click();
+            }
+        };
+        img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+    }
     const [newGuest, setNewGuest] = useState({
         name: "",
         organization: "",
@@ -260,25 +468,91 @@ export default function Admin() {
         }
     }
 
-    const handleAddGuest = (e: React.FormEvent) => {
+    const handleAddGuest = async (e: React.FormEvent) => {
         e.preventDefault()
-        const newId = (conferences.length + deletedConferences.length + 1).toString()
-        const simulatedConf = {
-            id: newId,
-            title: `Conferencia de ${newGuest.name}`,
-            description: newGuest.bio,
-            startTime: new Date().toISOString(),
-            endTime: new Date().toISOString(),
-            location: "Pendiente",
-            category: "General",
-            level: "Básico",
-            speaker: { ...newGuest }
+        setIsLoading(true)
+
+        try {
+            const { createPonente } = await import("../services/api");
+
+            const guestData = {
+                nombre: newGuest.name,
+                organizacion: newGuest.organization,
+                bio: newGuest.bio,
+                avatar_url: newGuest.avatar || "/default-avatar.png"
+            };
+
+            let savedSpeaker;
+            try {
+                savedSpeaker = await createPonente(guestData);
+            } catch (apiErr) {
+                console.warn("Error API al crear ponente, usando simulación local:", apiErr);
+                savedSpeaker = { ...guestData, id: `local-${Date.now()}` };
+            }
+
+            // 1. Actualizar lista de speakers (esto hará que aparezca en configuración)
+            const updatedSpeakers = [...speakers, savedSpeaker];
+            setSpeakers(updatedSpeakers);
+            localStorage.setItem("site_speakers", JSON.stringify(updatedSpeakers));
+
+            // 2. Crear conferencia simulada para la agenda si es deseado
+            const newId = `conf-${Date.now()}`;
+            const simulatedConf = {
+                id: newId,
+                title: `Conferencia: ${newGuest.name}`,
+                description: newGuest.bio,
+                startTime: new Date().toISOString(),
+                endTime: new Date().toISOString(),
+                location: "Pendiente",
+                category: "General",
+                level: "Básico",
+                speaker: {
+                    name: savedSpeaker.nombre || savedSpeaker.name,
+                    organization: savedSpeaker.organizacion || savedSpeaker.organization,
+                    bio: savedSpeaker.bio,
+                    avatar: savedSpeaker.avatar_url || savedSpeaker.avatar
+                }
+            };
+
+            setConferences([...conferences, simulatedConf]);
+            setShowGuestForm(false);
+            setNewGuest({ name: "", organization: "", bio: "", avatar: "" });
+            alert("¡Invitado agregado exitosamente! Ya aparece en la lista de configuración.");
+        } catch (err) {
+            console.error("Error al agregar invitado:", err);
+            alert("No se pudo agregar el invitado.");
+        } finally {
+            setIsLoading(false);
         }
-        setConferences([...conferences, simulatedConf])
-        setShowGuestForm(false)
-        setNewGuest({ name: "", organization: "", bio: "", avatar: "" })
-        alert("¡Invitado y foto cargados exitosamente!")
     }
+
+    const handleSaveSpeakerEdit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const updated = speakers.map(s => s.id === editingSpeaker.id ? editingSpeaker : s);
+        setSpeakers(updated);
+        localStorage.setItem("site_speakers", JSON.stringify(updated));
+
+        // También actualizar en las conferencias el nombre/org del ponente si cambió
+        const updatedConfs = conferences.map(c => {
+            if (c.speaker?.id === editingSpeaker.id || c.speaker?.name === (editingSpeaker.nombre || editingSpeaker.name)) {
+                return {
+                    ...c,
+                    speaker: {
+                        ...c.speaker,
+                        name: editingSpeaker.nombre || editingSpeaker.name,
+                        organization: editingSpeaker.organizacion || editingSpeaker.organization,
+                        avatar: editingSpeaker.avatar_url || editingSpeaker.avatar,
+                        bio: editingSpeaker.bio
+                    }
+                };
+            }
+            return c;
+        });
+        setConferences(updatedConfs);
+
+        setEditingSpeaker(null);
+        alert("✅ Información del invitado actualizada.");
+    };
 
     if (!userRole) return <div className="loading">{lang === 'es' ? 'Cargando panel...' : 'Loading panel...'}</div>
 
@@ -293,7 +567,11 @@ export default function Admin() {
             <div className="admin-header">
 
                 <h1>{t('admin_title')}</h1>
-                <p className="role-badge">{userRole === "SUPER_ADMIN" ? t('admin_role_super') : t('admin_role_content')}</p>
+                <p className="role-badge">
+                    {userRole === "SUPER_ADMIN" ? "Super Usuario 1: Acceso Total" :
+                        (userRole === "ADMIN" || userRole === "CONTENT_MANAGER") ? "Administrador de Eventos" :
+                            "Visualizador de Datos"}
+                </p>
             </div>
 
             <div className="admin-grid">
@@ -302,35 +580,57 @@ export default function Admin() {
                         className={activeTab === "conferences" ? "active" : ""}
                         onClick={() => setActiveTab("conferences")}
                     >
-                        {t('admin_sidebar_agenda')}
+                        📅 Agenda / Conferencias
                     </button>
                     <button
                         className={activeTab === "guests" ? "active" : ""}
                         onClick={() => setActiveTab("guests")}
                     >
-                        {t('admin_sidebar_guests')}
+                        👥 Invitados
                     </button>
-                    <button
-                        className={activeTab === "trash" ? "active" : ""}
-                        onClick={() => setActiveTab("trash")}
-                    >
-                        {t('admin_sidebar_trash')}
-                    </button>
+
                     {userRole === "SUPER_ADMIN" && (
+                        <button
+                            className={activeTab === "trash" ? "active" : ""}
+                            onClick={() => setActiveTab("trash")}
+                        >
+                            🗑️ Papelera / Restauración
+                        </button>
+                    )}
+
+                    {(userRole === "SUPER_ADMIN" || userRole === "ADMIN" || userRole === "CONTENT_MANAGER") && (
                         <button
                             className={activeTab === "analytics" ? "active" : ""}
                             onClick={() => setActiveTab("analytics")}
                         >
-                            {t('admin_sidebar_analytics')}
+                            📊 Analíticas
                         </button>
                     )}
+
                     {userRole === "SUPER_ADMIN" && (
-                        <button
-                            className={activeTab === "settings" ? "active" : ""}
-                            onClick={() => setActiveTab("settings")}
-                        >
-                            {t('admin_sidebar_settings')}
-                        </button>
+                        <>
+                            <button
+                                className={activeTab === "settings" ? "active" : ""}
+                                onClick={() => setActiveTab("settings")}
+                                style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+                            >
+                                ⚙️ Configuración Página
+                            </button>
+                            <button
+                                className={activeTab === "users" ? "active" : ""}
+                                onClick={() => setActiveTab("users")}
+                                style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+                            >
+                                👤 Usuarios
+                            </button>
+                            <button
+                                className={activeTab === "performance" ? "active" : ""}
+                                onClick={() => setActiveTab("performance")}
+                                style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+                            >
+                                ⏱️ Rendimiento
+                            </button>
+                        </>
                     )}
                 </aside>
 
@@ -339,12 +639,14 @@ export default function Admin() {
                         <div className="admin-view">
                             <div className="view-header">
                                 <h2>Control de Conferencias</h2>
-                                <button
-                                    className="btn-add"
-                                    onClick={() => setShowConfForm(!showConfForm)}
-                                >
-                                    {showConfForm ? "Cerrar Formulario" : "+ Añadir Nueva"}
-                                </button>
+                                {userRole !== "VIEWER" && (
+                                    <button
+                                        className="btn-add"
+                                        onClick={() => setShowConfForm(!showConfForm)}
+                                    >
+                                        {showConfForm ? "Cerrar Formulario" : "+ Añadir Nueva"}
+                                    </button>
+                                )}
                             </div>
 
                             {showConfForm && (() => {
@@ -408,7 +710,20 @@ export default function Admin() {
                                                 </select>
                                             </div>
                                         </div>
-                                        {newConf.type === 'virtual' ? (
+                                        <div className="form-group">
+                                            <label>Ubicación (Salón / Auditorio)</label>
+                                            <select
+                                                value={newConf.location}
+                                                onChange={e => setNewConf({ ...newConf, location: e.target.value })}
+                                                required
+                                                className="admin-select"
+                                            >
+                                                {Object.keys(locCapacities).map(loc => (
+                                                    <option key={loc} value={loc}>{loc} (Cap: {locCapacities[loc]})</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        {newConf.type === 'virtual' && (
                                             <div className="form-group">
                                                 <label>Enlace de la Reunión (Virtual)</label>
                                                 <input
@@ -418,20 +733,6 @@ export default function Admin() {
                                                     onChange={e => setNewConf({ ...newConf, virtualLink: e.target.value })}
                                                     required
                                                 />
-                                            </div>
-                                        ) : (
-                                            <div className="form-group">
-                                                <label>Ubicación (Salón / Auditorio)</label>
-                                                <select
-                                                    value={newConf.location}
-                                                    onChange={e => setNewConf({ ...newConf, location: e.target.value })}
-                                                    required
-                                                    className="admin-select"
-                                                >
-                                                    {Object.keys(locCapacities).map(loc => (
-                                                        <option key={loc} value={loc}>{loc} (Cap: {locCapacities[loc]})</option>
-                                                    ))}
-                                                </select>
                                             </div>
                                         )}
                                         <div className="form-group">
@@ -456,6 +757,68 @@ export default function Admin() {
                                                 <option value="General">General / Todas</option>
                                             </select>
                                         </div>
+                                        <div className="form-row">
+                                            <div className="form-group">
+                                                <label>Día de la Conferencia</label>
+                                                <select
+                                                    value={newConf.dayId}
+                                                    onChange={e => setNewConf({ ...newConf, dayId: e.target.value })}
+                                                    required
+                                                    className="admin-select"
+                                                >
+                                                    {agendaDays.map(day => (
+                                                        <option key={day.id} value={day.id}>{day.label}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className="form-group">
+                                                <label>Hora de Inicio</label>
+                                                <input
+                                                    type="time"
+                                                    required
+                                                    value={newConf.startTime}
+                                                    onChange={e => setNewConf({ ...newConf, startTime: e.target.value })}
+                                                />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>Hora de Finalización</label>
+                                                <input
+                                                    type="time"
+                                                    required
+                                                    value={newConf.endTime}
+                                                    onChange={e => setNewConf({ ...newConf, endTime: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                            <div className="form-group">
+                                                <label>🔗 Enlace Externo (Material)</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="https://ejemplo.com/recurso"
+                                                    value={newConf.documentUrl}
+                                                    onChange={e => setNewConf({ ...newConf, documentUrl: e.target.value })}
+                                                />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>📁 Cargar Archivo Local</label>
+                                                <input
+                                                    type="file"
+                                                    onChange={(e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (file) {
+                                                            const reader = new FileReader();
+                                                            reader.onloadend = () => {
+                                                                if (reader.result) setNewConf({ ...newConf, documentFile: reader.result as string });
+                                                            };
+                                                            reader.readAsDataURL(file);
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+
                                         <div className="form-group">
                                             <label>Descripción / Resumen</label>
                                             <textarea
@@ -476,7 +839,7 @@ export default function Admin() {
                                         <th>Título</th>
                                         <th>Ponente</th>
                                         <th>Ubicación</th>
-                                        <th>Acciones</th>
+                                        {userRole !== "VIEWER" && <th>Acciones</th>}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -485,26 +848,59 @@ export default function Admin() {
                                             <td>{conf.title}</td>
                                             <td>{conf.speaker.name}</td>
                                             <td>{conf.location}</td>
-                                            <td className="actions">
-                                                <button className="btn-edit-sm" onClick={() => handleEditConference(conf)}>✏️ Editar</button>
-                                                <button className="btn-delete-sm" onClick={() => handleDeleteConference(conf.id)}>🗑️ Borrar</button>
-                                            </td>
+                                            {userRole !== "VIEWER" && (
+                                                <td className="actions">
+                                                    <button className="btn-edit-sm" onClick={() => handleEditConference(conf)}>✏️ Editar</button>
+                                                    <button className="btn-edit-sm" style={{ background: '#27ae60', margin: '0 5px' }} onClick={() => setQrModalConf(conf)}>📷 QR</button>
+                                                    <button className="btn-delete-sm" onClick={() => handleDeleteConference(conf.id)}>🗑️ Borrar</button>
+                                                </td>
+                                            )}
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
+                            {/* Modal de QR de Asistencia */}
+                            {qrModalConf && (
+                                <div className="modal-overlay" onClick={() => setQrModalConf(null)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <div className="modal-content fade-in" onClick={e => e.stopPropagation()} style={{ background: '#fff', padding: '2rem', borderRadius: '12px', textAlign: 'center', maxWidth: '400px' }}>
+                                        <h2>Código de Asistencia</h2>
+                                        <p style={{ marginBottom: '1.5rem', color: '#666' }}>{qrModalConf.title}</p>
+
+                                        <div style={{ background: 'white', padding: '16px', display: 'inline-block', borderRadius: '8px', border: '1px solid #eee' }}>
+                                            <QRCode
+                                                id={`qr-code-svg-${qrModalConf.id}`}
+                                                value={`CONF_ATTENDANCE_${qrModalConf.id}`}
+                                                size={256}
+                                                level="H"
+                                            />
+                                        </div>
+
+                                        <div style={{ marginTop: '2rem', display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                                            <button className="btn-submit premium-btn" onClick={downloadQR}>
+                                                ⬇️ Descargar PNG
+                                            </button>
+                                            <button className="btn-cancel" onClick={() => setQrModalConf(null)}>
+                                                Cerrar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                         </div>
                     )}
                     {activeTab === "guests" && (
                         <div className="admin-view">
                             <div className="view-header">
                                 <h2>Gestión de Invitados</h2>
-                                <button
-                                    className="btn-add"
-                                    onClick={() => setShowGuestForm(!showGuestForm)}
-                                >
-                                    {showGuestForm ? "Cerrar Formulario" : "+ Nuevo Invitado"}
-                                </button>
+                                {userRole !== "VIEWER" && (
+                                    <button
+                                        className="btn-add"
+                                        onClick={() => setShowGuestForm(!showGuestForm)}
+                                    >
+                                        {showGuestForm ? "Cerrar Formulario" : "+ Nuevo Invitado"}
+                                    </button>
+                                )}
                             </div>
 
                             {showGuestForm && (
@@ -557,18 +953,41 @@ export default function Admin() {
                             )}
 
                             <div className="guests-grid">
-                                {speakers.map((speaker: any) => (
-                                    <div key={speaker.id} className="guest-admin-card fade-in">
-                                        <img src={speaker.avatar_url || "/default-avatar.png"} alt={speaker.nombre} />
-                                        <div className="guest-info">
-                                            <h4>{speaker.nombre}</h4>
-                                            <p>{speaker.organizacion}</p>
-                                        </div>
-                                        <div className="guest-actions">
-                                            <button className="btn-edit-sm">✏️ Editar</button>
-                                        </div>
+                                {speakers.length === 0 ? (
+                                    <div style={{
+                                        gridColumn: '1/-1',
+                                        textAlign: 'center',
+                                        padding: '3rem',
+                                        color: '#94a3b8',
+                                        background: '#f8fafc',
+                                        borderRadius: '12px',
+                                        border: '2px dashed #e2e8f0'
+                                    }}>
+                                        <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>👥</p>
+                                        <p style={{ fontWeight: '600' }}>No hay invitados aún</p>
+                                        <p style={{ fontSize: '0.85rem' }}>Agrega tu primer invitado con el botón de arriba.</p>
                                     </div>
-                                ))}
+                                ) : (
+                                    <>
+                                        <p style={{ gridColumn: '1/-1', color: '#64748b', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                                            {speakers.length} invitado{speakers.length !== 1 ? 's' : ''} registrado{speakers.length !== 1 ? 's' : ''}
+                                        </p>
+                                        {speakers.map((speaker: any) => (
+                                            <div key={speaker.id} className="guest-admin-card fade-in">
+                                                <img src={speaker.avatar_url || speaker.avatar || "/default-avatar.png"} alt={speaker.nombre || speaker.name} />
+                                                <div className="guest-info">
+                                                    <h4>{speaker.nombre || speaker.name}</h4>
+                                                    <p>{speaker.organizacion || speaker.organization}</p>
+                                                </div>
+                                                {userRole !== "VIEWER" && (
+                                                    <div className="guest-actions">
+                                                        <button className="btn-edit-sm" onClick={() => setEditingSpeaker(speaker)}>✏️ Editar Perfil</button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </>
+                                )}
                             </div>
 
                         </div>
@@ -796,6 +1215,8 @@ export default function Admin() {
                                 </div>
                             )}
 
+                            {/* El contenido de usuarios se movió a una pestaña principal */}
+
                             {/* ── PÁGINA: INVITADOS ── */}
                             {settingsTab === "pg-invitados" && (
                                 <div className="page-settings-panel fade-in">
@@ -819,6 +1240,47 @@ export default function Admin() {
                                         <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); alert("Cambios de Invitados guardados."); }}>
                                             Guardar Cambios
                                         </button>
+
+                                        {/* Lista real de invitados (misma fuente que la pestaña Invitados) */}
+                                        <div style={{ marginTop: '2rem', borderTop: '1px solid #e2e8f0', paddingTop: '1.5rem' }}>
+                                            <h4 style={{ marginBottom: '1rem', color: 'var(--primary-color)' }}>
+                                                👥 Invitados Registrados ({speakers.length})
+                                            </h4>
+                                            {speakers.length === 0 ? (
+                                                <p style={{ color: '#94a3b8', fontStyle: 'italic' }}>
+                                                    No hay invitados registrados aún. Agrégalos desde la pestaña "Invitados".
+                                                </p>
+                                            ) : (
+                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' }}>
+                                                    {speakers.map((sp: any) => (
+                                                        <div key={sp.id} style={{
+                                                            display: 'flex', alignItems: 'center', gap: '12px',
+                                                            padding: '12px', background: '#f8fafc',
+                                                            borderRadius: '12px', border: '1px solid #e2e8f0'
+                                                        }}>
+                                                            <img
+                                                                src={sp.avatar_url || sp.avatar || "/default-avatar.png"}
+                                                                alt={sp.nombre || sp.name}
+                                                                style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                                                            />
+                                                            <div style={{ minWidth: 0 }}>
+                                                                <p style={{ fontWeight: '700', margin: 0, fontSize: '0.9rem', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                    {sp.nombre || sp.name}
+                                                                </p>
+                                                                <p style={{ margin: 0, fontSize: '0.78rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                    {sp.organizacion || sp.organization || "—"}
+                                                                </p>
+                                                            </div>
+                                                            <button
+                                                                className="btn-edit-sm"
+                                                                style={{ padding: '6px', fontSize: '10px' }}
+                                                                onClick={() => setEditingSpeaker(sp)}
+                                                            >✏️</button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -853,8 +1315,158 @@ export default function Admin() {
                                                 <option value="4">4 columnas</option>
                                             </select>
                                         </div>
-                                        <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); alert("Cambios de Agenda guardados."); }}>
-                                            Guardar Cambios
+                                        <div className="form-group" style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                            <label style={{ fontSize: '1.1rem', color: 'var(--primary-color)', marginBottom: '1rem', display: 'block' }}>🚩 Gestión de Días del Evento</label>
+                                            <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1.5rem' }}>Define cuántos días dura el evento y cómo se llamará cada pestaña en la agenda.</p>
+
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                {agendaDays.map((day, index) => (
+                                                    <div key={day.id} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                                        <span style={{ fontWeight: 'bold', minWidth: '60px' }}>#{index + 1}</span>
+                                                        <input
+                                                            type="text"
+                                                            value={day.label}
+                                                            placeholder="Título del día (Ej: Día 1...)"
+                                                            style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                                                            onChange={(e) => {
+                                                                const newDays = [...agendaDays];
+                                                                newDays[index].label = e.target.value;
+                                                                setAgendaDays(newDays);
+                                                            }}
+                                                        />
+                                                        {agendaDays.length > 1 && (
+                                                            <button
+                                                                onClick={() => setAgendaDays(agendaDays.filter(d => d.id !== day.id))}
+                                                                style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer' }}
+                                                            >
+                                                                🗑️
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const newId = `day${agendaDays.length + 1}_${Date.now()}`;
+                                                        setAgendaDays([...agendaDays, { id: newId, label: `Día ${agendaDays.length + 1}` }]);
+                                                    }}
+                                                    style={{ padding: '10px', border: '2px dashed #cbd5e1', background: 'none', borderRadius: '8px', cursor: 'pointer', color: '#64748b', fontWeight: '600' }}
+                                                >
+                                                    + Agregar un Día Adicional
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="form-group" style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                            <label style={{ fontSize: '1.1rem', color: 'var(--primary-color)', marginBottom: '1rem', display: 'block' }}>🔍 Configuración de la Barra de Búsqueda y Filtros</label>
+                                            <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1.5rem' }}>Agrega, quita o edita los filtros que aparecen en la parte superior de la agenda.</p>
+
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                                {agendaFilters.map((filter, fIndex) => (
+                                                    <div key={filter.id} style={{ background: 'white', padding: '1.2rem', borderRadius: '12px', border: '1px solid #cbd5e1' }}>
+                                                        <div style={{ display: 'flex', gap: '10px', marginBottom: '1rem', alignItems: 'center' }}>
+                                                            <input
+                                                                type="text"
+                                                                value={filter.icon}
+                                                                title="Icono (Emoji)"
+                                                                style={{ width: '45px', padding: '8px', textAlign: 'center', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                                                                onChange={(e) => {
+                                                                    const newFilters = [...agendaFilters];
+                                                                    newFilters[fIndex].icon = e.target.value;
+                                                                    setAgendaFilters(newFilters);
+                                                                }}
+                                                            />
+                                                            <input
+                                                                type="text"
+                                                                value={filter.label}
+                                                                placeholder="Nombre del Filtro"
+                                                                style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontWeight: 'bold' }}
+                                                                onChange={(e) => {
+                                                                    const newFilters = [...agendaFilters];
+                                                                    newFilters[fIndex].label = e.target.value;
+                                                                    setAgendaFilters(newFilters);
+                                                                }}
+                                                            />
+                                                            <button
+                                                                onClick={() => setAgendaFilters(agendaFilters.filter((_, i) => i !== fIndex))}
+                                                                style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer' }}
+                                                                title="Eliminar Filtro"
+                                                            >🗑️</button>
+                                                        </div>
+
+                                                        <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px' }}>
+                                                            <label style={{ fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', color: '#64748b', marginBottom: '8px', display: 'block' }}>Opciones del Menú Desplegable:</label>
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                                {filter.options.map((opt: any, oIndex: number) => (
+                                                                    <div key={oIndex} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', minWidth: '80px' }}>{opt.value === 'all' ? 'Predeterm.' : 'Valor:'}</span>
+                                                                        <input
+                                                                            type="text"
+                                                                            value={opt.label}
+                                                                            placeholder="Etiqueta"
+                                                                            style={{ flex: 1, padding: '6px 10px', fontSize: '0.85rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}
+                                                                            onChange={(e) => {
+                                                                                const newFilters = [...agendaFilters];
+                                                                                newFilters[fIndex].options[oIndex].label = e.target.value;
+                                                                                setAgendaFilters(newFilters);
+                                                                            }}
+                                                                        />
+                                                                        {opt.value !== 'all' && (
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    const newFilters = [...agendaFilters];
+                                                                                    newFilters[fIndex].options = newFilters[fIndex].options.filter((_: any, i: number) => i !== oIndex);
+                                                                                    setAgendaFilters(newFilters);
+                                                                                }}
+                                                                                style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.8rem' }}
+                                                                            >❌</button>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                            <button
+                                                                style={{ marginTop: '12px', fontSize: '0.75rem', background: '#fff', color: 'var(--primary-color)', border: '1px solid var(--primary-color)', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+                                                                onClick={() => {
+                                                                    const lab = prompt("Nombre de la opción (ej: Internacional):");
+                                                                    const val = prompt("Valor a filtrar (debe coincidir con el campo de la DB/Mock, ej: 'internacional'):");
+                                                                    if (val && lab) {
+                                                                        const newFilters = [...agendaFilters];
+                                                                        newFilters[fIndex].options.push({ value: val, label: lab });
+                                                                        setAgendaFilters(newFilters);
+                                                                    }
+                                                                }}
+                                                            >+ Añadir Opción</button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+
+                                                <button
+                                                    onClick={() => {
+                                                        const label = prompt("Nombre del nuevo filtro (ej: Categoría):");
+                                                        if (label) {
+                                                            const id = label.toLowerCase().replace(/\s+/g, '_') + Date.now();
+                                                            const prop = prompt("Campo de la conferencia que filtrará (ej: category, level, type, speakerName):", "category");
+                                                            if (prop) {
+                                                                setAgendaFilters([...agendaFilters, {
+                                                                    id,
+                                                                    label,
+                                                                    property: prop,
+                                                                    icon: "🏷️",
+                                                                    options: [{ value: "all", label: `Todos los ${label}s` }]
+                                                                }]);
+                                                            }
+                                                        }
+                                                    }}
+                                                    style={{ width: '100%', padding: '12px', border: '2px dashed #cbd5e1', background: 'white', borderRadius: '12px', cursor: 'pointer', color: '#64748b', fontWeight: '600', transition: 'all 0.2s' }}
+                                                    onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--primary-color)'}
+                                                    onMouseLeave={(e) => e.currentTarget.style.borderColor = '#cbd5e1'}
+                                                >
+                                                    + Crear Nuevo Filtro Personalizado
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <button className="btn-submit" style={{ marginTop: '1.5rem', width: '100%' }} onClick={() => { dispatchUpdate(); alert("Configuración de Agenda y Días guardada."); }}>
+                                            Guardar Cambios de Agenda
                                         </button>
                                     </div>
                                 </div>
@@ -1271,7 +1883,6 @@ export default function Admin() {
                         </div>
                     )}
 
-                    {/* Modal de Edición de Conferencia */}
                     {editingConf && (
                         <div className="modal-overlay fade-in">
                             <div className="modal-content">
@@ -1289,21 +1900,29 @@ export default function Admin() {
                                         <label>Conferencista / Invitado</label>
                                         <select
                                             className="admin-select"
-                                            value={editingConf.speaker.name}
+                                            value={editingConf.speaker.name || editingConf.speaker.nombre}
                                             onChange={e => {
                                                 const selectedName = e.target.value;
-                                                const selectedSpeaker = conferences.find((c: any) => c.speaker.name === selectedName)?.speaker;
+                                                const selectedSpeaker = speakers.find((s: any) => (s.nombre || s.name) === selectedName);
                                                 if (selectedSpeaker) {
-                                                    setEditingConf({ ...editingConf, speaker: { ...selectedSpeaker } });
+                                                    setEditingConf({
+                                                        ...editingConf,
+                                                        speaker: {
+                                                            name: selectedSpeaker.nombre || selectedSpeaker.name,
+                                                            organization: selectedSpeaker.organizacion || selectedSpeaker.organization,
+                                                            bio: selectedSpeaker.bio,
+                                                            avatar: selectedSpeaker.avatar_url || selectedSpeaker.avatar
+                                                        }
+                                                    });
                                                 }
                                             }}
                                         >
-                                            {Array.from(new Set(conferences.map((c: any) => c.speaker.name)))
-                                                .map(name => conferences.find((c: any) => c.speaker.name === name)?.speaker)
-                                                .map((s, idx) => (
-                                                    <option key={idx} value={s.name}>{s.name} ({s.organization})</option>
-                                                ))
-                                            }
+                                            <option value="">Seleccionar un invitado...</option>
+                                            {speakers.map((s: any, idx: number) => (
+                                                <option key={idx} value={s.nombre || s.name}>
+                                                    {s.nombre || s.name} ({s.organizacion || s.organization || 'Sin org.'})
+                                                </option>
+                                            ))}
                                         </select>
                                     </div>
                                     <div className="form-group">
@@ -1317,29 +1936,29 @@ export default function Admin() {
                                             <option value="virtual">Virtual</option>
                                         </select>
                                     </div>
-                                    {editingConf.type === 'virtual' ? (
+                                    <div className="form-group">
+                                        <label>Ubicación</label>
+                                        <select
+                                            value={editingConf.location}
+                                            onChange={e => setEditingConf({ ...editingConf, location: e.target.value })}
+                                            required
+                                            className="admin-select"
+                                        >
+                                            {Object.keys(locCapacities).map(loc => (
+                                                <option key={loc} value={loc}>{loc}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    {editingConf.type === 'virtual' && (
                                         <div className="form-group">
                                             <label>Enlace de la Reunión (Virtual)</label>
                                             <input
                                                 type="url"
                                                 value={editingConf.virtualLink || ''}
                                                 onChange={e => setEditingConf({ ...editingConf, virtualLink: e.target.value })}
+                                                placeholder="https://zoom.us/j/..."
                                                 required
                                             />
-                                        </div>
-                                    ) : (
-                                        <div className="form-group">
-                                            <label>Ubicación</label>
-                                            <select
-                                                value={editingConf.location}
-                                                onChange={e => setEditingConf({ ...editingConf, location: e.target.value })}
-                                                required
-                                                className="admin-select"
-                                            >
-                                                {Object.keys(locCapacities).map(loc => (
-                                                    <option key={loc} value={loc}>{loc}</option>
-                                                ))}
-                                            </select>
                                         </div>
                                     )}
                                     <div className="form-group">
@@ -1362,10 +1981,66 @@ export default function Admin() {
                                             <option value="General">General / Todas</option>
                                         </select>
                                     </div>
+                                    <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                                        <div className="form-group">
+                                            <label>Día</label>
+                                            <select
+                                                value={editingConf.dayId || 'day1'}
+                                                onChange={e => setEditingConf({ ...editingConf, dayId: e.target.value })}
+                                                className="admin-select"
+                                            >
+                                                {agendaDays.map(day => (
+                                                    <option key={day.id} value={day.id}>{day.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Inicio</label>
+                                            <input
+                                                type="time"
+                                                value={editingConf.startTime || '09:00'}
+                                                onChange={e => setEditingConf({ ...editingConf, startTime: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Fin</label>
+                                            <input
+                                                type="time"
+                                                value={editingConf.endTime || '10:00'}
+                                                onChange={e => setEditingConf({ ...editingConf, endTime: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                        <div className="form-group">
+                                            <label>🔗 Enlace Externo</label>
+                                            <input
+                                                type="text"
+                                                value={editingConf.documentUrl || ''}
+                                                onChange={e => setEditingConf({ ...editingConf, documentUrl: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>📁 Cambiar Archivo</label>
+                                            <input
+                                                type="file"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) {
+                                                        const reader = new FileReader();
+                                                        reader.onloadend = () => {
+                                                            if (reader.result) setEditingConf({ ...editingConf, documentFile: reader.result as string });
+                                                        };
+                                                        reader.readAsDataURL(file);
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
                                     <div className="form-group">
                                         <label>Descripción</label>
                                         <textarea
-                                            rows={4}
+                                            rows={3}
                                             value={editingConf.description}
                                             onChange={e => setEditingConf({ ...editingConf, description: e.target.value })}
                                         />
@@ -1378,8 +2053,237 @@ export default function Admin() {
                             </div>
                         </div>
                     )}
+
+                    {editingSpeaker && (
+                        <div className="modal-overlay fade-in">
+                            <div className="modal-content" style={{ maxWidth: '400px' }}>
+                                <h3>👤 Editar Información del Invitado</h3>
+                                <form onSubmit={handleSaveSpeakerEdit}>
+                                    <div className="form-group">
+                                        <label>Nombre Completo</label>
+                                        <input
+                                            type="text"
+                                            value={editingSpeaker.nombre || editingSpeaker.name || ''}
+                                            onChange={e => setEditingSpeaker({ ...editingSpeaker, nombre: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Organización / Institución</label>
+                                        <input
+                                            type="text"
+                                            value={editingSpeaker.organizacion || editingSpeaker.organization || ''}
+                                            onChange={e => setEditingSpeaker({ ...editingSpeaker, organizacion: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Bio / Perfil Profesional</label>
+                                        <textarea
+                                            rows={4}
+                                            value={editingSpeaker.bio || ''}
+                                            onChange={e => setEditingSpeaker({ ...editingSpeaker, bio: e.target.value })}
+                                            required
+                                        ></textarea>
+                                    </div>
+                                    <div className="modal-actions">
+                                        <button type="submit" className="btn-save" style={{ background: 'var(--primary-color)', color: 'white' }}>Actualizar Datos</button>
+                                        <button type="button" className="btn-logout" onClick={() => setEditingSpeaker(null)}>Cancelar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === "users" && userRole === "SUPER_ADMIN" && (
+                        <div className="admin-view fade-in">
+                            <div className="view-header">
+                                <h2>👥 Gestión de Usuarios Registrados</h2>
+                                <p>Administra los perfiles de todos los participantes y roles asignados.</p>
+                            </div>
+
+                            <div className="table-responsive premium-card" style={{ marginTop: '2rem', background: 'white', padding: '1.5rem', borderRadius: '16px' }}>
+                                <table className="admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre Completo</th>
+                                            <th>Correo Electrónico</th>
+                                            <th>Rol</th>
+                                            <th>Carrera</th>
+                                            <th>Fecha Registro</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {registeredUsers.length > 0 ? (
+                                            registeredUsers.map((u: any) => (
+                                                <tr key={u.id}>
+                                                    <td style={{ fontWeight: '600', color: 'var(--primary-color)' }}>{u.nombre_completo}</td>
+                                                    <td>{u.email || "—"}</td>
+                                                    <td><span className={`badge-role ${u.rol.toLowerCase()}`}>{u.rol}</span></td>
+                                                    <td>{u.carrera || "N/A"}</td>
+                                                    <td style={{ color: '#888' }}>{new Date(u.created_at).toLocaleDateString()}</td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan={5} style={{ textAlign: "center", padding: "3rem", color: "#666" }}>
+                                                    <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🔍</div>
+                                                    No se encontraron usuarios registrados.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === "performance" && userRole === "SUPER_ADMIN" && (
+                        <div className="admin-view fade-in">
+                            <div className="view-header" style={{ marginBottom: '2rem' }}>
+                                <h2>⏱️ Inteligencia de Rendimiento Avanzada</h2>
+                                <p>Análisis estadístico (Media, Moda, Mediana) y carga granular de imágenes por sección.</p>
+                            </div>
+
+                            {/* Resumen Global Rápido */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+                                <div className="premium-card" style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', textAlign: 'center' }}>
+                                    <h4 style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>CARGA GLOBAL MEDIA</h4>
+                                    <p style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: '5px 0', color: 'var(--primary-color)' }}>
+                                        {Math.round(getLoadTimeStats().reduce((acc: number, curr: any) => acc + curr.value, 0) / (getLoadTimeStats().length || 1))} ms
+                                    </p>
+                                </div>
+                                <div className="premium-card" style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', textAlign: 'center' }}>
+                                    <h4 style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>PESO TOTAL ASSETS</h4>
+                                    <p style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: '5px 0', color: '#059669' }}>
+                                        {getResourceSizeStats().reduce((acc: number, curr: any) => acc + curr.value, 0)} KB
+                                    </p>
+                                </div>
+                                <div className="premium-card" style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', textAlign: 'center' }}>
+                                    <h4 style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>IMÁGENES CRÍTICAS</h4>
+                                    <p style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: '5px 0', color: '#dc2626' }}>
+                                        {getImageLoadStats().filter(i => i.value > 500).length} Lentas
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Selector de Pestaña de Página */}
+                            <div className="perf-page-selector" style={{ display: 'flex', gap: '8px', marginBottom: '2rem', overflowX: 'auto', paddingBottom: '10px' }}>
+                                {[
+                                    { id: "/", label: "Inicio", icon: "🏠" },
+                                    { id: "/invitados", label: "Invitados", icon: "👥" },
+                                    { id: "/conferencias", label: "Agenda", icon: "📅" },
+                                    { id: "/perfil", label: "Perfil", icon: "👤" },
+                                    { id: "/login", label: "Auth (Sesión)", icon: "🔐" },
+                                    { id: "/registro", label: "Registro", icon: "📝" }
+                                ].map(p => (
+                                    <button
+                                        key={p.id}
+                                        onClick={() => setSelectedPerfPage(p.id)}
+                                        style={{
+                                            padding: '8px 16px',
+                                            borderRadius: '20px',
+                                            border: selectedPerfPage === p.id ? '2px solid var(--primary-color)' : '1px solid #e2e8f0',
+                                            whiteSpace: 'nowrap',
+                                            cursor: 'pointer',
+                                            fontWeight: '600',
+                                            background: selectedPerfPage === p.id ? '#eff6ff' : 'white',
+                                            color: selectedPerfPage === p.id ? 'var(--primary-color)' : '#475569',
+                                        }}
+                                    >
+                                        {p.icon} {p.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Detalle Estadístico por Página */}
+                            {(() => {
+                                const stats = getAdvancedStatsByPage(selectedPerfPage);
+                                return (
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                            <div className="premium-card" style={{ background: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+                                                <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>📊 Estadísticas Vitales</h3>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                        <span style={{ color: '#64748b' }}>Media (Promedio):</span>
+                                                        <span style={{ fontWeight: 'bold' }}>{stats.mean} ms</span>
+                                                    </div>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                        <span style={{ color: '#64748b' }}>Mediana (Punto Medio):</span>
+                                                        <span style={{ fontWeight: 'bold' }}>{stats.median} ms</span>
+                                                    </div>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                        <span style={{ color: '#64748b' }}>Moda (Frecuencia):</span>
+                                                        <span style={{ fontWeight: 'bold' }}>{stats.mode} ms</span>
+                                                    </div>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed #eee' }}>
+                                                        <span style={{ color: '#64748b' }}>Muestra:</span>
+                                                        <span>{stats.count} registros</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="premium-card" style={{ background: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+                                                <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>📈 Carga por Recursos</h3>
+                                                <div style={{ width: '100%', height: 200 }}>
+                                                    <ResponsiveContainer>
+                                                        <PieChart>
+                                                            <Pie data={getResourceSizeStats()} innerRadius={50} outerRadius={70} dataKey="value">
+                                                                {getResourceSizeStats().map((_, idx) => (
+                                                                    <Cell key={`cell-${idx}`} fill={['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b'][idx % 4]} />
+                                                                ))}
+                                                            </Pie>
+                                                            <Tooltip />
+                                                        </PieChart>
+                                                    </ResponsiveContainer>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="premium-card" style={{ background: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+                                            <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem' }}>🖼️ Tiempo de Carga de Imágenes ({selectedPerfPage})</h3>
+                                            <div className="table-responsive" style={{ maxHeight: '450px', overflowY: 'auto' }}>
+                                                <table className="admin-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Nombre del Recurso</th>
+                                                            <th>Demora</th>
+                                                            <th>Evaluación</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {stats.images.length > 0 ? stats.images.map((img, idx) => (
+                                                            <tr key={idx}>
+                                                                <td style={{ fontSize: '0.8rem', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{img.name}</td>
+                                                                <td style={{ fontWeight: 'bold' }}>{img.duration} ms</td>
+                                                                <td>
+                                                                    <span style={{
+                                                                        padding: '2px 8px',
+                                                                        borderRadius: '10px',
+                                                                        fontSize: '0.7rem',
+                                                                        background: img.duration < 150 ? '#d1fae5' : img.duration < 400 ? '#fef3c7' : '#fee2e2',
+                                                                        color: img.duration < 150 ? '#065f46' : img.duration < 400 ? '#92400e' : '#991b1b'
+                                                                    }}>
+                                                                        {img.duration < 150 ? 'Excelente' : img.duration < 400 ? 'Normal' : 'Crítico'}
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        )) : (
+                                                            <tr><td colSpan={3} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Navega a esta pestaña para recolectar datos de imágenes.</td></tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                    )}
+
                 </main>
-            </div >
-        </div >
+            </div>
+        </div>
     )
 }
