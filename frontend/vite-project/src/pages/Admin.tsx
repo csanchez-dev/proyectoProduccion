@@ -458,14 +458,19 @@ export default function Admin() {
         avatar: ""
     })
 
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (file) {
-            const reader = new FileReader()
-            reader.onloadend = () => {
-                setNewGuest({ ...newGuest, avatar: reader.result as string })
+            setIsLoading(true);
+            try {
+                const { compressImage } = await import("../utils/imageCompressor");
+                const compressed = await compressImage(file, 800, 800, 0.7);
+                setNewGuest({ ...newGuest, avatar: compressed });
+            } catch (err) {
+                console.error("Error al comprimir imagen", err);
+            } finally {
+                setIsLoading(false);
             }
-            reader.readAsDataURL(file)
         }
     }
 
@@ -806,14 +811,29 @@ export default function Admin() {
                                                 <label>📁 Cargar Archivo Local</label>
                                                 <input
                                                     type="file"
-                                                    onChange={(e) => {
+                                                    onChange={async (e) => {
                                                         const file = e.target.files?.[0];
                                                         if (file) {
-                                                            const reader = new FileReader();
-                                                            reader.onloadend = () => {
-                                                                if (reader.result) setNewConf({ ...newConf, documentFile: reader.result as string });
-                                                            };
-                                                            reader.readAsDataURL(file);
+                                                            setIsLoading(true);
+                                                            try {
+                                                                if (file.type.startsWith("image/")) {
+                                                                    const { compressImage } = await import("../utils/imageCompressor");
+                                                                    const compressed = await compressImage(file, 1200, 1200, 0.7);
+                                                                    setNewConf({ ...newConf, documentFile: compressed });
+                                                                } else {
+                                                                    const reader = new FileReader();
+                                                                    reader.onloadend = () => {
+                                                                        if (reader.result) setNewConf({ ...newConf, documentFile: reader.result as string });
+                                                                        setIsLoading(false);
+                                                                    };
+                                                                    reader.readAsDataURL(file);
+                                                                    return;
+                                                                }
+                                                            } catch (err) {
+                                                                console.error("Error procesando archivo", err);
+                                                            } finally {
+                                                                setIsLoading(false);
+                                                            }
                                                         }
                                                     }}
                                                 />
@@ -1071,18 +1091,21 @@ export default function Admin() {
                                                 <input
                                                     type="file"
                                                     accept="image/*"
-                                                    onChange={(e) => {
+                                                    onChange={async (e) => {
                                                         const file = e.target.files?.[0];
                                                         if (file) {
-                                                            if (file.size > 1500000) { toast.error("La imagen es muy pesada (máx 1.5MB)."); return; }
-                                                            const reader = new FileReader();
-                                                            reader.onloadend = () => {
-                                                                if (reader.result) {
-                                                                    try { localStorage.setItem("site_banner", reader.result as string); dispatchUpdate(); }
-                                                                    catch { toast.error("La imagen sigue siendo muy grande."); }
-                                                                }
-                                                            };
-                                                            reader.readAsDataURL(file);
+                                                            setIsLoading(true);
+                                                            try {
+                                                                const { compressImage } = await import("../utils/imageCompressor");
+                                                                const compressed = await compressImage(file, 1920, 1080, 0.8);
+                                                                localStorage.setItem("site_banner", compressed);
+                                                                dispatchUpdate();
+                                                            } catch (err) {
+                                                                console.error("Error comprimiendo banner", err);
+                                                                toast.error("Error al procesar el banner");
+                                                            } finally {
+                                                                setIsLoading(false);
+                                                            }
                                                         }
                                                     }}
                                                     className="file-input"
@@ -1103,13 +1126,16 @@ export default function Admin() {
                                                 <div className="mini-preview">
                                                     <img src={logoUniPreview} alt="Preview Uni" style={{ height: '40px', objectFit: 'contain', background: '#eee', padding: '5px', borderRadius: '4px' }} />
                                                 </div>
-                                                <input type="file" accept="image/*" onChange={(e) => {
+                                                <input type="file" accept="image/*" onChange={async (e) => {
                                                     const file = e.target.files?.[0];
                                                     if (file) {
-                                                        if (file.size > 800000) { alert("El logo es muy grande (máx 800KB)."); return; }
-                                                        const reader = new FileReader();
-                                                        reader.onloadend = () => { if (reader.result) { localStorage.setItem("site_logo_uni", reader.result as string); dispatchUpdate(); } };
-                                                        reader.readAsDataURL(file);
+                                                        setIsLoading(true);
+                                                        try {
+                                                            const { compressImage } = await import("../utils/imageCompressor");
+                                                            const compressed = await compressImage(file, 400, 400, 0.8);
+                                                            localStorage.setItem("site_logo_uni", compressed);
+                                                            dispatchUpdate();
+                                                        } catch (err) { console.error(err); } finally { setIsLoading(false); }
                                                     }
                                                 }} />
                                                 <button type="button" className="btn-remove-img-sm" onClick={() => { localStorage.removeItem("site_logo_uni"); dispatchUpdate(); }}>Restaurar Original</button>
@@ -1119,13 +1145,16 @@ export default function Admin() {
                                                 <div className="mini-preview">
                                                     <img src={logoEventPreview} alt="Preview Evento" style={{ height: '40px', objectFit: 'contain', background: '#eee', padding: '5px', borderRadius: '4px' }} />
                                                 </div>
-                                                <input type="file" accept="image/*" onChange={(e) => {
+                                                <input type="file" accept="image/*" onChange={async (e) => {
                                                     const file = e.target.files?.[0];
                                                     if (file) {
-                                                        if (file.size > 800000) { alert("El logo es muy grande (máx 800KB)."); return; }
-                                                        const reader = new FileReader();
-                                                        reader.onloadend = () => { if (reader.result) { localStorage.setItem("site_logo_evento", reader.result as string); dispatchUpdate(); } };
-                                                        reader.readAsDataURL(file);
+                                                        setIsLoading(true);
+                                                        try {
+                                                            const { compressImage } = await import("../utils/imageCompressor");
+                                                            const compressed = await compressImage(file, 400, 400, 0.8);
+                                                            localStorage.setItem("site_logo_evento", compressed);
+                                                            dispatchUpdate();
+                                                        } catch (err) { console.error(err); } finally { setIsLoading(false); }
                                                     }
                                                 }} />
                                                 <button type="button" className="btn-remove-img-sm" onClick={() => { localStorage.removeItem("site_logo_evento"); dispatchUpdate(); }}>Restaurar Original</button>
@@ -2025,14 +2054,29 @@ export default function Admin() {
                                             <label>📁 Cambiar Archivo</label>
                                             <input
                                                 type="file"
-                                                onChange={(e) => {
+                                                onChange={async (e) => {
                                                     const file = e.target.files?.[0];
                                                     if (file) {
-                                                        const reader = new FileReader();
-                                                        reader.onloadend = () => {
-                                                            if (reader.result) setEditingConf({ ...editingConf, documentFile: reader.result as string });
-                                                        };
-                                                        reader.readAsDataURL(file);
+                                                        setIsLoading(true);
+                                                        try {
+                                                            if (file.type.startsWith("image/")) {
+                                                                const { compressImage } = await import("../utils/imageCompressor");
+                                                                const compressed = await compressImage(file, 1200, 1200, 0.7);
+                                                                setEditingConf({ ...editingConf, documentFile: compressed });
+                                                            } else {
+                                                                const reader = new FileReader();
+                                                                reader.onloadend = () => {
+                                                                    if (reader.result) setEditingConf({ ...editingConf, documentFile: reader.result as string });
+                                                                    setIsLoading(false);
+                                                                };
+                                                                reader.readAsDataURL(file);
+                                                                return;
+                                                            }
+                                                        } catch (err) {
+                                                            console.error("Error procesando archivo", err);
+                                                        } finally {
+                                                            setIsLoading(false);
+                                                        }
                                                     }
                                                 }}
                                             />
@@ -2348,17 +2392,20 @@ export default function Admin() {
                                 <input
                                     type="file"
                                     accept="image/*"
-                                    onChange={(e) => {
+                                    onChange={async (e) => {
                                         const file = e.target.files?.[0];
                                         if (file) {
-                                            if (file.size > 1500000) { toast.error("La imagen es muy pesada (máx 1.5MB)."); return; }
-                                            const reader = new FileReader();
-                                            reader.onloadend = () => {
-                                                if (reader.result) {
-                                                    setEditingSpeaker({ ...editingSpeaker, avatar_url: reader.result as string, avatar: reader.result as string });
-                                                }
-                                            };
-                                            reader.readAsDataURL(file);
+                                            setIsLoading(true);
+                                            try {
+                                                const { compressImage } = await import("../utils/imageCompressor");
+                                                const compressed = await compressImage(file, 800, 800, 0.7);
+                                                setEditingSpeaker({ ...editingSpeaker, avatar_url: compressed, avatar: compressed });
+                                            } catch (err) {
+                                                console.error(err);
+                                                toast.error("Error al procesar la imagen");
+                                            } finally {
+                                                setIsLoading(false);
+                                            }
                                         }
                                     }}
                                     style={{ width: '100%' }}
