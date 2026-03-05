@@ -821,13 +821,15 @@ export default function Admin() {
                                                                     const compressed = await compressImage(file, 1200, 1200, 0.7);
                                                                     setNewConf({ ...newConf, documentFile: compressed });
                                                                 } else {
-                                                                    const reader = new FileReader();
-                                                                    reader.onloadend = () => {
-                                                                        if (reader.result) setNewConf({ ...newConf, documentFile: reader.result as string });
-                                                                        setIsLoading(false);
-                                                                    };
-                                                                    reader.readAsDataURL(file);
-                                                                    return;
+                                                                    // Pausa diminuta para que el navedor pinte el overlay "Procesando" antes de bloquear la CPU leyendo el archivo
+                                                                    await new Promise(r => setTimeout(r, 50));
+                                                                    const base64Data = await new Promise<string>((resolve, reject) => {
+                                                                        const reader = new FileReader();
+                                                                        reader.onloadend = () => resolve(reader.result as string);
+                                                                        reader.onerror = reject;
+                                                                        reader.readAsDataURL(file);
+                                                                    });
+                                                                    setNewConf({ ...newConf, documentFile: base64Data });
                                                                 }
                                                             } catch (err) {
                                                                 console.error("Error procesando archivo", err);
@@ -2064,13 +2066,15 @@ export default function Admin() {
                                                                 const compressed = await compressImage(file, 1200, 1200, 0.7);
                                                                 setEditingConf({ ...editingConf, documentFile: compressed });
                                                             } else {
-                                                                const reader = new FileReader();
-                                                                reader.onloadend = () => {
-                                                                    if (reader.result) setEditingConf({ ...editingConf, documentFile: reader.result as string });
-                                                                    setIsLoading(false);
-                                                                };
-                                                                reader.readAsDataURL(file);
-                                                                return;
+                                                                // Pausa diminuta para que el navegador pinte la animación "Procesando"
+                                                                await new Promise(r => setTimeout(r, 50));
+                                                                const base64Data = await new Promise<string>((resolve, reject) => {
+                                                                    const reader = new FileReader();
+                                                                    reader.onloadend = () => resolve(reader.result as string);
+                                                                    reader.onerror = reject;
+                                                                    reader.readAsDataURL(file);
+                                                                });
+                                                                setEditingConf({ ...editingConf, documentFile: base64Data });
                                                             }
                                                         } catch (err) {
                                                             console.error("Error procesando archivo", err);
