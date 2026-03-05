@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { conferences as initialConferences } from "../data/conference_mocks"
-import { getEvents, getGenderStats, getConferenceStats, getPageViewsStats, getLoadTimeStats, getImageLoadStats, getResourceSizeStats, getAdvancedStatsByPage } from "../utils/tracker"
+import { getEvents, getGenderStats, getConferenceStats, getPageViewsStats, getLoadTimeStats, getImageLoadStats, getResourceSizeStats, getAdvancedStatsByPage, getAvailableYears } from "../utils/tracker"
 import { translations, getTranslation } from "../utils/i18n"
 import type { Language } from "../utils/i18n"
 import {
@@ -60,6 +60,7 @@ export default function Admin() {
     })
     const [selectedPerfPage, setSelectedPerfPage] = useState("/")
     const [settingsTab, setSettingsTab] = useState("general")
+    const [analyticsYear, setAnalyticsYear] = useState<number>(new Date().getFullYear())
     const navigate = useNavigate()
 
     // Gestión de Capacidad de Auditorios
@@ -1741,6 +1742,65 @@ export default function Admin() {
                                 <h2>📊 Dashboard de Inteligencia de Datos</h2>
                                 <p>Análisis avanzado del comportamiento de usuarios y registros.</p>
                             </div>
+
+                            {/* ── Filtro por Año ── */}
+                            <div style={{
+                                display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.75rem',
+                                background: 'white', padding: '1rem 1.5rem', borderRadius: '14px',
+                                boxShadow: '0 4px 16px rgba(0,0,0,0.06)', marginBottom: '1.5rem'
+                            }}>
+                                <span style={{ fontWeight: '700', color: '#374151', fontSize: '0.95rem' }}>📅 Filtrar por año:</span>
+                                {getAvailableYears().map((yr: number) => (
+                                    <button
+                                        key={yr}
+                                        onClick={() => setAnalyticsYear(yr)}
+                                        style={{
+                                            padding: '6px 18px', borderRadius: '20px', border: 'none', cursor: 'pointer',
+                                            fontWeight: analyticsYear === yr ? '700' : '500',
+                                            background: analyticsYear === yr ? 'var(--primary-color, #2563eb)' : '#f0f4ff',
+                                            color: analyticsYear === yr ? 'white' : '#374151',
+                                            fontSize: '0.9rem', transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        {yr}
+                                    </button>
+                                ))}
+                                <span style={{ marginLeft: 'auto', fontSize: '0.8rem', color: '#94a3b8' }}>
+                                    {getEvents(analyticsYear).length} eventos registrados en {analyticsYear}
+                                </span>
+                            </div>
+
+                            {/* ── Tarjetas KPI ── */}
+                            {(() => {
+                                const evs = getEvents(analyticsYear);
+                                const pageViews = evs.filter(e => e.type === 'PAGE_VIEW').length;
+                                const clicks = evs.filter(e => e.type === 'CLICK').length;
+                                const avgLoad = (() => {
+                                    const loads = evs.filter(e => e.type === 'PAGE_LOAD_TIME' && e.duration).map(e => e.duration as number);
+                                    return loads.length ? Math.round(loads.reduce((a, b) => a + b, 0) / loads.length) : 0;
+                                })();
+                                const kpis = [
+                                    { icon: '👁️', label: 'Visitas de Página', value: pageViews.toLocaleString(), color: '#2563eb' },
+                                    { icon: '🖱️', label: 'Clics Registrados', value: clicks.toLocaleString(), color: '#16a34a' },
+                                    { icon: '⚡', label: 'Tiempo Prom. Carga', value: avgLoad ? `${avgLoad} ms` : 'Sin datos', color: '#d97706' },
+                                    { icon: '📋', label: 'Total Eventos', value: evs.length.toLocaleString(), color: '#7c3aed' },
+                                ];
+                                return (
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+                                        {kpis.map((k, i) => (
+                                            <div key={i} style={{
+                                                background: 'white', borderRadius: '14px', padding: '1.25rem 1rem',
+                                                boxShadow: '0 4px 16px rgba(0,0,0,0.06)', textAlign: 'center',
+                                                borderTop: `4px solid ${k.color}`
+                                            }}>
+                                                <div style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>{k.icon}</div>
+                                                <div style={{ fontSize: '1.6rem', fontWeight: '800', color: k.color }}>{k.value}</div>
+                                                <div style={{ fontSize: '0.78rem', color: '#6b7280', marginTop: '0.25rem' }}>{k.label}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                );
+                            })()}
 
                             <div className="analytics-dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '2rem', marginTop: '2rem' }}>
 

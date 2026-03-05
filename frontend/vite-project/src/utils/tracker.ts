@@ -1,35 +1,51 @@
 export type AppEvent = {
-    timestamp: string;
+    timestamp: string;    // Localizado (para mostrar)
+    isoTimestamp?: string; // ISO 8601 (para filtrar por año)
     type: 'PAGE_VIEW' | 'CLICK' | 'PAGE_LOAD_TIME' | 'RESOURCE_LOAD' | 'IMAGE_LOAD';
     path: string;
     details?: string;
-    duration?: number; // En milisegundos
-    size?: number; // En bytes
+    duration?: number;
+    size?: number;
 };
 
 export const trackEvent = (type: AppEvent['type'], path: string, details?: string, duration?: number, size?: number) => {
     const events: AppEvent[] = JSON.parse(localStorage.getItem('app_analytics') || '[]');
-
+    const now = new Date();
     const newEvent: AppEvent = {
-        timestamp: new Date().toLocaleString(),
+        timestamp: now.toLocaleString(),
+        isoTimestamp: now.toISOString(),
         type,
         path,
         details,
         duration,
         size
     };
-
-    // Keep only last 300 events for advanced monitoring
     const updatedEvents = [newEvent, ...events].slice(0, 300);
     localStorage.setItem('app_analytics', JSON.stringify(updatedEvents));
 };
 
-export const getEvents = (): AppEvent[] => {
-    return JSON.parse(localStorage.getItem('app_analytics') || '[]');
+/** Retorna todos los eventos, opcionalmente filtrados por año */
+export const getEvents = (year?: number): AppEvent[] => {
+    const all: AppEvent[] = JSON.parse(localStorage.getItem('app_analytics') || '[]');
+    if (!year) return all;
+    return all.filter(e => {
+        try { return new Date(e.isoTimestamp || e.timestamp).getFullYear() === year; }
+        catch { return false; }
+    });
 };
 
-export const clearEvents = () => {
-    localStorage.removeItem('app_analytics');
+export const clearEvents = () => { localStorage.removeItem('app_analytics'); };
+
+/** Años únicos que tienen eventos registrados (siempre incluye el año actual) */
+export const getAvailableYears = (): number[] => {
+    const all: AppEvent[] = JSON.parse(localStorage.getItem('app_analytics') || '[]');
+    const years = new Set<number>();
+    years.add(new Date().getFullYear());
+    all.forEach(e => {
+        try { years.add(new Date(e.isoTimestamp || e.timestamp).getFullYear()); }
+        catch { /* ignorar */ }
+    });
+    return Array.from(years).sort((a, b) => b - a);
 };
 
 // Funciones para obtener estadísticas para gráficas
