@@ -135,7 +135,6 @@ export default function Login() {
                             required
                             value={formData.email}
                             onChange={handleInputChange}
-                            placeholder="admin@coniiti.com"
                         />
                     </div>
 
@@ -148,7 +147,6 @@ export default function Login() {
                             required
                             value={formData.password}
                             onChange={handleInputChange}
-                            placeholder="********"
                         />
                     </div>
 

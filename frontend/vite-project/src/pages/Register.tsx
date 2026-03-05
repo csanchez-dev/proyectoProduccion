@@ -169,7 +169,6 @@ export default function Register() {
               required
               value={formData.fullName}
               onChange={handleInputChange}
-              placeholder="Ej: Juan Pérez"
             />
           </div>
 
@@ -182,7 +181,6 @@ export default function Register() {
               required
               value={formData.email}
               onChange={handleInputChange}
-              placeholder="ejemplo@correo.com"
             />
           </div>
 
@@ -195,7 +193,6 @@ export default function Register() {
               required
               value={formData.password}
               onChange={handleInputChange}
-              placeholder="********"
             />
           </div>
 
