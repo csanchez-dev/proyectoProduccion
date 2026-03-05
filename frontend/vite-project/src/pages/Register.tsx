@@ -55,7 +55,7 @@ export default function Register() {
       try {
         await register({ ...formData, rol: mappedRole })
         // 2. Auto-login para que el usuario pueda entrar de una vez
-        const { data: authData, error: authError } = await signIn(formData.email, formData.password)
+        const { error: authError } = await signIn(formData.email, formData.password)
 
         if (authError) {
           alert("¡Cuenta creada! Por favor REVISA TU CORREO ELECTRÓNICO para confirmar tu cuenta y luego inicia sesión.")

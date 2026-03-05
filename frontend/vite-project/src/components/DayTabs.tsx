@@ -1,4 +1,3 @@
-import React from "react";
 
 export type DayOption = {
   id: string;
@@ -19,8 +18,8 @@ export default function DayTabs({ days, activeDayId, onChange }: Props) {
 
         return (
           <button
-              key={`${d.id}-${d.id === activeDayId ? "on" : "off"}`}
-          
+            key={`${d.id}-${d.id === activeDayId ? "on" : "off"}`}
+
             className={`dayTab ${isActive ? "active" : ""}`}
             onClick={() => onChange(d.id)}
           >
