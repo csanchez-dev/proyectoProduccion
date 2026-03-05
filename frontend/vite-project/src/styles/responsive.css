@@ -47,6 +47,11 @@ header {
     z-index: 149;
 }
 
+/* Ocultar botón hamburguesa por defecto en escritorio */
+.hamburger {
+    display: none;
+}
+
 @media (max-width: 768px) {
     header {
         display: flex;
