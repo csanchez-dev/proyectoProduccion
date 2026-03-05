@@ -14,14 +14,6 @@ export default function Login() {
     useEffect(() => {
         const updateLang = () => setLang((localStorage.getItem("app_lang") as Language) || 'es');
         window.addEventListener('app-lang-updated', updateLang);
-
-        // Pre-llenar el formulario con el último usuario local creado (solo para agilizar pruebas)
-        const usuariosGuardados = JSON.parse(localStorage.getItem('usuarios_locales') || '[]');
-        if (usuariosGuardados.length > 0) {
-            const ultimoUsuario = usuariosGuardados[usuariosGuardados.length - 1];
-            setFormData({ email: ultimoUsuario.email, password: ultimoUsuario.password });
-        }
-
         return () => window.removeEventListener('app-lang-updated', updateLang);
     }, []);
 
@@ -59,6 +51,7 @@ export default function Login() {
             }
 
             localStorage.setItem("user_session", JSON.stringify(userData))
+            window.dispatchEvent(new Event('user-session-updated'))
             navigate(userData.role !== "USER" ? "/admin" : "/")
         } catch (err: any) {
             console.warn("Fallo el login con Supabase, intentando fallback local...", err.message);
@@ -66,16 +59,19 @@ export default function Login() {
             // Fallback para Usuarios según requerimiento
             if (formData.email === "superadmin@coniiti.com" && formData.password === "super123") {
                 localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'SUPER_ADMIN', fullName: 'Super Usuario' }))
+                window.dispatchEvent(new Event('user-session-updated'))
                 navigate("/admin")
                 return;
             }
             if (formData.email === "admin@coniiti.com" && formData.password === "admin123") {
                 localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'ADMIN', fullName: 'Administrador de Eventos' }))
+                window.dispatchEvent(new Event('user-session-updated'))
                 navigate("/admin")
                 return;
             }
             if (formData.email === "viewer@coniiti.com" && formData.password === "viewer123") {
                 localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'VIEWER', fullName: 'Visualizador de Datos' }))
+                window.dispatchEvent(new Event('user-session-updated'))
                 navigate("/admin")
                 return;
             }
@@ -91,6 +87,7 @@ export default function Login() {
                     fullName: usuarioLocal.fullName || 'Usuario Local'
                 };
                 localStorage.setItem("user_session", JSON.stringify(localUserData));
+                window.dispatchEvent(new Event('user-session-updated'))
                 navigate(localUserData.role !== "USER" ? "/admin" : "/perfil")
                 return;
             }

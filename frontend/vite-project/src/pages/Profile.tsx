@@ -72,8 +72,7 @@ export default function Profile() {
         }
     };
 
-    useEffect(() => {
-        // Leer sesión activa
+    const loadProfileData = () => {
         const sessionData = localStorage.getItem("user_session");
         if (sessionData) {
             const parsedSession = JSON.parse(sessionData);
@@ -92,17 +91,36 @@ export default function Profile() {
                 career: usuarioCompleto.career || "No registrada",
                 gender: parsedSession.gender || usuarioCompleto.gender || "No especificado"
             });
-
             loadUserConferences();
         } else {
             navigate("/login")
         }
+    }
 
-        // Sincronizar cambios en tiempo real (por si se inscribe en otra pestaña)
-        window.addEventListener('storage', loadUserConferences);
+    useEffect(() => {
+        // Cargar datos al montar el componente
+        loadProfileData();
+
+        // Sincronizar cambios en tiempo real
+        const handleStorage = (e: StorageEvent) => {
+            if (e.key === 'user_session') {
+                if (!e.newValue) {
+                    // Sesión cerrada en otra pestaña => redirigir
+                    navigate("/login")
+                } else {
+                    loadProfileData()
+                }
+            } else {
+                loadUserConferences()
+            }
+        }
+
+        window.addEventListener('storage', handleStorage);
+        window.addEventListener('user-session-updated', loadProfileData);
         window.addEventListener('site-config-updated', loadUserConferences);
         return () => {
-            window.removeEventListener('storage', loadUserConferences);
+            window.removeEventListener('storage', handleStorage);
+            window.removeEventListener('user-session-updated', loadProfileData);
             window.removeEventListener('site-config-updated', loadUserConferences);
         };
     }, [])

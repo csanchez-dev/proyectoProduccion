@@ -13,34 +13,34 @@ export default function Layout({ children }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLElement | null>(null);
 
-useEffect(() => {
-  document.body.style.overflow = menuOpen ? "hidden" : "";
-  return () => {
-    document.body.style.overflow = "";
-  };
-}, [menuOpen]);
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menuOpen]);
 
-useEffect(() => {
-  const onKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "Escape") setMenuOpen(false);
-  };
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
 
-  const onClickOutside = (e: MouseEvent) => {
-    if (!menuOpen) return;
-    const target = e.target as Node;
-    if (menuRef.current && !menuRef.current.contains(target)) {
-      setMenuOpen(false);
-    }
-  };
+    const onClickOutside = (e: MouseEvent) => {
+      if (!menuOpen) return;
+      const target = e.target as Node;
+      if (menuRef.current && !menuRef.current.contains(target)) {
+        setMenuOpen(false);
+      }
+    };
 
-  document.addEventListener("keydown", onKeyDown);
-  document.addEventListener("mousedown", onClickOutside);
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("mousedown", onClickOutside);
 
-  return () => {
-    document.removeEventListener("keydown", onKeyDown);
-    document.removeEventListener("mousedown", onClickOutside);
-  };
-}, [menuOpen]);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("mousedown", onClickOutside);
+    };
+  }, [menuOpen]);
   const [user, setUser] = useState<any>(null)
   const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
   const location = useLocation()
@@ -117,18 +117,35 @@ useEffect(() => {
     if (customHeader) document.documentElement.style.setProperty('--header-bg', customHeader)
   }
 
-  // Simulación de verificación de sesión (se activa al recargar o navegar)
-  useEffect(() => {
+  // Función para refrescar sesión desde localStorage
+  const refreshSession = () => {
     const session = localStorage.getItem("user_session")
-    if (session) {
-      setUser(JSON.parse(session))
-    }
+    setUser(session ? JSON.parse(session) : null)
+  }
 
+  // Verificar sesión cada vez que cambia la ruta (cubre login/logout y navegación)
+  useEffect(() => {
+    refreshSession()
+  }, [location.pathname])
+
+  // Al montar: cargar config y escuchar eventos de storage (login en otra pestaña, etc.)
+  useEffect(() => {
+    refreshSession()
     refreshConfig()
 
-    // Escuchar cambios en vivo desde otros componentes
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'user_session') refreshSession()
+    }
+
     window.addEventListener('site-config-updated', refreshConfig)
-    return () => window.removeEventListener('site-config-updated', refreshConfig)
+    window.addEventListener('user-session-updated', refreshSession)
+    window.addEventListener('storage', handleStorage)
+
+    return () => {
+      window.removeEventListener('site-config-updated', refreshConfig)
+      window.removeEventListener('user-session-updated', refreshSession)
+      window.removeEventListener('storage', handleStorage)
+    }
   }, [])
 
   const handleLogout = () => {
@@ -166,13 +183,13 @@ useEffect(() => {
         </button>
 
         {/* ✅ SOLO UN NAV (este es el real) */}
-          {menuOpen && (
-           <div className="mobile-overlay" onClick={() => setMenuOpen(false)} />
-           )}
+        {menuOpen && (
+          <div className="mobile-overlay" onClick={() => setMenuOpen(false)} />
+        )}
         <nav
-        id="mobile-nav"
-         ref={menuRef}
-        className={`navbar ${menuOpen ? "open" : ""}`}>
+          id="mobile-nav"
+          ref={menuRef}
+          className={`navbar ${menuOpen ? "open" : ""}`}>
           <ul className="navbar-links">
             <li>
               <Link to="/" onClick={() => setMenuOpen(false)}>
@@ -223,15 +240,17 @@ useEffect(() => {
             {user ? (
               <div className="user-profile-menu">
                 {(user.role === "SUPER_ADMIN" ||
-                  user.role === "CONTENT_MANAGER") && (
-                  <Link
-                    to="/admin"
-                    className="btn-management"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    {t("nav_config")}
-                  </Link>
-                )}
+                  user.role === "CONTENT_MANAGER" ||
+                  user.role === "ADMIN" ||
+                  user.role === "VIEWER") && (
+                    <Link
+                      to="/admin"
+                      className="btn-management"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      {t("nav_config")}
+                    </Link>
+                  )}
                 <Link
                   to="/perfil"
                   className="btn-profile"
