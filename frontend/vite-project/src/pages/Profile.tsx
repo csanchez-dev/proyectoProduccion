@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { updatePerfil } from "../services/api"
 import { Scanner } from '@yudiel/react-qr-scanner'
 
