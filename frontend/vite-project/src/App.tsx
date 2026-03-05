@@ -11,6 +11,8 @@ import Invitados from "./pages/Invitados"
 import Home from "./pages/Home"
 import ResetPassword from "./pages/ResetPassword"
 
+import { Toaster } from 'sonner'
+
 export default function App() {
   const location = useLocation();
 
@@ -49,17 +51,20 @@ export default function App() {
   }, [location.pathname]); // Solo cuando cambia la ruta para no saturar
 
   return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/conferencias" element={<Agenda />} />
-        <Route path="/invitados" element={<Invitados />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/registro" element={<Register />} />
-        <Route path="/perfil" element={<Profile />} />
-        <Route path="/admin" element={<Admin />} />
-        <Route path="/actualizar-password" element={<ResetPassword />} />
-      </Routes>
-    </Layout>
+    <>
+      <Toaster position="top-center" richColors />
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/conferencias" element={<Agenda />} />
+          <Route path="/invitados" element={<Invitados />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/registro" element={<Register />} />
+          <Route path="/perfil" element={<Profile />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/actualizar-password" element={<ResetPassword />} />
+        </Routes>
+      </Layout>
+    </>
   )
 }

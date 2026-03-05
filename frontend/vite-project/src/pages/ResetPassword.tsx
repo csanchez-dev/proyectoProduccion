@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "../services/api"
 import { updatePassword } from "../services/api"
+import { toast } from "sonner"
 
 export default function ResetPassword() {
     const navigate = useNavigate()
@@ -58,7 +59,7 @@ export default function ResetPassword() {
             }
 
             // Una vez actualizada, el usuario ya tiene sesión activa o lo enviamos a login
-            alert("¡Contraseña actualizada con éxito! Serás redirigido para iniciar sesión de nuevo.")
+            toast.success("¡Contraseña actualizada con éxito!")
 
             // Cerrar la sesión actual (de recuperación) e ir a login
             await supabase.auth.signOut()
