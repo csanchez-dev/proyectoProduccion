@@ -49,19 +49,32 @@ export const registerUser = async (req: Request, res: Response) => {
     }
     console.log("Usuario creado en Auth:", data.user.id)
 
-    // 2. Crear perfil en la tabla perfil_usuario
-    const { error: profileError } = await admin_supabase
+    let profileData: any = {
+      id: data.user.id,
+      nombre_completo: fullName,
+      email: email,
+      rol: rol || 'USER', // Ahora viene del frontend o por defecto USER
+      carrera: career,
+      genero: gender,
+      documento: documentNumber,
+      codigo_institucional: institutionalCode
+    }
+
+    let { error: profileError } = await admin_supabase
       .from('perfil_usuario')
-      .insert({
+      .insert(profileData)
+
+    if (profileError && profileError.message.includes("Could not find")) {
+      console.warn("Columnas faltantes en Supabase, reintentando con formato básico", profileError.message);
+      profileData = {
         id: data.user.id,
         nombre_completo: fullName,
         email: email,
-        rol: rol || 'USER', // Ahora viene del frontend o por defecto USER
-        carrera: career,
-        genero: gender,
-        documento: documentNumber,
-        codigo_institucional: institutionalCode
-      })
+        rol: rol || 'USER'
+      };
+      const retryResult = await admin_supabase.from('perfil_usuario').insert(profileData);
+      profileError = retryResult.error;
+    }
 
     if (profileError) {
       // Si falla el perfil, eliminamos el usuario de auth para permitir re-intento
@@ -119,13 +132,19 @@ export const actualizarPerfil = async (req: any, res: any) => {
     const userId = req.user.id
     const { nombre_completo, carrera } = req.body
 
-    const { error } = await admin_supabase
+    let { error } = await admin_supabase
       .from('perfil_usuario')
       .update({
         nombre_completo,
         carrera
       })
       .eq('id', userId)
+
+    if (error && error.message.includes("Could not find")) {
+      console.warn("Columna no encontrada al actualizar, usando campos base");
+      const retryResult = await admin_supabase.from('perfil_usuario').update({ nombre_completo }).eq('id', userId);
+      error = retryResult.error;
+    }
 
     if (error) throw error
 
