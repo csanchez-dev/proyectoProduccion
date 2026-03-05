@@ -348,3 +348,46 @@
   border-radius: 6px;
   cursor: pointer;
 }
+
+/* Responsividad para pantallas pequeÃ±as y celulares */
+@media (max-width: 992px) {
+  .admin-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .admin-sidebar {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  
+  .admin-sidebar button {
+    flex: 1 1 calc(50% - 0.5rem);
+    text-align: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-container {
+    padding: 1rem;
+  }
+  
+  .view-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .admin-sidebar button {
+    flex: 1 1 100%;
+  }
+  
+  .admin-table-container {
+    overflow-x: auto;
+    width: 100%;
+    display: block;
+  }
+  
+  .modal-content {
+    width: 90%;
+    padding: 1.5rem;
+  }
+}
