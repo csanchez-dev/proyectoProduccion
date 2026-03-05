@@ -10,15 +10,17 @@ export default function Invitados() {
             try {
                 const data = await getPonencias();
                 if (data && data.length > 0) {
+                    console.info('[Invitados] Datos desde API:', data.length);
                     setConferences(data);
                 } else {
                     const saved = localStorage.getItem("site_conferences")
-                    setConferences(saved ? JSON.parse(saved) : initialConferences);
+                    const parsed = saved ? JSON.parse(saved) : null;
+                    setConferences((parsed && parsed.length > 0) ? parsed : initialConferences);
                 }
             } catch (err) {
-                console.error("Error fetching guests:", err);
                 const saved = localStorage.getItem("site_conferences")
-                setConferences(saved ? JSON.parse(saved) : initialConferences);
+                const parsed = saved ? JSON.parse(saved) : null;
+                setConferences((parsed && parsed.length > 0) ? parsed : initialConferences);
             }
         };
         fetchGuests();

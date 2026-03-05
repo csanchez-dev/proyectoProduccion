@@ -39,13 +39,15 @@ const mapPonencia = (p: any) => ({
     id: String(p.id),
     title: p.titulo,
     description: p.descripcion,
-    startTime: p.dia_evento ? `${p.dia_evento.fecha}T${p.hora_inicio}` : '2026-05-10T09:00:00',
-    endTime: p.dia_evento ? `${p.dia_evento.fecha}T${p.hora_fin}` : '2026-05-10T10:00:00',
+    startTime: p.hora_inicio || '09:00',
+    endTime: p.hora_fin || '10:00',
     location: p.sala?.nombre || 'Pendiente',
     category: p.category || 'General',
     level: p.level || 'Básico',
     type: p.type || 'presencial',
     virtualLink: p.virtualLink,
+    // Derivar dayId desde la fecha del dia_evento para que el filtro de días funcione
+    dayId: p.dia_evento?.id ? `day${p.dia_evento.id}` : (p.dia_id ? `day${p.dia_id}` : 'day1'),
     speaker: p.ponencia_ponente?.[0]?.ponente ? {
         name: p.ponencia_ponente[0].ponente.nombre,
         bio: p.ponencia_ponente[0].ponente.bio,
@@ -62,6 +64,9 @@ const mapPonencia = (p: any) => ({
 // GETters
 export const getPonencias = async () => {
     const data = await apiFetch('/ponencias');
+    if (!data || !Array.isArray(data) || data.length === 0) {
+        throw new Error('Sin datos en la API, usando fallback local');
+    }
     return data.map(mapPonencia);
 };
 

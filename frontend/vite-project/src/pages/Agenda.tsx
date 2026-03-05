@@ -27,16 +27,23 @@ export default function Agenda() {
       try {
         const data = await getPonencias();
         if (data && data.length > 0) {
+          console.info('[Agenda] Datos cargados desde la API:', data.length, 'conferencias');
           setConferencesList(data);
         } else {
-          // Fallback to mocks if DB is empty for now
+          // API vacía: usar localStorage o mocks
           const saved = localStorage.getItem("site_conferences")
-          setConferencesList(saved ? JSON.parse(saved) : initialConferences);
+          const parsed = saved ? JSON.parse(saved) : null;
+          const source = (parsed && parsed.length > 0) ? parsed : initialConferences;
+          console.info('[Agenda] Usando datos locales/mocks:', source.length, 'conferencias');
+          setConferencesList(source);
         }
       } catch (err) {
-        console.error("Error al cargar conferencias de la API:", err);
+        // Error de red o API: siempre usar localStorage o mocks
         const saved = localStorage.getItem("site_conferences")
-        setConferencesList(saved ? JSON.parse(saved) : initialConferences);
+        const parsed = saved ? JSON.parse(saved) : null;
+        const source = (parsed && parsed.length > 0) ? parsed : initialConferences;
+        console.info('[Agenda] Fallback a datos locales/mocks:', source.length, 'conferencias');
+        setConferencesList(source);
       } finally {
         setIsLoading(false);
       }
