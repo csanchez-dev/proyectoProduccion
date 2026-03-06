@@ -4,14 +4,22 @@ import { trackEvent } from "../utils/tracker"
 import { translations, getTranslation } from "../utils/i18n"
 import type { Language } from "../utils/i18n"
 
-
 type Props = {
   children: ReactNode
 }
 
 export default function Layout({ children }: Props) {
+
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLElement | null>(null);
+
+  const [user, setUser] = useState<any>(null)
+  const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
+
+  const location = useLocation()
+  const [logoEvento, setLogoEvento] = useState("/logo-coniiti.png")
+
+  const t = (key: keyof typeof translations.es) => getTranslation(key, lang)
 
   useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : "";
@@ -41,28 +49,17 @@ export default function Layout({ children }: Props) {
       document.removeEventListener("mousedown", onClickOutside);
     };
   }, [menuOpen]);
-  const [user, setUser] = useState<any>(null)
-  const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
-  const location = useLocation()
 
-  const [logoEvento, setLogoEvento] = useState("/logo-coniiti.png")
-
-  // Función para traducir rápido en el componente
-  const t = (key: keyof typeof translations.es) => getTranslation(key, lang)
-
-  // Cambiar idioma
   const handleLangChange = (newLang: Language) => {
     setLang(newLang)
     localStorage.setItem("app_lang", newLang)
     window.dispatchEvent(new Event('app-lang-updated'))
   }
 
-  // Tracking de ruta
   useEffect(() => {
     trackEvent('PAGE_VIEW', location.pathname)
   }, [location])
 
-  // Tracking de clics globales
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement
@@ -75,91 +72,37 @@ export default function Layout({ children }: Props) {
     return () => document.removeEventListener('click', handleClick)
   }, [location])
 
-  // Función para recargar la configuración sin refrescar la página
-  const refreshConfig = () => {
-    // Aplicar tema persistente
-    const theme = localStorage.getItem("site_theme")
-    if (theme && theme !== "default") {
-      document.body.className = `theme-${theme}`
-    } else {
-      document.body.className = ""
-    }
-
-
-    // Cargar logos persistentes
-
-    const savedLogoEvento = localStorage.getItem("site_logo_evento")
-    if (savedLogoEvento) setLogoEvento(savedLogoEvento)
-    else setLogoEvento("/logo-coniiti.png")
-
-    // Aplicar colores personalizados si existen
-    const customBg = localStorage.getItem("custom_bg_color")
-    if (customBg) document.documentElement.style.setProperty('--site-bg', customBg)
-
-    const customText = localStorage.getItem("custom_text_color")
-    if (customText) document.documentElement.style.setProperty('--site-text', customText)
-
-    const customPrimary = localStorage.getItem("custom_primary_color")
-    if (customPrimary) {
-      document.documentElement.style.setProperty('--primary-color', customPrimary)
-    } else {
-      document.documentElement.style.setProperty('--primary-color', "#2563EB")
-    }
-
-    const customSecondary = localStorage.getItem("custom_secondary_color")
-    if (customSecondary) {
-      document.documentElement.style.setProperty('--secondary-color', customSecondary)
-    } else {
-      document.documentElement.style.setProperty('--secondary-color', "#1E293B")
-    }
-
-    const customHeader = localStorage.getItem("custom_header_bg")
-    if (customHeader) document.documentElement.style.setProperty('--header-bg', customHeader)
-  }
-
-  // Función para refrescar sesión desde localStorage
   const refreshSession = () => {
     const session = localStorage.getItem("user_session")
     setUser(session ? JSON.parse(session) : null)
   }
 
-  // Verificar sesión cada vez que cambia la ruta (cubre login/logout y navegación)
   useEffect(() => {
     refreshSession()
   }, [location.pathname])
 
-  // Al montar: cargar config y escuchar eventos de storage (login en otra pestaña, etc.)
-  useEffect(() => {
-    refreshSession()
-    refreshConfig()
-
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'user_session') refreshSession()
-    }
-
-    window.addEventListener('site-config-updated', refreshConfig)
-    window.addEventListener('user-session-updated', refreshSession)
-    window.addEventListener('storage', handleStorage)
-
-    return () => {
-      window.removeEventListener('site-config-updated', refreshConfig)
-      window.removeEventListener('user-session-updated', refreshSession)
-      window.removeEventListener('storage', handleStorage)
-    }
-  }, [])
-
   const handleLogout = () => {
-    // Limpieza total del almacenamiento y estado
     localStorage.removeItem("user_session")
     sessionStorage.removeItem("session_active")
     setUser(null)
-
-    // Redirección con recarga completa para asegurar limpieza de memoria
     window.location.href = "/"
   }
+
   return (
     <>
-      <header>
+      {/* HEADER FIJO */}
+      <header
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          zIndex: 2000,
+          background: "var(--header-bg, white)",
+          borderBottom: "1px solid #eee"
+        }}
+      >
+
         <div className="logo-container">
           <img
             src={logoEvento}
@@ -172,7 +115,6 @@ export default function Layout({ children }: Props) {
           />
         </div>
 
-        {/* BOTÓN HAMBURGUESA */}
         <button
           className="hamburger"
           onClick={() => setMenuOpen((v) => !v)}
@@ -183,128 +125,97 @@ export default function Layout({ children }: Props) {
           ☰
         </button>
 
-        {/* ✅ SOLO UN NAV (este es el real) */}
         {menuOpen && (
           <div className="mobile-overlay" onClick={() => setMenuOpen(false)} />
         )}
+
         <nav
           id="mobile-nav"
           ref={menuRef}
-          className={`navbar ${menuOpen ? "open" : ""}`}>
+          className={`navbar ${menuOpen ? "open" : ""}`}
+        >
           <ul className="navbar-links">
+
             <li>
               <Link to="/" onClick={() => setMenuOpen(false)}>
                 {t("nav_home")}
               </Link>
             </li>
+
             <li>
               <Link to="/invitados" onClick={() => setMenuOpen(false)}>
                 {t("nav_guests")}
               </Link>
             </li>
+
             <li>
               <Link to="/conferencias" onClick={() => setMenuOpen(false)}>
                 {t("nav_agenda")}
               </Link>
             </li>
+
             <li>
               <a href="/#acerca-de" onClick={() => setMenuOpen(false)}>
                 {t("nav_about")}
               </a>
             </li>
+
             <li>
               <Link to="#contacto" onClick={() => setMenuOpen(false)}>
                 {t("nav_contact")}
               </Link>
             </li>
+
           </ul>
 
-          <div
-            className="user-auth-zone"
-            style={{ display: "flex", alignItems: "center", gap: "15px" }}
-          >
-            <div className="lang-dropdown-wrapper">
-              <select
-                value={lang}
-                onChange={(e) => handleLangChange(e.target.value as Language)}
-                className="lang-select"
-              >
-                <option value="es" style={{ color: "#333" }}>
-                  🌐 Idioma: Español
-                </option>
-                <option value="en" style={{ color: "#333" }}>
-                  🌐 Language: English
-                </option>
-              </select>
-            </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+
+            <select
+              value={lang}
+              onChange={(e) => handleLangChange(e.target.value as Language)}
+            >
+              <option value="es">🌐 Español</option>
+              <option value="en">🌐 English</option>
+            </select>
 
             {user ? (
-              <div className="user-profile-menu">
-                {(user.role === "SUPER_ADMIN" ||
-                  user.role === "CONTENT_MANAGER" ||
-                  user.role === "ADMIN" ||
-                  user.role === "VIEWER") && (
-                    <Link
-                      to="/admin"
-                      className="btn-management"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      {t("nav_config")}
-                    </Link>
-                  )}
-                <Link
-                  to="/perfil"
-                  className="btn-profile"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {t("nav_profile")}
-                </Link>
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    handleLogout();
-                  }}
-                  className="btn-logout"
-                  type="button"
-                >
+
+              <>
+                <Link to="/perfil">{t("nav_profile")}</Link>
+
+                <button onClick={handleLogout}>
                   {t("nav_logout")}
                 </button>
-              </div>
-            ) : (
-              <div style={{ display: "flex", gap: "10px" }}>
-                <Link
-                  to="/login"
-                  className="btn-login-header"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {t("nav_login")}
-                </Link>
+              </>
 
-                <Link
-                  to="/registro"
-                  className="btn-register-header"
-                  onClick={() => setMenuOpen(false)}
-                  style={{
-                    padding: "8px 16px",
-                    borderRadius: "8px",
-                    textDecoration: "none",
-                    fontWeight: "600",
-                    background: "var(--primary-color)",
-                    color: "white",
-                    transition: "all 0.3s ease",
-                  }}
-                >
-                  {t("nav_register")}
-                </Link>
-              </div>
+            ) : (
+
+              <>
+                <Link to="/login">{t("nav_login")}</Link>
+                <Link to="/registro">{t("nav_register")}</Link>
+              </>
+
             )}
+
           </div>
+
         </nav>
       </header>
 
-      <main className="main-container">{children}</main>
+      {/* CONTENIDO */}
+      <main
+        className="main-container"
+        style={{
+          paddingTop: "100px"
+        }}
+      >
+        {children}
+      </main>
 
-      <footer>{t("footer_copy")}</footer>
+      <footer>
+        {t("footer_copy")}
+      </footer>
+
     </>
-  );
+  )
 }
