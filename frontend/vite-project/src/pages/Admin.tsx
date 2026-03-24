@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react" // v2-ui-refresh
+import React, { useState, useEffect } from "react" // v2-ui-refresh
 import { useNavigate } from "react-router-dom"
 import { conferences as initialConferences } from "../data/conference_mocks"
 import { getEvents, getGenderStats, getConferenceStats, getPageViewsStats, getLoadTimeStats, getImageLoadStats, getResourceSizeStats, getAdvancedStatsByPage, getAvailableYears } from "../utils/tracker"
@@ -40,6 +40,8 @@ export default function Admin() {
     const [headerColor, setHeaderColor] = useState(localStorage.getItem("custom_header_bg") || "#1f2a44")
     const [primaryColor, setPrimaryColor] = useState(localStorage.getItem("custom_primary_color") || "#2563EB")
     const [secondaryColor, setSecondaryColor] = useState(localStorage.getItem("custom_secondary_color") || "#1E293B")
+    const [accentColor, setAccentColor] = useState(localStorage.getItem("custom_accent_color") || "#00D2FF")
+    const [globalVideoBg, setGlobalVideoBg] = useState(localStorage.getItem("custom_global_video") || "")
 
     const dispatchUpdate = () => {
         window.dispatchEvent(new Event('site-config-updated'));
@@ -51,6 +53,7 @@ export default function Admin() {
         setHeaderColor(localStorage.getItem("custom_header_bg") || "#1f2a44");
         setPrimaryColor(localStorage.getItem("custom_primary_color") || "#2563EB");
         setSecondaryColor(localStorage.getItem("custom_secondary_color") || "#1E293B");
+        setAccentColor(localStorage.getItem("custom_accent_color") || "#00D2FF");
     };
     const [chartTypes, setChartTypes] = useState<any>({
         views: 'bar',
@@ -105,6 +108,17 @@ export default function Admin() {
     useEffect(() => {
         localStorage.setItem("site_location_capacities", JSON.stringify(locCapacities));
     }, [locCapacities]);
+
+    useEffect(() => {
+        const refreshRealtime = () => {
+            const savedPen = localStorage.getItem("site_pending_gallery");
+            if (savedPen) setPendingPhotos(JSON.parse(savedPen));
+            const savedPub = localStorage.getItem("site_public_gallery");
+            if (savedPub) setPublicGallery(JSON.parse(savedPub));
+        };
+        window.addEventListener('site-config-updated', refreshRealtime);
+        return () => window.removeEventListener('site-config-updated', refreshRealtime);
+    }, []);
 
     useEffect(() => {
         const session = localStorage.getItem("user_session")
@@ -642,9 +656,22 @@ export default function Admin() {
                             <button
                                 className={activeTab === "settings" ? "active" : ""}
                                 onClick={() => setActiveTab("settings")}
-                                style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '10px' }}
                             >
-                                ⚙️ Configuración Page
+                                <span style={{display:'flex', alignItems:'center', gap:'10px'}}>⚙️ Configuración Page</span>
+                                {pendingPhotos.length > 0 && (
+                                    <span style={{
+                                        background: '#ef4444', 
+                                        color: 'white', 
+                                        borderRadius: '20px', 
+                                        padding: '2px 8px', 
+                                        fontSize: '0.7rem',
+                                        fontWeight: 'bold',
+                                        animation: 'pulse 2s infinite'
+                                    }}>
+                                        {pendingPhotos.length}
+                                    </span>
+                                )}
                             </button>
                             <button
                                 className={activeTab === "users" ? "active" : ""}
@@ -1119,6 +1146,7 @@ export default function Admin() {
                                                                 localStorage.setItem("custom_primary_color", theme.themeData.primary);
                                                                 localStorage.setItem("custom_secondary_color", theme.themeData.secondary);
                                                                 localStorage.setItem("custom_header_bg", theme.themeData.header);
+                                                                localStorage.setItem("custom_accent_color", "#00D2FF"); // Default param para presets
                                                             }
                                                             dispatchUpdate();
                                                         }}
@@ -1340,27 +1368,81 @@ export default function Admin() {
                                         </div>
                                     </div>
                                     <div className="form-group">
-                                        <label>Personalización de Colores</label>
+                                        <label>🌟 Fondo Animado / Interactivo (Global)</label>
+                                        <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                            <div style={{ marginBottom: '1rem' }}>
+                                                <span style={{ display:'block', fontWeight:'600', marginBottom:'0.5rem', fontSize:'0.9rem' }}>Fondo Global por URL (Video MP4 / GIF)</span>
+                                                <input 
+                                                    type="url" 
+                                                    placeholder="https://pagina.com/video.mp4" 
+                                                    value={globalVideoBg} 
+                                                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }}
+                                                    onChange={(e) => {
+                                                        localStorage.setItem("custom_global_video", e.target.value);
+                                                        setGlobalVideoBg(e.target.value);
+                                                        dispatchUpdate();
+                                                    }}
+                                                />
+                                            </div>
+                                            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
+                                                <span style={{ display:'block', fontWeight:'600', marginBottom:'0.5rem', fontSize:'0.9rem' }}>Fondo de Imagen y Efecto Parallax</span>
+                                                <input type="file" accept="image/*" className="file-input" onChange={async (e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) {
+                                                        try {
+                                                            setIsLoading(true);
+                                                            const { compressImage } = await import("../utils/imageCompressor");
+                                                            const compressed = await compressImage(file, 1920, 1080, 0.7);
+                                                            localStorage.setItem("custom_global_image", compressed);
+                                                            dispatchUpdate();
+                                                            toast.success("Imagen de fondo guardada.");
+                                                        } catch (err) { console.error(err); } finally { setIsLoading(false); }
+                                                    }
+                                                }} />
+                                                <div style={{marginTop: '0.8rem'}}>
+                                                    <label style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize:'0.9rem'}}>
+                                                        <input type="checkbox" defaultChecked={localStorage.getItem("custom_parallax") !== "false"} onChange={(e) => {
+                                                            localStorage.setItem("custom_parallax", String(e.target.checked));
+                                                            dispatchUpdate();
+                                                        }} />
+                                                        <span>Activar Movimiento Fluido con Scroll (Efecto Parallax)</span>
+                                                    </label>
+                                                </div>
+                                                <button type="button" className="btn-remove-img-sm" style={{marginTop: '1rem'}} onClick={() => {
+                                                    ["custom_global_image", "custom_global_video"].forEach(k => localStorage.removeItem(k));
+                                                    setGlobalVideoBg("");
+                                                    dispatchUpdate();
+                                                    toast.success("Fondos eliminados");
+                                                }}>Quitar Fondo Global</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="form-group">
+                                        <label>🎨 Panel de Personalización de Colores (En Vivo)</label>
                                         <div className="color-picker-grid">
                                             <div className="color-item">
-                                                <span>Fondo General</span>
+                                                <span>Fondo de la Página <small style={{display:'block', fontSize:'11px', color:'#666'}}>Afecta toda la aplicación (--bg-page)</small></span>
                                                 <input type="color" value={bgColor} onChange={(e) => { localStorage.setItem("custom_bg_color", e.target.value); setBgColor(e.target.value); dispatchUpdate(); }} />
                                             </div>
                                             <div className="color-item">
-                                                <span>Texto Principal</span>
+                                                <span>Texto Principal <small style={{display:'block', fontSize:'11px', color:'#666'}}>Color oscuro de la lectura (--text-primary)</small></span>
                                                 <input type="color" value={textColor} onChange={(e) => { localStorage.setItem("custom_text_color", e.target.value); setTextColor(e.target.value); dispatchUpdate(); }} />
                                             </div>
                                             <div className="color-item">
-                                                <span>Color de Cabecera</span>
+                                                <span>Cabecera del Menú <small style={{display:'block', fontSize:'11px', color:'#666'}}>Barra de navegación oscura superior</small></span>
                                                 <input type="color" value={headerColor} onChange={(e) => { localStorage.setItem("custom_header_bg", e.target.value); setHeaderColor(e.target.value); dispatchUpdate(); }} />
                                             </div>
                                             <div className="color-item">
-                                                <span>Color Primario (Botones)</span>
+                                                <span>Color Primario <small style={{display:'block', fontSize:'11px', color:'#666'}}>Botones, links, y acentos fuertes</small></span>
                                                 <input type="color" value={primaryColor} onChange={(e) => { localStorage.setItem("custom_primary_color", e.target.value); setPrimaryColor(e.target.value); dispatchUpdate(); }} />
                                             </div>
                                             <div className="color-item">
-                                                <span>Color Secundario</span>
+                                                <span>Color Secundario <small style={{display:'block', fontSize:'11px', color:'#666'}}>Bordes gruesos y fondos de componentes</small></span>
                                                 <input type="color" value={secondaryColor} onChange={(e) => { localStorage.setItem("custom_secondary_color", e.target.value); setSecondaryColor(e.target.value); dispatchUpdate(); }} />
+                                            </div>
+                                            <div className="color-item">
+                                                <span>Acento / Resaltes <small style={{display:'block', fontSize:'11px', color:'#666'}}>Detalles interactivos (Cyan, Neón)</small></span>
+                                                <input type="color" value={accentColor} onChange={(e) => { localStorage.setItem("custom_accent_color", e.target.value); setAccentColor(e.target.value); dispatchUpdate(); }} />
                                             </div>
                                         </div>
                                     </div>
@@ -1375,7 +1457,8 @@ export default function Admin() {
                                         <button type="button" className="btn-logout" style={{ marginLeft: '1rem', background: '#e74c3c' }}
                                             onClick={() => {
                                                 if (confirm("¿Seguro que quieres borrar toda la personalización?")) {
-                                                    ["site_banner", "site_logo_uni", "site_logo_evento", "custom_bg_color", "custom_text_color", "custom_header_bg", "custom_primary_color", "custom_secondary_color"].forEach(key => localStorage.removeItem(key));
+                                                    ["site_banner", "site_logo_uni", "site_logo_evento", "custom_bg_color", "custom_text_color", "custom_header_bg", "custom_primary_color", "custom_secondary_color", "custom_accent_color", "custom_global_image", "custom_global_video", "custom_parallax"].forEach(key => localStorage.removeItem(key));
+                                                    setGlobalVideoBg("");
                                                     dispatchUpdate();
                                                 }
                                             }}>
@@ -1763,6 +1846,11 @@ export default function Admin() {
                                             <div>
                                                 <h3 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--secondary-color)' }}>🖼️ Gestión Maestra de Galería</h3>
                                                 <p style={{ margin: '5px 0 0 0', color: '#64748b' }}>Control de fotos públicas, pendientes de usuarios y banco privado.</p>
+                                                {pendingPhotos.length > 0 && (
+                                                    <div style={{ marginTop: '10px', display: 'inline-block', background: '#fffbeb', border: '1px solid #fde68a', padding: '5px 12px', borderRadius: '12px', fontSize: '0.85rem', color: '#b45309', fontWeight: 'bold' }}>
+                                                        📩 Tienes {pendingPhotos.length} {pendingPhotos.length === 1 ? 'foto' : 'fotos'} de usuarios esperando tu aprobación.
+                                                    </div>
+                                                )}
                                             </div>
                                             <div style={{ display: 'flex', gap: '0.75rem' }}>
                                                 <button onClick={() => document.getElementById('direct-public-upload')?.click()} className="btn-add" style={{ background: '#10b981', color: 'white', border: 'none' }}>
@@ -2836,6 +2924,23 @@ export default function Admin() {
                     </div>
                 )
             }
+            <style>{`
+                @keyframes pulse {
+                    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+                    70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+                    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+                }
+                .admin-sidebar button {
+                    transition: all 0.2s ease;
+                }
+                .admin-sidebar button:hover {
+                    background: #f1f5f9;
+                }
+                .admin-sidebar button.active {
+                    background: var(--primary-color);
+                    color: white;
+                }
+            `}</style>
         </div >
     )
 }

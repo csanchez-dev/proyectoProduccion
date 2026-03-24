@@ -121,13 +121,13 @@ export default function Login() {
             <div className="register-card fade-in">
                 <div className="login-header-premium">
                     <div className="icon-badge">🔒</div>
-                    <h2>{lang === 'es' ? "Iniciar Sesión" : "Login"}</h2>
-                    <p>{lang === 'es' ? "Ingresa tus credenciales para acceder al panel" : "Enter your credentials to access the panel"}</p>
+                    <h2>{t('login_title')}</h2>
+                    <p>{lang === 'es' ? "Ingresa tus credenciales para acceder al panel" : (lang === 'en' ? "Enter your credentials to access the panel" : "Entre com suas credenciais")}</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="premium-form">
                     <div className="form-group">
-                        <label htmlFor="email">{lang === 'es' ? "Correo Electrónico" : "Email Address"}</label>
+                        <label htmlFor="email">{t('login_email')}</label>
                         <input
                             type="email"
                             id="email"
@@ -139,7 +139,7 @@ export default function Login() {
                     </div>
 
                     <div className="form-group">
-                        <label htmlFor="password">{lang === 'es' ? "Contraseña" : "Password"}</label>
+                        <label htmlFor="password">{t('login_pass')}</label>
                         <input
                             type="password"
                             id="password"
@@ -151,22 +151,22 @@ export default function Login() {
                     </div>
 
                     <button type="submit" className="btn-submit premium-btn" disabled={isLoading}>
-                        {isLoading ? (lang === 'es' ? "Iniciando..." : "Logging in...") : t('login_submit')}
+                        {isLoading ? (lang === 'es' ? "Iniciando..." : "Wait...") : t('login_submit')}
                     </button>
 
                 </form>
 
                 <div style={{ marginTop: '1rem', textAlign: 'center' }}>
                     <a href="#" className="accent-link" onClick={(e) => { e.preventDefault(); handleForgotPassword(); }} style={{ fontSize: '0.9rem' }}>
-                        {lang === 'es' ? "¿Olvidaste tu contraseña?" : "Forgot your password?"}
+                        {t('login_forgot')}
                     </a>
                 </div>
 
                 <div className="auth-footer">
                     <p>
-                        {lang === 'es' ? "¿No tienes una cuenta?" : "Don't have an account?"}{" "}
+                        {t('login_no_account')}{" "}
                         <Link to="/registro" className="accent-link">
-                            {lang === 'es' ? "Regístrate aquí" : "Register here"}
+                            {t('login_reg_here')}
                         </Link>
                     </p>
                 </div>

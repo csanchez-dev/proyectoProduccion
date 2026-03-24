@@ -179,6 +179,7 @@ export default function ConferenceCard({ conference }: Props) {
     }
   }
 
+  const [showSpeakerModal, setShowSpeakerModal] = useState(false)
   const categoryLabel = conference.category || "General"
   const speakerName = conference.speaker?.name || "Ponente por confirmar"
 
@@ -187,11 +188,63 @@ export default function ConferenceCard({ conference }: Props) {
       className={`card ${isRegistered ? "registered" : ""} ${
         isFull ? "full" : ""
       }`}
+      data-reveal="up"
       style={{
         position: "relative",
         overflow: "hidden",
       }}
     >
+      {/* Modal de Perfil del Expositor */}
+      {showSpeakerModal && (
+        <div 
+          className="modal-overlay fade-in" 
+          style={{ 
+            position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', 
+            background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(8px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000,
+            padding: '20px'
+          }}
+          onClick={() => setShowSpeakerModal(false)}
+        >
+          <div 
+            className="modal-content" 
+            style={{ 
+              background: 'white', padding: '2.5rem', borderRadius: '32px', 
+              maxWidth: '500px', width: '100%', textAlign: 'center',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              position: 'relative'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <button 
+              onClick={() => setShowSpeakerModal(false)}
+              style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', border: 'none', background: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#94a3b8' }}
+            >
+              ✕
+            </button>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <img 
+                src={conference.speaker?.avatar || "/default-avatar.png"} 
+                alt={speakerName} 
+                style={{ width: '120px', height: '120px', borderRadius: '50%', objectFit: 'cover', border: '4px solid var(--primary-color)', padding: '4px' }}
+              />
+            </div>
+            <h3 style={{ fontSize: '1.8rem', color: 'var(--secondary-color)', fontWeight: 800, marginBottom: '0.5rem' }}>{speakerName}</h3>
+            <p style={{ color: 'var(--primary-color)', fontWeight: 700, fontSize: '1.05rem', marginBottom: '1.5rem' }}>{conference.speaker?.organization}</p>
+            <div style={{ textAlign: 'left', background: '#f8fafc', padding: '1.5rem', borderRadius: '20px', border: '1px solid #e2e8f0' }}>
+              <p style={{ color: '#475569', lineHeight: '1.6', margin: 0 }}>{conference.speaker?.bio || "No hay biografía disponible para este invitado."}</p>
+            </div>
+            <button 
+              className="btn btn-primary" 
+              style={{ marginTop: '2rem', width: '100%' }}
+              onClick={() => setShowSpeakerModal(false)}
+            >
+              Cerrar Perfil
+            </button>
+          </div>
+        </div>
+      )}
+
       <div
         style={{
           position: "absolute",
@@ -313,6 +366,7 @@ export default function ConferenceCard({ conference }: Props) {
 
           <button
             type="button"
+            onClick={() => setShowSpeakerModal(true)}
             style={{
               background: "white",
               border: "1px solid #cbd5e1",
