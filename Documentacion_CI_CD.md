@@ -1,37 +1,28 @@
-# Documentación de CI/CD para CONIITI
+# Reporte de Configuración CI/CD - Proyecto CONIITI
 
-## 1. Branch Protection y Reglas de la Rama Principal
+Este documento detalla los pasos y configuraciones que implementamos en equipo para asegurar que nadie pueda subir código "sucio" o roto a nuestra rama principal, cumpliendo con los requisitos de la entrega.
 
-Se he creado/configurado la rama **`desarrollo-rediseño-david`**. A partir de ahora, todo el desarrollo debe realizarse en esta rama y **está prohibido hacer push directo a la rama `main`**.
+## 1. Protección de la Rama Principal (Branch Protection)
 
-Para asegurar esto en GitHub (ya que requiere permisos de administrador del repositorio), deben hacer lo siguiente:
-1. Vayan a su repositorio en GitHub > **Settings** > **Branches**.
-2. Hagan clic en **Add branch protection rule** o seleccionen la rama `main`.
-3. Marquen la opción **Require a pull request before merging**.
-4. Marquen la opción **Require status checks to pass before merging** y seleccionen los checks que deben pasar obligatoriamente (Linting, Pruebas Unitarias, Build).
+Para mantener nuestro código completamente a salvo, creamos una nueva rama de trabajo llamada **`desarrollo-rediseño-david`**. La regla a partir de ahora es clara: **está prohibido hacer push directo a `main`**. Absolutamente todos los cambios deben pasar primero por nuestra nueva rama de desarrollo y aprobar revisiones.
 
-## 2. Configuración de Calidad en el Pipeline (`.github/workflows/ci.yml`)
+Para forzar esta regla en GitHub, configuramos las protecciones desde el panel de control del repositorio:
+1. Entramos a la pestaña **Settings** > **Branches**.
+2. Seleccionamos las reglas de protección para la rama `main` y activamos la casilla **"Require a pull request before merging"** (Exigir un PR).
+3. Además, activamos la opción **"Require status checks to pass before merging"** para que GitHub bloquee cualquier mezcla de código si este no pasa primero nuestras validaciones automáticas.
 
-Hemos creado una configuración de GitHub Actions (`ci.yml`) que garantiza la calidad antes de aceptar cualquier código. El archivo realiza tres verificaciones principales:
+## 2. El Pipeline Automatizado (Nuestro Archivo `.yml`)
 
-1. **Linting (`npm run lint`)**: Usando ESLint super estricto, el robot revisará que no existan variables sin utilizar ni puntos y comas omitidos. Si falla, se interrumpe y mata el proceso.
-2. **Pruebas Unitarias (`npm run test`)**: Se utiliza **Vitest** y **React Testing Library**. Se ha creado una prueba automatizada en `frontend/vite-project/src/Register.test.tsx` que renderiza el botón de Registro y confirma que exista con el texto **"Registrarse"** de CONIITI. Si algo rompe esa renderización, los tests fallan bloqueando todo.
-3. **Build Estricto (`npm run build`)**: Se ejecuta mediante `CI=true npm run build`. Si hay alertas o errores graves tanto de TypeScript o CSS, se paraliza el paso a producción.
+Para automatizar la verificación de calidad, creamos el archivo `.github/workflows/ci.yml`. Este pipeline funciona como nuestro "robot revisor" que verifica el código antes de aceptar cualquier Pull Request mediante 3 filtros obligatorios:
 
-## 3. Elaborando su Entrega del Pull Request
+1. **Linting estricto**: Configuramos ESLint para que analice que todo el código esté completamente limpio y estructurado. Si a alguien del grupo se le pasa un punto y coma mal puesto o deja alguna variable creada sin utilizar, el robot rechaza los cambios y mata el proceso inmediatamente.
+2. **Pruebas Unitarias**: Implementamos una prueba automatizada utilizando **Vitest** en el archivo `Register.test.tsx`. El robot tiene la tarea específica de renderizar nuestra aplicación y confirmar que el componente **"Botón de Registro"** del CONIITI realmente exista en pantalla y tenga su texto correcto ("Registrarse"). Si alguien borra o daña este botón, la prueba falla y se detiene todo.
+3. **Build Estricto**: Por último, el pipeline intenta compilar todo el proyecto para producción (`CI=true npm run build`). Si durante la construcción del proyecto se generan advertencias de compilación por TypeScript, alertas pesadas de CSS o imágenes inadecuadas, el pipeline se pone en rojo y el Action falla.
 
-Para entregar la pantalla al profesor y cumplir los requisitos, sigan estos pasos:
+## 3. Demostración y Evidencias de nuestro Pull Request
 
-1. Suban todo este código mediante git a la rama `desarrollo-rediseño-david`:
-   ```bash
-   git add .
-   git commit -m "Configurar CI/CD: Lint, Tests y Build de CONIITI"
-   git checkout -b desarrollo-rediseño-david
-   git push origin desarrollo-rediseño-david
-   ```
-2. En GitHub pulsen el botón **"Compare & pull request"** para intentar pasar su código hacia `main`.
-3. **Tomen un Pantallazo / Evidencia 1**: Mostrando la validación del Pull Request donde GitHub **no permite darle al botón "Merge"** indicando que existen comprobaciones en progreso (o que fallaron y deben solucionarlas).
-4. El robot de GitHub Actions ejecutará los Jobs. Cuando finalice y pasen de forma exitosa, las tres verificaciones se pondrán verdes.
-5. **Tomen un Pantallazo / Evidencia 2**: Mostrando la pestaña "Actions" (o la sección inferior del PR) donde quede claro que los 3 pasos ("Linting", "Pruebas Unitarias", y "Build Estricto") están en verde.
+Como constancia de nuestro trabajo exitoso, abrimos un **Pull Request** intentando pasar nuestros cambios desde `desarrollo-rediseño-david` hacia `main`. 
 
-Este documento y los cambios están listos para ser subidos.
+Acompañando a esta entrega, adjuntamos nuestras capturas donde demostramos el bloqueo y posterior éxito de nuestro "robot":
+* **Pantallazo Evidencia 1**: Mostramos el Pull Request recién abierto, donde GitHub nos inhabilita el botón de "Merge Pull Request", demostrando que el robot está trabajando y no deja subir el código hasta comprobar que no esté sucio.
+* **Pantallazo Evidencia 2**: El historial final del panel de Actions donde se ven claramente nuestros 3 pasos de control (**Linting, Pruebas Unitarias / Test, y Build Estricto**) todos en verde, comprobando que nuestra prueba evaluó el botón exitosamente y nuestro código es totalmente seguro.
