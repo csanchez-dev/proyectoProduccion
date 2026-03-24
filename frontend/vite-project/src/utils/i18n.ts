@@ -4,8 +4,9 @@ export const translations = {
     es: {
         nav_home: "Inicio",
         nav_guests: "Invitados",
-        nav_agenda: "Agenda",
+        nav_agenda: "Orden del día",
         nav_about: "Acerca de",
+        nav_gallery: "Galería",
         nav_contact: "Contacto",
         nav_config: "Configuración",
         nav_profile: "Mi Perfil",
@@ -36,6 +37,7 @@ export const translations = {
         nav_guests: "Guests",
         nav_agenda: "Agenda",
         nav_about: "About Us",
+        nav_gallery: "Gallery",
         nav_contact: "Contact",
         nav_config: "Configuration",
         nav_profile: "My Profile",

@@ -217,6 +217,11 @@ export default function Layout({ children }: Props) {
                 {t("nav_contact")}
               </Link>
             </li>
+            <li>
+              <Link to="/galeria" onClick={() => setMenuOpen(false)} style={{ color: 'var(--primary-color)', fontWeight: 'bold', borderBottom: '2px solid var(--primary-color)' }}>
+                {t("nav_gallery")}
+              </Link>
+            </li>
           </ul>
 
           <div

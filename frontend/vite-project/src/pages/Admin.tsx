@@ -69,6 +69,21 @@ export default function Admin() {
     });
     const [isAddingTheme, setIsAddingTheme] = useState(false);
     const [newThemeData, setNewThemeData] = useState({ name: '', primary: '#2563EB', secondary: '#1E293B', bg: '#ffffff', text: '#1b1a1a', header: '#1f2a44' });
+
+    const [adminGallery, setAdminGallery] = useState<any[]>(() => {
+        const saved = localStorage.getItem("admin_private_gallery");
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    const [publicGallery, setPublicGallery] = useState<any[]>(() => {
+        const saved = localStorage.getItem("site_public_gallery");
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    const [pendingPhotos, setPendingPhotos] = useState<any[]>(() => {
+        const saved = localStorage.getItem("site_pending_gallery");
+        return saved ? JSON.parse(saved) : [];
+    });
     const navigate = useNavigate()
 
     // Gestión de Capacidad de Auditorios
@@ -618,7 +633,7 @@ export default function Admin() {
                             className={activeTab === "analytics" ? "active" : ""}
                             onClick={() => setActiveTab("analytics")}
                         >
-                            📊 Analíticas
+                            📊 Análisis
                         </button>
                     )}
 
@@ -629,7 +644,7 @@ export default function Admin() {
                                 onClick={() => setActiveTab("settings")}
                                 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
                             >
-                                ⚙️ Configuración Página
+                                ⚙️ Configuración Page
                             </button>
                             <button
                                 className={activeTab === "users" ? "active" : ""}
@@ -649,7 +664,7 @@ export default function Admin() {
                     )}
                 </aside>
 
-                <main className="admin-content">
+                <section className="admin-content">
                     {activeTab === "conferences" && (
                         <div className="admin-view">
                             <div className="view-header">
@@ -1045,6 +1060,7 @@ export default function Admin() {
                                     { id: "pg-acerca", icon: "ℹ️", label: "Acerca De" },
                                     { id: "pg-contacto", icon: "✉️", label: "Contacto" },
                                     { id: "pg-aforos", icon: "🏛️", label: "Aforos y Sedes" },
+                                    { id: "pg-galeria", icon: "🖼️", label: "Galería Admin" },
                                 ].map(tab => (
                                     <button
                                         key={tab.id}
@@ -1052,10 +1068,10 @@ export default function Admin() {
                                         style={{
                                             padding: '8px 18px',
                                             borderRadius: '10px',
-                                            border: 'none',
+                                            border: tab.id === 'pg-galeria' ? '2px solid var(--primary-color)' : 'none',
                                             cursor: 'pointer',
-                                            fontWeight: settingsTab === tab.id ? '700' : '500',
-                                            background: settingsTab === tab.id ? 'var(--primary-color)' : '#f0f4ff',
+                                            fontWeight: (settingsTab === tab.id || tab.id === 'pg-galeria') ? '700' : '500',
+                                            background: settingsTab === tab.id ? 'var(--primary-color)' : (tab.id === 'pg-galeria' ? '#e0e7ff' : '#f0f4ff'),
                                             color: settingsTab === tab.id ? 'white' : '#374151',
                                             transition: 'all 0.2s',
                                             fontSize: '0.9rem'
@@ -1732,6 +1748,163 @@ export default function Admin() {
                                     </div>
                                 </div>
                             )}
+
+                            {/* ── SECCIÓN: GALERÍA ADMINISTRATIVA ── */}
+                            {settingsTab === "pg-galeria" && (
+                                <div className="page-settings-panel fade-in">
+                                    <div style={{ marginBottom: '2rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem' }}>
+                                        <h2 style={{ margin: 0, color: 'var(--primary-color)' }}>📸 Centro de Gestión de Imágenes</h2>
+                                        <p style={{ color: '#64748b', fontSize: '1rem' }}>Administra la galería pública, revisa envíos de usuarios y gestiona tu banco de fotos privado.</p>
+                                    </div>
+
+                                    {/* Cabecera con Acciones Rápidas */}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', background: '#f8fafc', padding: '1.5rem', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                                            <div>
+                                                <h3 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--secondary-color)' }}>🖼️ Gestión Maestra de Galería</h3>
+                                                <p style={{ margin: '5px 0 0 0', color: '#64748b' }}>Control de fotos públicas, pendientes de usuarios y banco privado.</p>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                                <button onClick={() => document.getElementById('direct-public-upload')?.click()} className="btn-add" style={{ background: '#10b981', color: 'white', border: 'none' }}>
+                                                    📤 Subir a Pública
+                                                </button>
+                                                <button onClick={() => document.getElementById('admin-priv-upload')?.click()} className="btn-add" style={{ background: 'var(--secondary-color)', color: 'white', border: 'none' }}>
+                                                    🔐 Subir a Privada
+                                                </button>
+                                                <input type="file" id="direct-public-upload" multiple accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
+                                                    const files = e.target.files; if (!files) return;
+                                                    setIsLoading(true);
+                                                    try {
+                                                        const { compressImage } = await import("../utils/imageCompressor");
+                                                        const newImages = [...publicGallery];
+                                                        for (let i = 0; i < files.length; i++) {
+                                                            const compressed = await compressImage(files[i], 1200, 1200, 0.7);
+                                                            newImages.unshift({ id: `pub-${Date.now()}-${i}`, url: compressed, name: files[i].name, date: new Date().toLocaleString() });
+                                                        }
+                                                        setPublicGallery(newImages);
+                                                        localStorage.setItem("site_public_gallery", JSON.stringify(newImages));
+                                                        window.dispatchEvent(new Event('site-config-updated'));
+                                                        toast.success("Subidas directamente a la galería pública.");
+                                                    } catch (err) { toast.error("Error al procesar."); } finally { setIsLoading(false); }
+                                                }} />
+                                                <input type="file" id="admin-priv-upload" multiple accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
+                                                    const files = e.target.files; if (!files) return;
+                                                    setIsLoading(true);
+                                                    try {
+                                                        const { compressImage } = await import("../utils/imageCompressor");
+                                                        const newImages = [...adminGallery];
+                                                        for (let i = 0; i < files.length; i++) {
+                                                            const compressed = await compressImage(files[i], 1200, 1200, 0.7);
+                                                            newImages.unshift({ id: `priv-${Date.now()}-${i}`, url: compressed, name: files[i].name, date: new Date().toLocaleString() });
+                                                        }
+                                                        setAdminGallery(newImages);
+                                                        localStorage.setItem("admin_private_gallery", JSON.stringify(newImages));
+                                                        toast.success("Guardadas en tu espacio privado.");
+                                                    } catch (err) { toast.error("Error al procesar."); } finally { setIsLoading(false); }
+                                                }} />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Sub-navegación Rápida */}
+                                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', padding: '10px', background: '#f1f5f9', borderRadius: '12px' }}>
+                                        <button onClick={() => document.getElementById('sec-pub')?.scrollIntoView({ behavior: 'smooth' })} style={{ flex: 1, padding: '8px', border: 'none', background: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>🌐 Galería Pública</button>
+                                        <button onClick={() => document.getElementById('sec-pen')?.scrollIntoView({ behavior: 'smooth' })} style={{ flex: 1, padding: '8px', border: 'none', background: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', position: 'relative' }}>
+                                            📩 Pendientes
+                                            {pendingPhotos.length > 0 && <span style={{ position: 'absolute', top: '-5px', right: '-5px', background: '#ef4444', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: '0.7rem' }}>{pendingPhotos.length}</span>}
+                                        </button>
+                                        <button onClick={() => document.getElementById('sec-pri')?.scrollIntoView({ behavior: 'smooth' })} style={{ flex: 1, padding: '8px', border: 'none', background: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>🔐 Privada (Admin)</button>
+                                    </div>
+
+                                    {/* ── SECCIÓN A: PÚBLICA ── */}
+                                    <div id="sec-pub" style={{ marginBottom: '4rem' }}>
+                                        <h4 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>🌐 Galería Pública (En vivo)</h4>
+                                        {publicGallery.length === 0 ? (
+                                            <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>No hay fotos públicas aún.</div>
+                                        ) : (
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1.2rem' }}>
+                                                {publicGallery.map(img => (
+                                                    <div key={img.id} style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', border: '1px solid #eee' }}>
+                                                        <img src={img.url} style={{ width: '100%', height: '120px', objectFit: 'cover' }} />
+                                                        <button onClick={() => {
+                                                            if (confirm("¿Borrar definitivamente del sitio público?")) {
+                                                                const updated = publicGallery.filter(i => i.id !== img.id);
+                                                                setPublicGallery(updated);
+                                                                localStorage.setItem("site_public_gallery", JSON.stringify(updated));
+                                                                window.dispatchEvent(new Event('site-config-updated'));
+                                                                toast.success("Eliminada");
+                                                            }
+                                                        }} style={{ position: 'absolute', top: '5px', right: '5px', background: 'rgba(239,68,68,0.8)', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', width: '25px', height: '25px' }}>🗑️</button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* ── SECCIÓN B: PENDIENTES ── */}
+                                    <div id="sec-pen" style={{ marginBottom: '4rem', padding: '2rem', background: '#fffbeb', borderRadius: '20px', border: '1px solid #fde68a' }}>
+                                        <h4 style={{ margin: 0, marginBottom: '1.5rem' }}>📩 Fotos Enviadas por Usuarios ({pendingPhotos.length})</h4>
+                                        {pendingPhotos.length === 0 ? (
+                                            <div style={{ textAlign: 'center', color: '#d97706' }}>No hay fotos pendientes de revisión. ✨</div>
+                                        ) : (
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1.5rem' }}>
+                                                {pendingPhotos.map(img => (
+                                                    <div key={img.id} style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+                                                        <img src={img.url} style={{ width: '100%', height: '140px', objectFit: 'cover' }} />
+                                                        <div style={{ padding: '10px', fontSize: '0.8rem' }}>
+                                                            <div style={{ fontWeight: 'bold' }}>{img.user || 'Visitante'}</div>
+                                                            <div style={{ color: '#64748b' }}>{img.date}</div>
+                                                            <div style={{ display: 'flex', gap: '5px', marginTop: '10px' }}>
+                                                                <button onClick={() => {
+                                                                    const updatedPub = [img, ...publicGallery];
+                                                                    const updatedPen = pendingPhotos.filter(p => p.id !== img.id);
+                                                                    setPublicGallery(updatedPub);
+                                                                    setPendingPhotos(updatedPen);
+                                                                    localStorage.setItem("site_public_gallery", JSON.stringify(updatedPub));
+                                                                    localStorage.setItem("site_pending_gallery", JSON.stringify(updatedPen));
+                                                                    window.dispatchEvent(new Event('site-config-updated'));
+                                                                    toast.success("¡Foto aprobada!");
+                                                                }} style={{ flex: 1, padding: '6px', background: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Aprobar</button>
+                                                                <button onClick={() => {
+                                                                    if (confirm("¿Rechazar esta foto?")) {
+                                                                        const updatedPen = pendingPhotos.filter(p => p.id !== img.id);
+                                                                        setPendingPhotos(updatedPen);
+                                                                        localStorage.setItem("site_pending_gallery", JSON.stringify(updatedPen));
+                                                                        toast.error("Foto rechazada");
+                                                                    }
+                                                                }} style={{ padding: '6px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>✖</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* ── SECCIÓN C: PRIVADA ── */}
+                                    <div id="sec-pri">
+                                        <h4 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>🔐 Espacio Privado (Admin Only)</h4>
+                                        {adminGallery.length === 0 ? (
+                                            <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Tu galería privada está vacía.</div>
+                                        ) : (
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '1rem' }}>
+                                                {adminGallery.map(img => (
+                                                    <div key={img.id} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden' }}>
+                                                        <img src={img.url} style={{ width: '100%', height: '110px', objectFit: 'cover' }} />
+                                                        <button onClick={() => {
+                                                            const updated = adminGallery.filter(i => i.id !== img.id);
+                                                            setAdminGallery(updated);
+                                                            localStorage.setItem("admin_private_gallery", JSON.stringify(updated));
+                                                            toast.success("Eliminada de privados");
+                                                        }} style={{ position: 'absolute', top: '5px', right: '5px', background: 'rgba(30,41,59,0.7)', color: 'white', border: 'none', borderRadius: '50%', cursor: 'pointer', width: '22px', height: '22px', fontSize: '10px' }}>✕</button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
 
                             {/* ── PÁGINA: AFOROS ── */}
                             {settingsTab === "pg-aforos" && (
@@ -2550,117 +2723,119 @@ export default function Admin() {
                         </div>
                     )}
 
-                </main>
-            </div>
+                </section>
+            </div >
 
             {/* ── MODAL: EDITAR INVITADO ── */}
-            {editingSpeaker && (
-                <div className="modal-overlay" style={{
-                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-                    zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
-                }}>
-                    <div className="modal-content fade-in" style={{
-                        background: 'white', borderRadius: '16px', padding: '2rem',
-                        width: '100%', maxWidth: '520px', boxShadow: '0 20px 50px rgba(0,0,0,0.3)'
+            {
+                editingSpeaker && (
+                    <div className="modal-overlay" style={{
+                        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+                        zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
                     }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                            <h3 style={{ margin: 0, fontSize: '1.3rem', color: '#1e293b' }}>✏️ Editar Invitado</h3>
-                            <button onClick={() => setEditingSpeaker(null)} style={{
-                                background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#94a3b8'
-                            }}>✕</button>
-                        </div>
+                        <div className="modal-content fade-in" style={{
+                            background: 'white', borderRadius: '16px', padding: '2rem',
+                            width: '100%', maxWidth: '520px', boxShadow: '0 20px 50px rgba(0,0,0,0.3)'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                <h3 style={{ margin: 0, fontSize: '1.3rem', color: '#1e293b' }}>✏️ Editar Invitado</h3>
+                                <button onClick={() => setEditingSpeaker(null)} style={{
+                                    background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#94a3b8'
+                                }}>✕</button>
+                            </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
-                            <img
-                                src={editingSpeaker.avatar_url || editingSpeaker.avatar || '/default-avatar.png'}
-                                alt="Preview"
-                                style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #2563eb' }}
-                            />
-                        </div>
-
-                        <form onSubmit={handleSaveSpeakerEdit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            <div className="form-group">
-                                <label style={{ fontWeight: '600', color: '#374151', fontSize: '0.9rem' }}>Nombre Completo</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={editingSpeaker.nombre || editingSpeaker.name || ''}
-                                    onChange={(e) => setEditingSpeaker({ ...editingSpeaker, nombre: e.target.value, name: e.target.value })}
-                                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem' }}
+                            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+                                <img
+                                    src={editingSpeaker.avatar_url || editingSpeaker.avatar || '/default-avatar.png'}
+                                    alt="Preview"
+                                    style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #2563eb' }}
                                 />
                             </div>
 
-                            <div className="form-group">
-                                <label style={{ fontWeight: '600', color: '#374151', fontSize: '0.9rem' }}>Organización / Universidad</label>
-                                <input
-                                    type="text"
-                                    value={editingSpeaker.organizacion || editingSpeaker.organization || ''}
-                                    onChange={(e) => setEditingSpeaker({ ...editingSpeaker, organizacion: e.target.value, organization: e.target.value })}
-                                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem' }}
-                                />
-                            </div>
+                            <form onSubmit={handleSaveSpeakerEdit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <div className="form-group">
+                                    <label style={{ fontWeight: '600', color: '#374151', fontSize: '0.9rem' }}>Nombre Completo</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={editingSpeaker.nombre || editingSpeaker.name || ''}
+                                        onChange={(e) => setEditingSpeaker({ ...editingSpeaker, nombre: e.target.value, name: e.target.value })}
+                                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem' }}
+                                    />
+                                </div>
 
-                            <div className="form-group">
-                                <label style={{ fontWeight: '600', color: '#374151', fontSize: '0.9rem' }}>Bio / Perfil Profesional</label>
-                                <textarea
-                                    rows={3}
-                                    value={editingSpeaker.bio || ''}
-                                    onChange={(e) => setEditingSpeaker({ ...editingSpeaker, bio: e.target.value })}
-                                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem', resize: 'vertical' }}
-                                />
-                            </div>
+                                <div className="form-group">
+                                    <label style={{ fontWeight: '600', color: '#374151', fontSize: '0.9rem' }}>Organización / Universidad</label>
+                                    <input
+                                        type="text"
+                                        value={editingSpeaker.organizacion || editingSpeaker.organization || ''}
+                                        onChange={(e) => setEditingSpeaker({ ...editingSpeaker, organizacion: e.target.value, organization: e.target.value })}
+                                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem' }}
+                                    />
+                                </div>
 
-                            <div className="form-group">
-                                <label style={{ fontWeight: '600', color: '#374151', fontSize: '0.9rem' }}>Foto del Invitado (cambiar)</label>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={async (e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) {
-                                            setIsLoading(true);
-                                            try {
-                                                const { compressImage } = await import("../utils/imageCompressor");
-                                                const compressed = await compressImage(file, 800, 800, 0.7);
-                                                setEditingSpeaker({ ...editingSpeaker, avatar_url: compressed, avatar: compressed });
-                                            } catch (err) {
-                                                console.error(err);
-                                                toast.error("Error al procesar la imagen");
-                                            } finally {
-                                                setIsLoading(false);
+                                <div className="form-group">
+                                    <label style={{ fontWeight: '600', color: '#374151', fontSize: '0.9rem' }}>Bio / Perfil Profesional</label>
+                                    <textarea
+                                        rows={3}
+                                        value={editingSpeaker.bio || ''}
+                                        onChange={(e) => setEditingSpeaker({ ...editingSpeaker, bio: e.target.value })}
+                                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem', resize: 'vertical' }}
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label style={{ fontWeight: '600', color: '#374151', fontSize: '0.9rem' }}>Foto del Invitado (cambiar)</label>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                setIsLoading(true);
+                                                try {
+                                                    const { compressImage } = await import("../utils/imageCompressor");
+                                                    const compressed = await compressImage(file, 800, 800, 0.7);
+                                                    setEditingSpeaker({ ...editingSpeaker, avatar_url: compressed, avatar: compressed });
+                                                } catch (err) {
+                                                    console.error(err);
+                                                    toast.error("Error al procesar la imagen");
+                                                } finally {
+                                                    setIsLoading(false);
+                                                }
                                             }
-                                        }
-                                    }}
-                                    style={{ width: '100%' }}
-                                />
-                            </div>
+                                        }}
+                                        style={{ width: '100%' }}
+                                    />
+                                </div>
 
-                            <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                                <button
-                                    type="button"
-                                    onClick={() => setEditingSpeaker(null)}
-                                    style={{
-                                        flex: 1, padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px',
-                                        background: 'white', cursor: 'pointer', fontWeight: '600', color: '#6b7280'
-                                    }}
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="submit"
-                                    style={{
-                                        flex: 2, padding: '10px', border: 'none', borderRadius: '8px',
-                                        background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', color: 'white',
-                                        cursor: 'pointer', fontWeight: '700', fontSize: '1rem'
-                                    }}
-                                >
-                                    💾 Guardar Cambios
-                                </button>
-                            </div>
-                        </form>
+                                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditingSpeaker(null)}
+                                        style={{
+                                            flex: 1, padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px',
+                                            background: 'white', cursor: 'pointer', fontWeight: '600', color: '#6b7280'
+                                        }}
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        style={{
+                                            flex: 2, padding: '10px', border: 'none', borderRadius: '8px',
+                                            background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', color: 'white',
+                                            cursor: 'pointer', fontWeight: '700', fontSize: '1rem'
+                                        }}
+                                    >
+                                        💾 Guardar Cambios
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     )
 }

@@ -9,6 +9,7 @@ import Profile from "./pages/Profile"
 import Admin from "./pages/Admin"
 import Invitados from "./pages/Invitados"
 import Home from "./pages/Home"
+import Gallery from "./pages/Gallery"
 import ResetPassword from "./pages/ResetPassword"
 
 import { Toaster } from 'sonner'
@@ -58,6 +59,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/conferencias" element={<Agenda />} />
           <Route path="/invitados" element={<Invitados />} />
+          <Route path="/galeria" element={<Gallery />} />
           <Route path="/login" element={<Login />} />
           <Route path="/registro" element={<Register />} />
           <Route path="/perfil" element={<Profile />} />
