@@ -4,7 +4,7 @@ Este documento detalla los pasos y configuraciones que implementamos en equipo p
 
 ## 1. Protección de la Rama Principal (Branch Protection)
 
-Para mantener nuestro código completamente a salvo, creamos una nueva rama de trabajo llamada **`desarrollo-rediseño-david`**. La regla a partir de ahora es clara: **está prohibido hacer push directo a `main`**. Absolutamente todos los cambios deben pasar primero por nuestra nueva rama de desarrollo y aprobar revisiones.
+Para mantener nuestro código completamente a salvo, creamos una nueva rama de trabajo llamada **`desarrollo-rediseño`**. La regla a partir de ahora es clara: **está prohibido hacer push directo a `main`**. Absolutamente todos los cambios deben pasar primero por nuestra nueva rama de desarrollo y aprobar revisiones.
 
 Para forzar esta regla en GitHub, configuramos las protecciones desde el panel de control del repositorio:
 1. Entramos a la pestaña **Settings** > **Branches**.
@@ -21,7 +21,7 @@ Para automatizar la verificación de calidad, creamos el archivo `.github/workfl
 
 ## 3. Demostración y Evidencias de nuestro Pull Request
 
-Como constancia de nuestro trabajo exitoso, abrimos un **Pull Request** intentando pasar nuestros cambios desde `desarrollo-rediseño-david` hacia `main`. 
+Como constancia de nuestro trabajo exitoso, abrimos un **Pull Request** intentando pasar nuestros cambios desde `desarrollo-rediseño` hacia `main`. 
 
 Acompañando a esta entrega, adjuntamos nuestras capturas donde demostramos el bloqueo y posterior éxito de nuestro "robot":
 * **Pantallazo Evidencia 1**: Mostramos el Pull Request recién abierto, donde GitHub nos inhabilita el botón de "Merge Pull Request", demostrando que el robot está trabajando y no deja subir el código hasta comprobar que no esté sucio.
