@@ -26,7 +26,7 @@ jobs:
         cache-dependency-path: './frontend/vite-project/package-lock.json'
 
     - name: Instalar dependencias
-      run: npm ci
+      run: npm ci --legacy-peer-deps
 
     - name: Linting
       run: npm run lint
