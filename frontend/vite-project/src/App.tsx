@@ -1,18 +1,18 @@
-import { useState, useEffect } from "react"
-import { Routes, Route, useLocation } from "react-router-dom"
-import { trackEvent } from "./utils/tracker"
-import Layout from "./components/Layout"
-import Agenda from "./pages/Agenda"
-import Register from "./pages/Register"
-import Login from "./pages/Login"
-import Profile from "./pages/Profile"
-import Admin from "./pages/Admin"
-import Invitados from "./pages/Invitados"
-import Home from "./pages/Home"
-import Gallery from "./pages/Gallery"
-import ResetPassword from "./pages/ResetPassword"
+import { useState, useEffect } from "react";
+import { Routes, Route, useLocation } from "react-router-dom";
+import { trackEvent } from "./utils/tracker";
+import Layout from "./components/Layout";
+import Agenda from "./pages/Agenda";
+import Register from "./pages/Register";
+import Login from "./pages/Login";
+import Profile from "./pages/Profile";
+import Admin from "./pages/Admin";
+import Invitados from "./pages/Invitados";
+import Home from "./pages/Home";
+import Gallery from "./pages/Gallery";
+import ResetPassword from "./pages/ResetPassword";
 
-import { Toaster } from 'sonner'
+import { Toaster } from 'sonner';
 
 export default function App() {
   const location = useLocation();
@@ -137,5 +137,5 @@ export default function App() {
         </Routes>
       </Layout>
     </>
-  )
+  );
 }

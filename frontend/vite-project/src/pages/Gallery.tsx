@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react"
-import { toast } from "sonner"
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 export default function Gallery() {
     const [publicGallery, setPublicGallery] = useState<any[]>(() => {
@@ -234,5 +234,5 @@ export default function Gallery() {
                 @keyframes spin { to { transform: rotate(360deg); } }
             `}</style>
         </div>
-    )
+    );
 }

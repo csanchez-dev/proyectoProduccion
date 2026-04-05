@@ -1,15 +1,15 @@
-import { useState, useEffect } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import { translations, getTranslation } from "../utils/i18n"
-import type { Language } from "../utils/i18n"
-import { signIn, apiFetch, resetPassword } from "../services/api"
-import { toast } from "sonner"
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { translations, getTranslation } from "../utils/i18n";
+import type { Language } from "../utils/i18n";
+import { signIn, apiFetch, resetPassword } from "../services/api";
+import { toast } from "sonner";
 
 export default function Login() {
-    const navigate = useNavigate()
+    const navigate = useNavigate();
 
-    const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
-    const [isLoading, setIsLoading] = useState(false)
+    const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es');
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         const updateLang = () => setLang((localStorage.getItem("app_lang") as Language) || 'es');
@@ -17,29 +17,29 @@ export default function Login() {
         return () => window.removeEventListener('app-lang-updated', updateLang);
     }, []);
 
-    const t = (key: keyof typeof translations.es) => getTranslation(key, lang)
+    const t = (key: keyof typeof translations.es) => getTranslation(key, lang);
 
     const [formData, setFormData] = useState({
         email: "",
         password: ""
-    })
+    });
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData({
             ...formData,
             [name]: value
-        })
-    }
+        });
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setIsLoading(true)
+        e.preventDefault();
+        setIsLoading(true);
 
         try {
             // 1. Auth con Supabase
-            const { data: _data, error } = await signIn(formData.email, formData.password)
-            if (error) throw error
+            const { error } = await signIn(formData.email, formData.password);
+            if (error) throw error;
 
             // 2. Obtener perfil desde nuestra API para saber el rol
             const perfil = await apiFetch('/usuarios/perfil');
@@ -48,35 +48,35 @@ export default function Login() {
                 email: formData.email,
                 role: perfil.rol || 'USER',
                 fullName: perfil.nombre_completo || 'Usuario'
-            }
+            };
 
-            localStorage.setItem("user_session", JSON.stringify(userData))
-            sessionStorage.setItem("session_active", "1")
-            window.dispatchEvent(new Event('user-session-updated'))
-            navigate(userData.role !== "USER" ? "/admin" : "/")
+            localStorage.setItem("user_session", JSON.stringify(userData));
+            sessionStorage.setItem("session_active", "1");
+            window.dispatchEvent(new Event('user-session-updated'));
+            navigate(userData.role !== "USER" ? "/admin" : "/");
         } catch (err: any) {
             console.warn("Fallo el login con Supabase, intentando fallback local...", err.message);
 
             // Fallback para Usuarios según requerimiento
             if (formData.email === "superadmin@coniiti.com" && formData.password === "super123") {
-                localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'SUPER_ADMIN', fullName: 'Super Usuario' }))
-                sessionStorage.setItem("session_active", "1")
-                window.dispatchEvent(new Event('user-session-updated'))
-                navigate("/admin")
+                localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'SUPER_ADMIN', fullName: 'Super Usuario' }));
+                sessionStorage.setItem("session_active", "1");
+                window.dispatchEvent(new Event('user-session-updated'));
+                navigate("/admin");
                 return;
             }
             if (formData.email === "admin@coniiti.com" && formData.password === "admin123") {
-                localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'ADMIN', fullName: 'Administrador de Eventos' }))
-                sessionStorage.setItem("session_active", "1")
-                window.dispatchEvent(new Event('user-session-updated'))
-                navigate("/admin")
+                localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'ADMIN', fullName: 'Administrador de Eventos' }));
+                sessionStorage.setItem("session_active", "1");
+                window.dispatchEvent(new Event('user-session-updated'));
+                navigate("/admin");
                 return;
             }
             if (formData.email === "viewer@coniiti.com" && formData.password === "viewer123") {
-                localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'VIEWER', fullName: 'Visualizador de Datos' }))
-                sessionStorage.setItem("session_active", "1")
-                window.dispatchEvent(new Event('user-session-updated'))
-                navigate("/admin")
+                localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'VIEWER', fullName: 'Visualizador de Datos' }));
+                sessionStorage.setItem("session_active", "1");
+                window.dispatchEvent(new Event('user-session-updated'));
+                navigate("/admin");
                 return;
             }
 
@@ -91,16 +91,16 @@ export default function Login() {
                     fullName: usuarioLocal.fullName || 'Usuario Local'
                 };
                 localStorage.setItem("user_session", JSON.stringify(localUserData));
-                sessionStorage.setItem("session_active", "1")
-                window.dispatchEvent(new Event('user-session-updated'))
-                navigate(localUserData.role !== "USER" ? "/admin" : "/perfil")
+                sessionStorage.setItem("session_active", "1");
+                window.dispatchEvent(new Event('user-session-updated'));
+                navigate(localUserData.role !== "USER" ? "/admin" : "/perfil");
                 return;
             }
             toast.error(err.message || 'Credenciales inválidas');
         } finally {
-            setIsLoading(false)
+            setIsLoading(false);
         }
-    }
+    };
 
     const handleForgotPassword = async () => {
         const email = prompt("Ingresa el correo electrónico asociado a tu cuenta:");
@@ -114,7 +114,7 @@ export default function Login() {
             console.error("Error reseteando contraseña", err);
             toast.error("Error al solicitar el enlace.");
         }
-    }
+    };
 
     return (
         <div className="register-container">
@@ -172,5 +172,5 @@ export default function Login() {
                 </div>
             </div>
         </div>
-    )
+    );
 }

@@ -11,10 +11,15 @@ export default [
   ...tseslint.configs.recommended,
   pluginReactConfig,
   {
+    settings: {
+      react: { version: "detect" }
+    },
     rules: {
       "react/react-in-jsx-scope": "off",
       "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": "error",
+      "@typescript-eslint/no-explicit-any": "off",
+      "react/no-unescaped-entities": "off",
       "semi": ["error", "always"]
     }
   }

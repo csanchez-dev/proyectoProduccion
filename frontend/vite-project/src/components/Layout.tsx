@@ -1,28 +1,28 @@
 import { useState, useEffect, useRef, type ReactNode } from "react";
-import { Link, useLocation } from "react-router-dom"
-import { trackEvent } from "../utils/tracker"
-import { translations, getTranslation } from "../utils/i18n"
-import type { Language } from "../utils/i18n"
-import { useScrollReveal } from "../hooks/useScrollReveal"
+import { Link, useLocation } from "react-router-dom";
+import { trackEvent } from "../utils/tracker";
+import { translations, getTranslation } from "../utils/i18n";
+import type { Language } from "../utils/i18n";
+import { useScrollReveal } from "../hooks/useScrollReveal";
 
 type Props = {
   children: ReactNode
 }
 
 export default function Layout({ children }: Props) {
-  useScrollReveal()
+  useScrollReveal();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const menuRef = useRef<HTMLElement | null>(null);
 
-  const [user, setUser] = useState<any>(null)
-  const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
+  const [user, setUser] = useState<any>(null);
+  const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es');
 
-  const location = useLocation()
-  const [logoEvento, setLogoEvento] = useState("/logo-coniiti.png")
+  const location = useLocation();
+  const [logoEvento, setLogoEvento] = useState("/logo-coniiti.png");
 
-  const t = (key: keyof typeof translations.es) => getTranslation(key, lang)
+  const t = (key: keyof typeof translations.es) => getTranslation(key, lang);
 
   useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : "";
@@ -54,42 +54,42 @@ export default function Layout({ children }: Props) {
   }, [menuOpen]);
 
   const handleLangChange = (newLang: Language) => {
-    setLang(newLang)
-    localStorage.setItem("app_lang", newLang)
-    window.dispatchEvent(new Event('app-lang-updated'))
-  }
+    setLang(newLang);
+    localStorage.setItem("app_lang", newLang);
+    window.dispatchEvent(new Event('app-lang-updated'));
+  };
 
   useEffect(() => {
-    trackEvent('PAGE_VIEW', location.pathname)
-  }, [location])
+    trackEvent('PAGE_VIEW', location.pathname);
+  }, [location]);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement
+      const target = e.target as HTMLElement;
       if (target.tagName === 'A' || target.tagName === 'BUTTON' || target.closest('a') || target.closest('button')) {
-        const text = target.innerText || target.getAttribute('alt') || 'Sin texto'
-        trackEvent('CLICK', location.pathname, `Clic en: ${text.slice(0, 30)}`)
+        const text = target.innerText || target.getAttribute('alt') || 'Sin texto';
+        trackEvent('CLICK', location.pathname, `Clic en: ${text.slice(0, 30)}`);
       }
-    }
-    document.addEventListener('click', handleClick)
-    return () => document.removeEventListener('click', handleClick)
-  }, [location])
+    };
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [location]);
 
   const refreshSession = () => {
-    const session = localStorage.getItem("user_session")
-    setUser(session ? JSON.parse(session) : null)
-  }
+    const session = localStorage.getItem("user_session");
+    setUser(session ? JSON.parse(session) : null);
+  };
 
   useEffect(() => {
-    refreshSession()
-  }, [location.pathname])
+    refreshSession();
+  }, [location.pathname]);
 
   const handleLogout = () => {
-    localStorage.removeItem("user_session")
-    sessionStorage.removeItem("session_active")
-    setUser(null)
-    window.location.href = "/"
-  }
+    localStorage.removeItem("user_session");
+    sessionStorage.removeItem("session_active");
+    setUser(null);
+    window.location.href = "/";
+  };
 
   return (
     <>
@@ -292,5 +292,5 @@ export default function Layout({ children }: Props) {
       </footer>
 
     </>
-  )
+  );
 }

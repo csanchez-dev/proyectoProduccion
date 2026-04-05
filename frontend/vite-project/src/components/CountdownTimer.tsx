@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react"
-import type { Language } from "../utils/i18n"
+import { useState, useEffect } from "react";
+import type { Language } from "../utils/i18n";
 
 const countdownLabels: Record<Language, { days: string; hours: string; minutes: string; seconds: string }> = {
     es: { days: "Días", hours: "Horas", minutes: "Minutos", seconds: "Segundos" },
@@ -12,41 +12,41 @@ const countdownLabels: Record<Language, { days: string; hours: string; minutes: 
     hi: { days: "दिन", hours: "घंटे", minutes: "मिनट", seconds: "सेकंड" },
     ar: { days: "أيام", hours: "ساعات", minutes: "دقائق", seconds: "ثواني" },
     ja: { days: "日", hours: "時間", minutes: "分", seconds: "秒" },
-}
+};
 
 export default function CountdownTimer() {
-    const targetDate = new Date("2026-10-01T08:00:00").getTime()
-    const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
+    const targetDate = new Date("2026-10-01T08:00:00").getTime();
+    const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es');
 
     const [timeLeft, setTimeLeft] = useState({
         days: 0, hours: 0, minutes: 0, seconds: 0
-    })
+    });
 
     useEffect(() => {
-        const updateLang = () => setLang((localStorage.getItem("app_lang") as Language) || 'es')
-        window.addEventListener('app-lang-updated', updateLang)
-        return () => window.removeEventListener('app-lang-updated', updateLang)
-    }, [])
+        const updateLang = () => setLang((localStorage.getItem("app_lang") as Language) || 'es');
+        window.addEventListener('app-lang-updated', updateLang);
+        return () => window.removeEventListener('app-lang-updated', updateLang);
+    }, []);
 
     useEffect(() => {
         const timer = setInterval(() => {
-            const now = new Date().getTime()
-            const difference = targetDate - now
+            const now = new Date().getTime();
+            const difference = targetDate - now;
             if (difference > 0) {
                 setTimeLeft({
                     days: Math.floor(difference / (1000 * 60 * 60 * 24)),
                     hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
                     minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
                     seconds: Math.floor((difference % (1000 * 60)) / 1000)
-                })
+                });
             } else {
-                clearInterval(timer)
+                clearInterval(timer);
             }
-        }, 1000)
-        return () => clearInterval(timer)
-    }, [])
+        }, 1000);
+        return () => clearInterval(timer);
+    }, []);
 
-    const labels = countdownLabels[lang] || countdownLabels.es
+    const labels = countdownLabels[lang] || countdownLabels.es;
 
     return (
         <div className="countdown-container fade-in">
@@ -67,5 +67,5 @@ export default function CountdownTimer() {
                 <span className="count-label">{labels.seconds}</span>
             </div>
         </div>
-    )
+    );
 }

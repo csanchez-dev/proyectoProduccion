@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from "react" // v2-ui-refresh
-import { useNavigate } from "react-router-dom"
-import { conferences as initialConferences } from "../data/conference_mocks"
-import { getEvents, getGenderStats, getConferenceStats, getPageViewsStats, getLoadTimeStats, getImageLoadStats, getResourceSizeStats, getAdvancedStatsByPage, getAvailableYears } from "../utils/tracker"
-import { translations, getTranslation } from "../utils/i18n"
-import type { Language } from "../utils/i18n"
+import React, { useState, useEffect } from "react"; // v2-ui-refresh
+import { useNavigate } from "react-router-dom";
+import { conferences as initialConferences } from "../data/conference_mocks";
+import { getEvents, getGenderStats, getConferenceStats, getPageViewsStats, getLoadTimeStats, getImageLoadStats, getResourceSizeStats, getAdvancedStatsByPage, getAvailableYears } from "../utils/tracker";
+import { translations, getTranslation } from "../utils/i18n";
+import type { Language } from "../utils/i18n";
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     PieChart, Pie, Cell, LineChart, Line, ScatterChart, Scatter, ZAxis
-} from 'recharts'
-import QRCode from 'react-qr-code'
-import { toast } from "sonner"
+} from 'recharts';
+import QRCode from 'react-qr-code';
+import { toast } from "sonner";
 
 export default function Admin() {
-    const [userRole, setUserRole] = useState<string | null>(null)
-    const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
+    const [userRole, setUserRole] = useState<string | null>(null);
+    const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es');
 
     useEffect(() => {
         const updateLang = () => setLang((localStorage.getItem("app_lang") as Language) || 'es');
@@ -21,27 +21,27 @@ export default function Admin() {
         return () => window.removeEventListener('app-lang-updated', updateLang);
     }, []);
 
-    const t = (key: keyof typeof translations.es) => getTranslation(key, lang)
+    const t = (key: keyof typeof translations.es) => getTranslation(key, lang);
 
-    const [conferences, setConferences] = useState<any[]>([])
+    const [conferences, setConferences] = useState<any[]>([]);
     const [deletedConferences, setDeletedConferences] = useState<any[]>(() => {
-        const saved = localStorage.getItem("site_deleted_conferences")
-        return saved ? JSON.parse(saved) : []
-    })
+        const saved = localStorage.getItem("site_deleted_conferences");
+        return saved ? JSON.parse(saved) : [];
+    });
 
-    const [activeTab, setActiveTab] = useState("conferences")
-    const [bannerPreview, setBannerPreview] = useState(localStorage.getItem("site_banner") || "/banner-header.png")
-    const [logoUniPreview, setLogoUniPreview] = useState(localStorage.getItem("site_logo_uni") || "/ucatolica-logo.png")
-    const [logoEventPreview, setLogoEventPreview] = useState(localStorage.getItem("site_logo_evento") || "/logo-coniiti.png")
+    const [activeTab, setActiveTab] = useState("conferences");
+    const [bannerPreview, setBannerPreview] = useState(localStorage.getItem("site_banner") || "/banner-header.png");
+    const [logoUniPreview, setLogoUniPreview] = useState(localStorage.getItem("site_logo_uni") || "/ucatolica-logo.png");
+    const [logoEventPreview, setLogoEventPreview] = useState(localStorage.getItem("site_logo_evento") || "/logo-coniiti.png");
 
     // Estados para colores
-    const [bgColor, setBgColor] = useState(localStorage.getItem("custom_bg_color") || "#ffffff")
-    const [textColor, setTextColor] = useState(localStorage.getItem("custom_text_color") || "#1b1a1a")
-    const [headerColor, setHeaderColor] = useState(localStorage.getItem("custom_header_bg") || "#1f2a44")
-    const [primaryColor, setPrimaryColor] = useState(localStorage.getItem("custom_primary_color") || "#2563EB")
-    const [secondaryColor, setSecondaryColor] = useState(localStorage.getItem("custom_secondary_color") || "#1E293B")
-    const [accentColor, setAccentColor] = useState(localStorage.getItem("custom_accent_color") || "#00D2FF")
-    const [globalVideoBg, setGlobalVideoBg] = useState(localStorage.getItem("custom_global_video") || "")
+    const [bgColor, setBgColor] = useState(localStorage.getItem("custom_bg_color") || "#ffffff");
+    const [textColor, setTextColor] = useState(localStorage.getItem("custom_text_color") || "#1b1a1a");
+    const [headerColor, setHeaderColor] = useState(localStorage.getItem("custom_header_bg") || "#1f2a44");
+    const [primaryColor, setPrimaryColor] = useState(localStorage.getItem("custom_primary_color") || "#2563EB");
+    const [secondaryColor, setSecondaryColor] = useState(localStorage.getItem("custom_secondary_color") || "#1E293B");
+    const [accentColor, setAccentColor] = useState(localStorage.getItem("custom_accent_color") || "#00D2FF");
+    const [globalVideoBg, setGlobalVideoBg] = useState(localStorage.getItem("custom_global_video") || "");
 
     const dispatchUpdate = () => {
         window.dispatchEvent(new Event('site-config-updated'));
@@ -60,10 +60,10 @@ export default function Admin() {
         gender: 'pie',
         conferences: 'bar',
         performance: 'bar'
-    })
-    const [selectedPerfPage, setSelectedPerfPage] = useState("/")
-    const [settingsTab, setSettingsTab] = useState("general")
-    const [analyticsYear, setAnalyticsYear] = useState<number>(new Date().getFullYear())
+    });
+    const [selectedPerfPage, setSelectedPerfPage] = useState("/");
+    const [settingsTab, setSettingsTab] = useState("general");
+    const [analyticsYear, setAnalyticsYear] = useState<number>(new Date().getFullYear());
 
     // States for Custom Theme creation
     const [customThemes, setCustomThemes] = useState<any[]>(() => {
@@ -87,7 +87,7 @@ export default function Admin() {
         const saved = localStorage.getItem("site_pending_gallery");
         return saved ? JSON.parse(saved) : [];
     });
-    const navigate = useNavigate()
+    const navigate = useNavigate();
 
     // Gestión de Capacidad de Auditorios
     const [locCapacities, setLocCapacities] = useState(() => {
@@ -121,18 +121,18 @@ export default function Admin() {
     }, []);
 
     useEffect(() => {
-        const session = localStorage.getItem("user_session")
+        const session = localStorage.getItem("user_session");
         if (session) {
-            const user = JSON.parse(session)
+            const user = JSON.parse(session);
             if (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "VIEWER" || user.role === "CONTENT_MANAGER") {
-                setUserRole(user.role)
+                setUserRole(user.role);
             } else {
-                navigate("/") // No tiene permisos
+                navigate("/"); // No tiene permisos
             }
         } else {
-            navigate("/login") // No hay sesión
+            navigate("/login"); // No hay sesión
         }
-    }, [navigate])
+    }, [navigate]);
 
     const [speakers, setSpeakers] = useState<any[]>(() => {
         // Inicializar con los datos de los mocks + locales para que nunca esté vacía la lista
@@ -169,9 +169,9 @@ export default function Admin() {
             });
         } catch { /* sin datos locales */ }
         return seedSpeakers;
-    })
-    const [registeredUsers, setRegisteredUsers] = useState<any[]>([])
-    const [isLoading, setIsLoading] = useState(false)
+    });
+    const [registeredUsers, setRegisteredUsers] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
 
     const fetchAllData = async () => {
         setIsLoading(true);
@@ -264,21 +264,21 @@ export default function Admin() {
 
     // Persistencia automática de los cambios
     useEffect(() => {
-        localStorage.setItem("site_conferences", JSON.stringify(conferences))
-    }, [conferences])
+        localStorage.setItem("site_conferences", JSON.stringify(conferences));
+    }, [conferences]);
 
     useEffect(() => {
-        localStorage.setItem("site_deleted_conferences", JSON.stringify(deletedConferences))
-    }, [deletedConferences])
+        localStorage.setItem("site_deleted_conferences", JSON.stringify(deletedConferences));
+    }, [deletedConferences]);
 
     useEffect(() => {
         if (speakers.length > 0) {
-            localStorage.setItem("site_speakers", JSON.stringify(speakers))
+            localStorage.setItem("site_speakers", JSON.stringify(speakers));
         }
-    }, [speakers])
+    }, [speakers]);
 
-    const [editingConf, setEditingConf] = useState<any | null>(null)
-    const [editingSpeaker, setEditingSpeaker] = useState<any | null>(null)
+    const [editingConf, setEditingConf] = useState<any | null>(null);
+    const [editingSpeaker, setEditingSpeaker] = useState<any | null>(null);
 
     const handleDeleteConference = async (id: string) => {
         if (!confirm("¿Estás seguro de eliminar esta conferencia?")) return;
@@ -292,20 +292,20 @@ export default function Admin() {
             console.error("Error deleting conference:", err);
             // alert("No se pudo eliminar de la base de datos.");
         }
-    }
+    };
 
     const handleRestoreConference = (id: string) => {
-        const confToRestore = deletedConferences.find((c: any) => c.id === id)
+        const confToRestore = deletedConferences.find((c: any) => c.id === id);
         if (confToRestore) {
-            setConferences([...conferences, confToRestore])
-            setDeletedConferences(deletedConferences.filter((c: any) => c.id !== id))
+            setConferences([...conferences, confToRestore]);
+            setDeletedConferences(deletedConferences.filter((c: any) => c.id !== id));
             // alert("Conferencia restaurada")
         }
-    }
+    };
 
     const handleEditConference = (conf: { id: string, title: string, description: string, speakerName?: string, startTime: string, endTime: string, location: string, category: string, level: string, speaker: any, career?: string }) => {
-        setEditingConf({ ...conf })
-    }
+        setEditingConf({ ...conf });
+    };
 
     // Gestión de Días de la Agenda
     const [agendaDays, setAgendaDays] = useState<{ id: string, label: string }[]>(() => {
@@ -366,7 +366,7 @@ export default function Admin() {
         localStorage.setItem("agenda_filters_config", JSON.stringify(agendaFilters));
     }, [agendaFilters]);
 
-    const [showConfForm, setShowConfForm] = useState(false)
+    const [showConfForm, setShowConfForm] = useState(false);
     const [newConf, setNewConf] = useState({
         title: "",
         location: "Auditorio Paraninfo",
@@ -380,11 +380,11 @@ export default function Admin() {
         virtualLink: "",
         documentUrl: "",
         documentFile: ""
-    })
+    });
 
     const handleAddConference = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setIsLoading(true)
+        e.preventDefault();
+        setIsLoading(true);
 
         try {
             const { createPonencia } = await import("../services/api");
@@ -439,10 +439,10 @@ export default function Admin() {
         } finally {
             setIsLoading(false);
         }
-    }
+    };
 
     const handleSaveEdit = async (e: React.FormEvent) => {
-        e.preventDefault()
+        e.preventDefault();
         try {
             const updatedConfs = conferences.map((c: any) => c.id === editingConf.id ? editingConf : c);
             setConferences(updatedConfs);
@@ -456,16 +456,16 @@ export default function Admin() {
                 console.warn("No se pudo actualizar en API (posible endpoint inexistente), cambios guardados localmente");
             }
 
-            setEditingConf(null)
-            toast.success("Cambios guardados correctamente")
+            setEditingConf(null);
+            toast.success("Cambios guardados correctamente");
         } catch (err) {
             console.error("Error al guardar cambios:", err);
             // alert("No se pudieron guardar los cambios");
         }
-    }
+    };
 
-    const [showGuestForm, setShowGuestForm] = useState(false)
-    const [qrModalConf, setQrModalConf] = useState<any | null>(null)
+    const [showGuestForm, setShowGuestForm] = useState(false);
+    const [qrModalConf, setQrModalConf] = useState<any | null>(null);
 
     const downloadQR = () => {
         const svg = document.getElementById(`qr-code-svg-${qrModalConf?.id}`);
@@ -488,16 +488,16 @@ export default function Admin() {
             }
         };
         img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
-    }
+    };
     const [newGuest, setNewGuest] = useState({
         name: "",
         organization: "",
         bio: "",
         avatar: ""
-    })
+    });
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]
+        const file = e.target.files?.[0];
         if (file) {
             setIsLoading(true);
             try {
@@ -510,11 +510,11 @@ export default function Admin() {
                 setIsLoading(false);
             }
         }
-    }
+    };
 
     const handleAddGuest = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setIsLoading(true)
+        e.preventDefault();
+        setIsLoading(true);
 
         try {
             const { createPonente } = await import("../services/api");
@@ -568,7 +568,7 @@ export default function Admin() {
         } finally {
             setIsLoading(false);
         }
-    }
+    };
 
     const handleSaveSpeakerEdit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -598,7 +598,7 @@ export default function Admin() {
         // alert("✅ Información del invitado actualizada.");
     };
 
-    if (!userRole) return <div className="loading">{lang === 'es' ? 'Cargando panel...' : 'Loading panel...'}</div>
+    if (!userRole) return <div className="loading">{lang === 'es' ? 'Cargando panel...' : 'Loading panel...'}</div>;
 
     return (
         <div className="admin-container fade-in">
@@ -2942,5 +2942,5 @@ export default function Admin() {
                 }
             `}</style>
         </div >
-    )
+    );
 }

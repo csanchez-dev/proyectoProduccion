@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react"
-import type { Conference } from "../types/conference"
+import { useState, useEffect } from "react";
+import type { Conference } from "../types/conference";
 
 type Props = {
   conference: Conference
@@ -7,97 +7,97 @@ type Props = {
 
 export default function ConferenceCard({ conference }: Props) {
   const [maxCapacity, setMaxCapacity] = useState(() => {
-    if (conference.type === "virtual") return 500
+    if (conference.type === "virtual") return 500;
     const capacities = JSON.parse(
       localStorage.getItem("site_location_capacities") || "{}"
-    )
-    return capacities[conference.location] || 150
-  })
+    );
+    return capacities[conference.location] || 150;
+  });
 
   const [isRegistered, setIsRegistered] = useState(() => {
-    const sessionData = localStorage.getItem("user_session")
-    if (!sessionData) return false
-    const currentUser = JSON.parse(sessionData)
+    const sessionData = localStorage.getItem("user_session");
+    if (!sessionData) return false;
+    const currentUser = JSON.parse(sessionData);
     const userRegs = JSON.parse(
       localStorage.getItem(`registrations_${currentUser.email}`) || "[]"
-    )
-    return userRegs.some((r: any) => r.id === conference.id)
-  })
+    );
+    return userRegs.some((r: any) => r.id === conference.id);
+  });
 
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false);
 
   const [availableSeats, setAvailableSeats] = useState(() => {
-    const savedStats = JSON.parse(localStorage.getItem("conf_stats") || "[]")
-    const confStat = savedStats.find((s: any) => s.name === conference.title)
-    return confStat ? maxCapacity - confStat.value : maxCapacity
-  })
+    const savedStats = JSON.parse(localStorage.getItem("conf_stats") || "[]");
+    const confStat = savedStats.find((s: any) => s.name === conference.title);
+    return confStat ? maxCapacity - confStat.value : maxCapacity;
+  });
 
-  const isFull = availableSeats <= 0
+  const isFull = availableSeats <= 0;
 
   const getStockColor = () => {
-    if (availableSeats <= 0) return "#ff4d4d"
-    if (availableSeats <= 50) return "#ffa500"
-    if (availableSeats <= 100) return "#fff9c4"
-    return "#c8e6c9"
-  }
+    if (availableSeats <= 0) return "#ff4d4d";
+    if (availableSeats <= 50) return "#ffa500";
+    if (availableSeats <= 100) return "#fff9c4";
+    return "#c8e6c9";
+  };
 
   useEffect(() => {
     const refreshCapacity = () => {
       const capacities = JSON.parse(
         localStorage.getItem("site_location_capacities") || "{}"
-      )
+      );
       const newMax =
         conference.type === "virtual"
           ? 500
-          : capacities[conference.location] || 150
+          : capacities[conference.location] || 150;
 
-      setMaxCapacity(newMax)
+      setMaxCapacity(newMax);
 
-      const savedStats = JSON.parse(localStorage.getItem("conf_stats") || "[]")
-      const confStat = savedStats.find((s: any) => s.name === conference.title)
-      setAvailableSeats(confStat ? newMax - confStat.value : newMax)
-    }
+      const savedStats = JSON.parse(localStorage.getItem("conf_stats") || "[]");
+      const confStat = savedStats.find((s: any) => s.name === conference.title);
+      setAvailableSeats(confStat ? newMax - confStat.value : newMax);
+    };
 
-    window.addEventListener("site-config-updated", refreshCapacity)
-    window.addEventListener("storage", refreshCapacity)
+    window.addEventListener("site-config-updated", refreshCapacity);
+    window.addEventListener("storage", refreshCapacity);
 
     return () => {
-      window.removeEventListener("site-config-updated", refreshCapacity)
-      window.removeEventListener("storage", refreshCapacity)
-    }
-  }, [conference.location, conference.title, conference.type])
+      window.removeEventListener("site-config-updated", refreshCapacity);
+      window.removeEventListener("storage", refreshCapacity);
+    };
+  }, [conference.location, conference.title, conference.type]);
 
   const handleRegister = () => {
-    if (isRegistered || isFull) return
+    if (isRegistered || isFull) return;
 
-    const sessionData = localStorage.getItem("user_session")
+    const sessionData = localStorage.getItem("user_session");
     if (!sessionData) {
-      alert("Debes iniciar sesión para inscribirte en conferencias.")
-      window.location.href = "/login"
-      return
+      alert("Debes iniciar sesión para inscribirte en conferencias.");
+      window.location.href = "/login";
+      return;
     }
 
-    const currentUser = JSON.parse(sessionData)
-    setIsLoading(true)
+    const currentUser = JSON.parse(sessionData);
+    setIsLoading(true);
 
     setTimeout(() => {
-      setIsLoading(false)
-      setIsRegistered(true)
-      setAvailableSeats((prev: number) => prev - 1)
+      setIsLoading(false);
+      setIsRegistered(true);
+      setAvailableSeats((prev: number) => prev - 1);
 
-      const stats = JSON.parse(localStorage.getItem("conf_stats") || "[]")
-      const confIndex = stats.findIndex((s: any) => s.name === conference.title)
+      const stats = JSON.parse(localStorage.getItem("conf_stats") || "[]");
+      const confIndex = stats.findIndex((s: any) => s.name === conference.title);
 
       if (confIndex >= 0) {
-        stats[confIndex].value += 1
+        stats[confIndex].value += 1;
       } else {
-        stats.push({ name: conference.title, value: 1 })
+        stats.push({ name: conference.title, value: 1 });
       }
 
-      localStorage.setItem("conf_stats", JSON.stringify(stats))
+      localStorage.setItem("conf_stats", JSON.stringify(stats));
 
-      const userRegKey = `registrations_${currentUser.email}`
-      const userRegs = JSON.parse(localStorage.getItem(userRegKey) || "[]")
+      const userRegKey = `registrations_${currentUser.email}`;
+      const userRegs = JSON.parse(localStorage.getItem(userRegKey) || "[]");
 
       const normalized = {
         ...conference,
@@ -118,7 +118,7 @@ export default function ConferenceCard({ conference }: Props) {
           conference.dayId ||
           ((conference as any).dia_id ? `day${(conference as any).dia_id}` : "day1"),
         attended: (conference as any).attended || false,
-      }
+      };
 
       if (
         !userRegs.some(
@@ -126,43 +126,43 @@ export default function ConferenceCard({ conference }: Props) {
             String(r.id) === String(normalized.id) || r.title === normalized.title
         )
       ) {
-        userRegs.push(normalized)
-        localStorage.setItem(userRegKey, JSON.stringify(userRegs))
-        window.dispatchEvent(new Event("storage"))
+        userRegs.push(normalized);
+        localStorage.setItem(userRegKey, JSON.stringify(userRegs));
+        window.dispatchEvent(new Event("storage"));
       }
 
-      alert("🎉 ¡Inscripción exitosa! Puedes verla en tu perfil.")
-    }, 1500)
-  }
+      alert("🎉 ¡Inscripción exitosa! Puedes verla en tu perfil.");
+    }, 1500);
+  };
 
   const formatTime = (value: string) => {
-    if (!value) return ""
+    if (!value) return "";
 
     if (value.includes("T")) {
-      const date = new Date(value)
+      const date = new Date(value);
       if (!isNaN(date.getTime())) {
         return date.toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
-        })
+        });
       }
     }
 
-    if (value.includes(":") && value.length <= 5) return value
+    if (value.includes(":") && value.length <= 5) return value;
 
     try {
       return new Date(value).toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
-      })
+      });
     } catch {
-      return value
+      return value;
     }
-  }
+  };
 
   const getTimeZoneLabel = () => {
     try {
-      const zone = Intl.DateTimeFormat().resolvedOptions().timeZone
+      const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
       const labels: Record<string, string> = {
         "America/Bogota": "Hora Colombia",
@@ -171,17 +171,17 @@ export default function ConferenceCard({ conference }: Props) {
         "America/Lima": "Hora Perú",
         "America/Santiago": "Hora Chile",
         "America/Argentina/Buenos_Aires": "Hora Argentina",
-      }
+      };
 
-      return labels[zone] || zone.replace("_", " ")
+      return labels[zone] || zone.replace("_", " ");
     } catch {
-      return "Hora local"
+      return "Hora local";
     }
-  }
+  };
 
-  const [showSpeakerModal, setShowSpeakerModal] = useState(false)
-  const categoryLabel = conference.category || "General"
-  const speakerName = conference.speaker?.name || "Ponente por confirmar"
+  const [showSpeakerModal, setShowSpeakerModal] = useState(false);
+  const categoryLabel = conference.category || "General";
+  const speakerName = conference.speaker?.name || "Ponente por confirmar";
 
   return (
     <div
@@ -492,18 +492,18 @@ export default function ConferenceCard({ conference }: Props) {
                 : "0 8px 18px rgba(37, 99, 235, 0.25)",
             }}
             onMouseEnter={(e) => {
-              if (isRegistered || isFull) return
-              e.currentTarget.style.transform = "translateY(-3px) scale(1.02)"
+              if (isRegistered || isFull) return;
+              e.currentTarget.style.transform = "translateY(-3px) scale(1.02)";
               e.currentTarget.style.boxShadow =
-                "0 14px 26px rgba(37, 99, 235, 0.35)"
-              e.currentTarget.style.filter = "brightness(1.05)"
+                "0 14px 26px rgba(37, 99, 235, 0.35)";
+              e.currentTarget.style.filter = "brightness(1.05)";
             }}
             onMouseLeave={(e) => {
-              if (isRegistered || isFull) return
-              e.currentTarget.style.transform = "translateY(0) scale(1)"
+              if (isRegistered || isFull) return;
+              e.currentTarget.style.transform = "translateY(0) scale(1)";
               e.currentTarget.style.boxShadow =
-                "0 8px 18px rgba(37, 99, 235, 0.25)"
-              e.currentTarget.style.filter = "brightness(1)"
+                "0 8px 18px rgba(37, 99, 235, 0.25)";
+              e.currentTarget.style.filter = "brightness(1)";
             }}
           >
             {isLoading
@@ -517,5 +517,5 @@ export default function ConferenceCard({ conference }: Props) {
         </div>
       </div>
     </div>
-  )
+  );
 }

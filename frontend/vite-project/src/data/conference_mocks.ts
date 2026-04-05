@@ -1,4 +1,4 @@
-import type { Conference } from "../types/conference.ts"
+import type { Conference } from "../types/conference.ts";
 
 export const conferences: Conference[] = [
   {
