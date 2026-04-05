@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react"
-import { getTranslation } from "../utils/i18n"
 import type { Language } from "../utils/i18n"
 
 const countdownLabels: Record<Language, { days: string; hours: string; minutes: string; seconds: string }> = {
