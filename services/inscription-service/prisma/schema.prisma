@@ -1,0 +1,12 @@
+model InscripcionPonencia {
+  id            String    @id @default(uuid())
+  usuarioId     String
+  ponenciaId    String
+  asistio       Boolean   @default(false)
+  fecha_inscripcion DateTime @default(now())
+
+  usuario       Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  ponencia      Ponencia  @relation(fields: [ponenciaId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, ponenciaId])
+}
