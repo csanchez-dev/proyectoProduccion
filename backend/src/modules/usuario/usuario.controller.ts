@@ -1,170 +1,87 @@
 import { Request, Response } from 'express'
-import * as service from './usuario.service'
-import { admin_supabase } from '../../config/supabase'
+import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcrypt'
+import jwt from 'jsonwebtoken'
 
-
-// Registrar un usuario(CREATE)
+const prisma = new PrismaClient()
 
 export const registerUser = async (req: Request, res: Response) => {
   const { fullName, email, password, rol, career, gender, documentNumber, institutionalCode } = req.body
 
   try {
-    console.log("Intentando registrar usuario:", email)
-
-    // Validar en la BD que no exista ya el documento de identidad
+    // Validaciones únicas
     if (documentNumber) {
-      const { data: docExists } = await admin_supabase
-        .from('perfil_usuario')
-        .select('id')
-        .eq('documento', documentNumber)
-        .maybeSingle()
-
+      const docExists = await prisma.usuario.findUnique({
+        where: { documento: documentNumber }
+      })
       if (docExists) {
-        return res.status(400).json({ error: "El número de documento ya se encuentra registrado." })
+        return res.status(400).json({ error: "Documento ya registrado" })
       }
     }
 
-    // Validar en la BD que no exista ya el código institucional
-    if (rol === 'ESTUDIANTE' && institutionalCode) {
-      const { data: codeExists } = await admin_supabase
-        .from('perfil_usuario')
-        .select('id')
-        .eq('codigo_institucional', institutionalCode)
-        .maybeSingle()
-
+    if (institutionalCode) {
+      const codeExists = await prisma.usuario.findUnique({
+        where: { codigoInstitucional: institutionalCode }
+      })
       if (codeExists) {
-        return res.status(400).json({ error: "El código institucional ya se encuentra registrado por otro estudiante." })
+        return res.status(400).json({ error: "Código institucional ya registrado" })
       }
     }
 
-    // 1. Crear usuario en auth supabase
-    const { data, error } = await admin_supabase.auth.signUp({
-      email,
-      password,
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10)
+
+    // Crear usuario
+    const user = await prisma.usuario.create({
+      data: {
+        nombreCompleto: fullName,
+        email,
+        password: hashedPassword,
+        rol,
+        carrera: career,
+        genero: gender,
+        documento: documentNumber,
+        codigoInstitucional: institutionalCode
+      }
     })
 
-    if (error || !data.user) {
-      console.error("Error de Supabase Auth:", error)
-      return res.status(400).json({ error: error?.message || "No se pudo crear el usuario en Auth" })
-    }
-    console.log("Usuario creado en Auth:", data.user.id)
-
-    let profileData: any = {
-      id: data.user.id,
-      nombre_completo: fullName,
-      email: email,
-      rol: rol || 'USER', // Ahora viene del frontend o por defecto USER
-      carrera: career,
-      genero: gender,
-      documento: documentNumber,
-      codigo_institucional: institutionalCode
-    }
-
-    let { error: profileError } = await admin_supabase
-      .from('perfil_usuario')
-      .insert(profileData)
-
-    if (profileError && profileError.message.includes("Could not find")) {
-      console.warn("Columnas faltantes en Supabase, reintentando con formato básico", profileError.message);
-      profileData = {
-        id: data.user.id,
-        nombre_completo: fullName,
-        email: email,
-        rol: rol || 'USER'
-      };
-      const retryResult = await admin_supabase.from('perfil_usuario').insert(profileData);
-      profileError = retryResult.error;
-    }
-
-    if (profileError) {
-      // Si falla el perfil, eliminamos el usuario de auth para permitir re-intento
-      await admin_supabase.auth.admin.deleteUser(data.user.id)
-      console.error("Error al crear perfil:", profileError)
-      return res.status(400).json({ error: "Error al crear el perfil: " + profileError.message })
-    }
+    // Crear token
+    const token = jwt.sign(
+      { userId: user.id, rol: user.rol },
+      process.env.JWT_SECRET!,
+      { expiresIn: '1h' }
+    )
 
     return res.status(201).json({
-      message: "Usuario y perfil creados correctamente",
-      user: {
-        id: data.user.id,
-        email: data.user.email,
-        fullName
-      }
+      message: "Usuario creado correctamente",
+      token
     })
-  } catch (err: any) {
-    console.error("Error en registro server-side:", err)
-    return res.status(500).json({ error: "Error interno del servidor" })
+
+  } catch (err) {
+    return res.status(500).json({ error: "Error interno" })
   }
 }
 
+export const loginUser = async (req: Request, res: Response) => {
+  const { email, password } = req.body
 
-export const obtenerPerfil = async (req: Request, res: Response) => {
-  const userId = (req as any).user.id
-  const { data, error } = await service.obtenerMiPerfil(userId)
+  const user = await prisma.usuario.findUnique({ where: { email } })
 
-  if (error) return res.status(400).json({ error: error.message })
-  res.json(data)
-}
-
-export const crearPerfil = async (req: any, res: any) => {
-  try {
-    const userId = req.user.id
-    const { nombre_completo, rol } = req.body
-
-    const { error } = await admin_supabase
-      .from('perfil_usuario')
-      .insert({
-        id: userId,
-        nombre_completo,
-        rol: rol || 'USER'
-      })
-
-    if (error) throw error
-
-    res.status(201).json({ message: 'Perfil creado correctamente' })
-  } catch (err: any) {
-    res.status(400).json({ error: err.message })
+  if (!user) {
+    return res.status(400).json({ error: "Usuario no encontrado" })
   }
-}
 
-export const actualizarPerfil = async (req: any, res: any) => {
-  try {
-    const userId = req.user.id
-    const { nombre_completo, carrera } = req.body
+  const valid = await bcrypt.compare(password, user.password)
 
-    let { error } = await admin_supabase
-      .from('perfil_usuario')
-      .update({
-        nombre_completo,
-        carrera
-      })
-      .eq('id', userId)
-
-    if (error && error.message.includes("Could not find")) {
-      console.warn("Columna no encontrada al actualizar, usando campos base");
-      const retryResult = await admin_supabase.from('perfil_usuario').update({ nombre_completo }).eq('id', userId);
-      error = retryResult.error;
-    }
-
-    if (error) throw error
-
-    res.json({ message: 'Perfil actualizado correctamente' })
-  } catch (err: any) {
-    res.status(400).json({ error: err.message })
+  if (!valid) {
+    return res.status(400).json({ error: "Contraseña incorrecta" })
   }
-}
 
-export const obtenerUsuarios = async (req: any, res: any) => {
-  try {
-    const { data, error } = await admin_supabase
-      .from('perfil_usuario')
-      .select('*')
-      .order('created_at', { ascending: false })
+  const token = jwt.sign(
+    { userId: user.id, rol: user.rol },
+    process.env.JWT_SECRET!,
+    { expiresIn: '1h' }
+  )
 
-    if (error) throw error
-
-    res.json(data)
-  } catch (err: any) {
-    res.status(400).json({ error: err.message })
-  }
+  res.json({ token })
 }

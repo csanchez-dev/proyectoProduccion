@@ -1,0 +1,32 @@
+
+services:
+  postgres-auth:
+    image: postgres:18
+    container_name: postgres_auth
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: auth_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_auth_data:/var/lib/postgresql
+
+  auth-service:
+    build: ./services/auth-service
+    container_name: auth_service
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres-auth
+    environment:
+      DATABASE_URL: postgresql://postgres:123456@postgres-auth:5432/auth_db
+      JWT_SECRET: supersecret
+    volumes:
+      - ./services/auth-service:/app
+    command: npm run dev
+
+volumes:
+  postgres_auth_data:
