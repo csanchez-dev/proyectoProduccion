@@ -1,33 +1,23 @@
 // src/controllers/usuario.controller.ts
-import { Request, Response } from 'express'
-import bcrypt from 'bcrypt'
-import { prisma } from '../config/prisma'
+import { Request, Response } from 'express';
+import bcrypt from 'bcrypt';
+import { prisma } from '../config/prisma.js';
+import { TipoUsuario } from '@prisma/client';
 
 // 🟢 Registro (usuario + perfil)
 export const registerUser = async (req: Request, res: Response) => {
-  const { email, password, nombres, apellidos, universidad, tipo_usuario } = req.body
+  const { email, password, nombres, apellidos, universidad, tipo_usuario } = req.body;
 
   try {
-    // Verificar email único
-    const exists = await prisma.usuario.findUnique({
-      where: { email }
-    })
+    const exists = await prisma.usuario.findUnique({ where: { email } });
+    if (exists) return res.status(400).json({ error: 'El email ya está registrado' });
 
-    if (exists) {
-      return res.status(400).json({ error: 'El email ya está registrado' })
-    }
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10)
-
-    // Transacción (usuario + perfil)
     const user = await prisma.$transaction(async (tx) => {
       const newUser = await tx.usuario.create({
-        data: {
-          email,
-          password_hash: hashedPassword
-        }
-      })
+        data: { email, password_hash: hashedPassword },
+      });
 
       await tx.perfilUsuario.create({
         data: {
@@ -35,73 +25,59 @@ export const registerUser = async (req: Request, res: Response) => {
           nombres,
           apellidos,
           universidad,
-          tipo_usuario
-        }
-      })
+          tipo_usuario: tipo_usuario || TipoUsuario.estudiante,
+        },
+      });
 
-      return newUser
-    })
+      return newUser;
+    });
 
-    return res.status(201).json({
-      message: 'Usuario creado correctamente',
-      userId: user.id
-    })
-
+    return res.status(201).json({ message: 'Usuario creado correctamente', userId: user.id });
   } catch (error) {
-    return res.status(500).json({ error: 'Error interno del servidor' })
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
-}
+};
 
 // 🔵 Obtener mi perfil
-export const getMyProfile = async (req: any, res: Response) => {
-  const userId = req.user.userId
-
+export const getMyProfile = async (req: Request, res: Response) => {
   try {
-    const perfil = await prisma.perfilUsuario.findUnique({
-      where: { id: userId }
-    })
+    const userId = req.user!.userId;
 
-    return res.json(perfil)
+    const perfil = await prisma.perfilUsuario.findUnique({
+      where: { id: userId },
+    });
+
+    if (!perfil) return res.status(404).json({ error: 'Perfil no encontrado' });
+
+    return res.json(perfil);
   } catch {
-    return res.status(500).json({ error: 'Error al obtener perfil' })
+    return res.status(500).json({ error: 'Error al obtener perfil' });
   }
-}
+};
 
 // 🟡 Actualizar perfil
-export const updateProfile = async (req: any, res: Response) => {
-  const userId = req.user.userId
-  const { nombres, apellidos, universidad } = req.body
-
+export const updateProfile = async (req: Request, res: Response) => {
   try {
+    const userId = req.user!.userId;
+    const { nombres, apellidos, universidad } = req.body;
+
     const updated = await prisma.perfilUsuario.update({
       where: { id: userId },
-      data: {
-        nombres,
-        apellidos,
-        universidad
-      }
-    })
+      data: { nombres, apellidos, universidad },
+    });
 
-    res.json({
-      message: 'Perfil actualizado',
-      data: updated
-    })
+    return res.json({ message: 'Perfil actualizado', data: updated });
   } catch {
-    res.status(400).json({ error: 'No se pudo actualizar' })
+    return res.status(400).json({ error: 'No se pudo actualizar' });
   }
-}
+};
 
 // 🔴 Obtener todos los usuarios (admin)
 export const getAllUsers = async (_req: Request, res: Response) => {
   try {
-    const users = await prisma.usuario.findMany({
-      include: {
-        perfil: true
-      }
-    })
-
-    res.json(users)
+    const users = await prisma.usuario.findMany({ include: { perfil: true } });
+    return res.json(users);
   } catch {
-    res.status(500).json({ error: 'Error al obtener usuarios' })
+    return res.status(500).json({ error: 'Error al obtener usuarios' });
   }
-}
+};

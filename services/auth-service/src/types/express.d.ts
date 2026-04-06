@@ -1,9 +1,15 @@
-import { Request } from 'express'
+// src/types/express.d.ts
+import { Request } from 'express';
+import { TipoUsuario } from '@prisma/client';
 
 declare global {
   namespace Express {
     interface Request {
-      user?: any // puedes tiparlo mejor luego
+      user?: {
+        userId: string;
+        email: string;
+        rol: TipoUsuario;
+      };
     }
   }
 }

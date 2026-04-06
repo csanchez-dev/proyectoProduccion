@@ -1,11 +1,12 @@
 {
   "name": "auth-service",
+  "type": "module",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
-     "dev": "npx prisma generate && ts-node-dev src/app.ts",
+    "dev": "npx prisma generate && ts-node-dev --respawn src/server.ts",
     "start": "node dist/app.js"
   },
   "keywords": [],
@@ -21,6 +22,7 @@
     "pg": "^8.20.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^25.5.2",
     "prisma": "^7.6.0",

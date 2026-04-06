@@ -1,23 +1,23 @@
 // src/app.ts
-import express from 'express'
-import cors from 'cors'
+import express, { Express, Request, Response } from 'express';
+import cors from 'cors';
 
-import authRoutes from './routes/auth.routes'
-import usuarioRoutes from './routes/usuario.routes'
+import authRoutes from './routes/auth.routes.js';
+import usuarioRoutes  from './routes/usuario.routes.js';
 
-const app = express()
+const app: Express = express();
 
 // Middlewares globales
-app.use(cors())
-app.use(express.json())
+app.use(cors());
+app.use(express.json());
 
 // Health check (clave en microservicios)
-app.get('/health', (_, res) => {
-  res.json({ status: 'ok', service: 'auth-service' })
-})
+app.get('/health', (_req: Request, res: Response) => {
+  res.json({ status: 'ok', service: 'auth-service' });
+});
 
 // Rutas
-app.use('/api/auth', authRoutes)
-app.use('/api/usuarios', usuarioRoutes)
+app.use('/api/auth', authRoutes);
+app.use('/api/usuarios', usuarioRoutes);
 
-export default app
+export default app;
