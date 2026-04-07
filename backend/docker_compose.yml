@@ -5,6 +5,7 @@ networks:
     driver: bridge
 
 services:
+  # === BASES DE DATOS ===
   postgres:
     image: postgres:15
     container_name: coniiti-postgres
@@ -14,6 +15,8 @@ services:
       POSTGRES_DB: coniiti_main
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"   # opcional, solo para debug
     networks:
       - coniiti-net
     restart: unless-stopped
@@ -23,12 +26,35 @@ services:
       timeout: 5s
       retries: 5
 
+  notification-postgres:
+    image: postgres:16
+    container_name: coniiti-notification-postgres
+    environment:
+      POSTGRES_USER: notifications_user
+      POSTGRES_PASSWORD: notifications_pass
+      POSTGRES_DB: notifications_db
+    volumes:
+      - notification-postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5437:5432"
+    networks:
+      - coniiti-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notifications_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # === REDIS ===
   redis:
     image: redis:7-alpine
     container_name: coniiti-redis
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
+    ports:
+      - "6379:6379"
     networks:
       - coniiti-net
     restart: unless-stopped
@@ -38,14 +64,16 @@ services:
       timeout: 5s
       retries: 5
 
+  # === RABBITMQ (puertos de Julián para evitar conflictos) ===
   rabbitmq:
-    image: rabbitmq:3-management-alpine
+    image: rabbitmq:4.0-management
     container_name: coniiti-rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
     ports:
-      - "15672:15672"
+      - "5673:5672"
+      - "15673:15672"
     networks:
       - coniiti-net
     restart: unless-stopped
@@ -55,6 +83,7 @@ services:
       timeout: 5s
       retries: 5
 
+  # === MICROSERVICIOS ===
   auth-service:
     build: ./services/auth-service
     container_name: coniiti-auth
@@ -65,7 +94,7 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       REDIS_URL: redis://redis:6379
-      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672
+      RABBITMQ_URL: amqp://user:password@rabbitmq:5672
     depends_on:
       postgres:
         condition: service_healthy
@@ -98,7 +127,7 @@ services:
       DB_HOST: postgres
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
-      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672
+      RABBITMQ_URL: amqp://user:password@rabbitmq:5672
     depends_on:
       postgres:
         condition: service_healthy
@@ -109,35 +138,57 @@ services:
     restart: unless-stopped
 
   notification-service:
-    build: ./notification-service   # ← ruta en la raíz
+    build: ./notification-service
     container_name: coniiti-notification
     environment:
-      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672
       PORT: 4000
+      DB_HOST: notification-postgres
+      DB_PORT: 5432
+      DB_USER: notifications_user
+      DB_PASSWORD: notifications_pass
+      DB_NAME: notifications_db
+      RABBITMQ_URL: amqp://user:password@rabbitmq:5672
     depends_on:
+      notification-postgres:
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
     networks:
       - coniiti-net
     restart: unless-stopped
 
+  # === API GATEWAY (NGINX) ===
   nginx:
     image: nginx:alpine
     container_name: coniiti-nginx
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./frontend/vite-project/dist:/usr/share/nginx/html:ro   # sirve el build del frontend
+      # Si tienes el frontend buildido, descomenta la siguiente línea:
+      # - ./frontend/vite-project/dist:/usr/share/nginx/html:ro
     ports:
       - "80:80"
     depends_on:
       - auth-service
       - agenda-service
       - inscription-service
+      - notification-service
     networks:
       - coniiti-net
     restart: unless-stopped
 
-  # Logs centralizados (opcional)
+  # === (Opcional) Frontend standalone de Julián ===
+  # frontend-app:
+  #   build: ../frontend/vite-project
+  #   container_name: coniiti-frontend
+  #   ports:
+  #     - "5173:80"
+  #   depends_on:
+  #     - nginx
+  #   networks:
+  #     - coniiti-net
+  #   restart: unless-stopped
+
+  # === LOGS CENTRALIZADOS ===
   loki:
     image: grafana/loki:2.9.0
     container_name: coniiti-loki
@@ -180,6 +231,7 @@ services:
 
 volumes:
   postgres_data:
+  notification-postgres-data:
   redis_data:
   loki_data:
   grafana_data:
