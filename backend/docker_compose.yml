@@ -1,5 +1,3 @@
-version: '4.0'
-
 networks:
   coniiti-net:
     driver: bridge
