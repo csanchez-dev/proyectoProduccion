@@ -11,6 +11,6 @@ COPY .env ./
 
 RUN npm run build
 
-EXPOSE 4000
+EXPOSE 3000
 
-CMD ["npm", "start"]
+CMD ["npm", "run", "start"]

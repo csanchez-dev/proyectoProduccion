@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: notifications_pass
       POSTGRES_DB: notifications_db
     ports:
-      - "5434:5432"
+      - "5438:5432"
     volumes:
       - notification_postgres_data:/var/lib/postgresql/data
 
