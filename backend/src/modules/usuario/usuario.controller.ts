@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import * as service from './usuario.service'
 import { admin_supabase } from '../../config/supabase'
+import { publishEvent } from '../../config/rabbitmq'
 
 
 // Registrar un usuario(CREATE)
@@ -83,6 +84,16 @@ export const registerUser = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Error al crear el perfil: " + profileError.message })
     }
 
+    // [Julián - RabbitMQ] Publicamos el evento de registro exitoso
+    await publishEvent('usuarios_queue', {
+      tipo: 'NUEVO_REGISTRO',
+      userId: data.user.id,
+      email: data.user.email,
+      fullName,
+      rol: rol || 'USER',
+      fecha: new Date()
+    });
+
     return res.status(201).json({
       message: "Usuario y perfil creados correctamente",
       user: {
@@ -94,6 +105,30 @@ export const registerUser = async (req: Request, res: Response) => {
   } catch (err: any) {
     console.error("Error en registro server-side:", err)
     return res.status(500).json({ error: "Error interno del servidor" })
+  }
+}
+
+export const loginUser = async (req: Request, res: Response) => {
+  const { email, password } = req.body
+  try {
+    const { data, error } = await admin_supabase.auth.signInWithPassword({
+      email,
+      password
+    })
+
+    if (error) return res.status(401).json({ error: error.message })
+
+    // [Julián - RabbitMQ] Publicamos el evento de login exitoso
+    await publishEvent('usuarios_queue', {
+      tipo: 'LOGIN_EXITOSO',
+      userId: data.user?.id,
+      email: data.user?.email,
+      fecha: new Date()
+    });
+
+    res.json(data)
+  } catch (err: any) {
+    res.status(500).json({ error: 'Error interno de Julián' })
   }
 }
 

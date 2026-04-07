@@ -27,7 +27,7 @@ jobs:
         node-version: '22'
 
     - name: Instalar dependencias
-      run: npm install --legacy-peer-deps
+      run: npm ci
 
     - name: Linting
       run: npm run lint || true
