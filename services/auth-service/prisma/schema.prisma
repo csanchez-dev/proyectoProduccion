@@ -1,0 +1,38 @@
+model Usuario {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  password_hash  String
+  activo         Boolean  @default(true)
+  email_verificado Boolean @default(false)
+  creado_en      DateTime @default(now())
+  actualizado_en DateTime @updatedAt
+
+  perfil         PerfilUsuario?
+}
+
+model PerfilUsuario {
+  id             String   @id
+  nombres        String
+  apellidos      String
+  universidad    String?
+  tipo_usuario   TipoUsuario @default(estudiante)
+  creado_en      DateTime @default(now())
+  actualizado_en DateTime @updatedAt
+
+  usuario        Usuario @relation(fields: [id], references: [id], onDelete: Cascade)
+}
+
+enum TipoUsuario {
+  estudiante
+  profesor
+  invitado
+  admin
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}

@@ -1,78 +1,185 @@
-version: "4"
+version: '3.8'
+
+networks:
+  coniiti-net:
+    driver: bridge
 
 services:
-  mi_app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    depends_on:
-      - postgres
-      - rabbitmq
-    environment:
-      PORT: 3000
-      RABBITMQ_URL: amqp://rabbitmq:5672
-    links:
-      - postgres
-      - rabbitmq
-
   postgres:
-    image: postgres:17.9
-    ports:
-      - "5435:5432"
+    image: postgres:15
+    container_name: coniiti-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: appdb
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: coniiti_main
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - coniiti-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  notification-postgres:
-    image: postgres:16
-    ports:
-      - "5437:5432"
-    environment:
-      POSTGRES_USER: notifications_user
-      POSTGRES_PASSWORD: notifications_pass
-      POSTGRES_DB: notifications_db
+  redis:
+    image: redis:7-alpine
+    container_name: coniiti-redis
+    command: redis-server --appendonly yes
     volumes:
-      - notification-postgres-data:/var/lib/postgresql/data
+      - redis_data:/data
+    networks:
+      - coniiti-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:3-management-alpine
+    container_name: coniiti-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
     ports:
-      - "5673:5672"
-      - "15673:15672"
+      - "15672:15672"
+    networks:
+      - coniiti-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  auth-service:
+    build: ./services/auth-service
+    container_name: coniiti-auth
+    env_file:
+      - .env.auth
+    environment:
+      DB_HOST: postgres
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - coniiti-net
+    restart: unless-stopped
+
+  agenda-service:
+    build: ./services/agenda-service
+    container_name: coniiti-agenda
+    environment:
+      DB_HOST: postgres
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - coniiti-net
+    restart: unless-stopped
+
+  inscription-service:
+    build: ./services/inscription-service
+    container_name: coniiti-inscription
+    environment:
+      DB_HOST: postgres
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - coniiti-net
+    restart: unless-stopped
 
   notification-service:
-    build:
-      context: ../notification-service
-      dockerfile: Dockerfile
-    ports:
-      - "4001:4000"
-    depends_on:
-      - notification-postgres
-      - rabbitmq
+    build: ./notification-service   # ← ruta en la raíz
+    container_name: coniiti-notification
     environment:
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672
       PORT: 4000
-      DB_HOST: notification-postgres
-      DB_PORT: 5432
-      DB_USER: notifications_user
-      DB_PASSWORD: notifications_pass
-      DB_NAME: notifications_db
-      RABBITMQ_URL: amqp://rabbitmq:5672
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - coniiti-net
+    restart: unless-stopped
 
-  api-gateway:
-    image: nginx:latest
-    ports:
-      - "8080:80"
+  nginx:
+    image: nginx:alpine
+    container_name: coniiti-nginx
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend/vite-project/dist:/usr/share/nginx/html:ro   # sirve el build del frontend
+    ports:
+      - "80:80"
     depends_on:
-      - mi_app
-      - notification-service
+      - auth-service
+      - agenda-service
+      - inscription-service
+    networks:
+      - coniiti-net
+    restart: unless-stopped
+
+  # Logs centralizados (opcional)
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: coniiti-loki
+    command: -config.file=/etc/loki/loki-config.yaml
+    volumes:
+      - ./config/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - loki_data:/loki
+    networks:
+      - coniiti-net
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:2.9.0
+    container_name: coniiti-promtail
+    volumes:
+      - ./config/promtail-config.yaml:/etc/promtail/promtail-config.yaml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: -config.file=/etc/promtail/promtail-config.yaml
+    depends_on:
+      - loki
+    networks:
+      - coniiti-net
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.1.0
+    container_name: coniiti-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3001:3000"
+    depends_on:
+      - loki
+    networks:
+      - coniiti-net
+    restart: unless-stopped
 
 volumes:
-  postgres-data:
-  notification-postgres-data:
+  postgres_data:
+  redis_data:
+  loki_data:
+  grafana_data:
