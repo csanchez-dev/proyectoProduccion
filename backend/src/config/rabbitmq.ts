@@ -1,6 +1,6 @@
 import * as amqp from 'amqplib';
 
-const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://localhost:5672';
+const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://rabbitmq:5672';
 const EXCHANGE_NAME = 'events';
 const EXCHANGE_TYPE = 'topic';
 
@@ -10,16 +10,25 @@ let channel: any = null;
 async function getChannel() {
   if (channel) return channel;
 
-  connection = await amqp.connect(RABBITMQ_URL);
-  channel = await connection.createConfirmChannel();
+  try {
+    connection = await amqp.connect(RABBITMQ_URL);
+    channel = await connection.createConfirmChannel();
 
-  await channel.assertExchange(EXCHANGE_NAME, EXCHANGE_TYPE, {
-    durable: true,
-  });
+    await channel.assertExchange(EXCHANGE_NAME, EXCHANGE_TYPE, {
+      durable: true,
+    });
 
-  return channel;
+    console.log('[Julián & Team - RabbitMQ] Conexión establecida con éxito');
+    return channel;
+  } catch (error) {
+    console.error('[RabbitMQ Connection Error]', error);
+    throw error;
+  }
 }
 
+/**
+ * Función mejorada por Julián y el equipo para publicar eventos.
+ */
 export async function publishEvent(
   routingKey: string,
   payload: Record<string, unknown>
@@ -37,4 +46,5 @@ export async function publishEvent(
   );
 
   await ch.waitForConfirms();
+  console.log(`[Julián - Evento] Enviado con éxito a la clave: ${routingKey}`);
 }
