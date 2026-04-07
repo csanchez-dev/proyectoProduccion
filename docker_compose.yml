@@ -1,11 +1,10 @@
-version: '4.0'
+version: '3.8'
 
 networks:
   coniiti-net:
     driver: bridge
 
 services:
-  # === BASES DE DATOS ===
   postgres:
     image: postgres:15
     container_name: coniiti-postgres
@@ -16,7 +15,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"   # opcional, solo para debug
+      - "5432:5432"
     networks:
       - coniiti-net
     restart: unless-stopped
@@ -46,7 +45,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # === REDIS ===
   redis:
     image: redis:7-alpine
     container_name: coniiti-redis
@@ -64,7 +62,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # === RABBITMQ (puertos de Julián para evitar conflictos) ===
   rabbitmq:
     image: rabbitmq:4.0-management
     container_name: coniiti-rabbitmq
@@ -83,7 +80,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # === MICROSERVICIOS ===
   auth-service:
     build: ./services/auth-service
     container_name: coniiti-auth
@@ -157,13 +153,12 @@ services:
       - coniiti-net
     restart: unless-stopped
 
-  # === API GATEWAY (NGINX) ===
   nginx:
     image: nginx:alpine
     container_name: coniiti-nginx
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      # Si tienes el frontend buildido, descomenta la siguiente línea:
+      # Si tienes el build del frontend, descomenta la siguiente línea:
       # - ./frontend/vite-project/dist:/usr/share/nginx/html:ro
     ports:
       - "80:80"
@@ -176,19 +171,6 @@ services:
       - coniiti-net
     restart: unless-stopped
 
-  # === (Opcional) Frontend standalone de Julián ===
-  # frontend-app:
-  #   build: ../frontend/vite-project
-  #   container_name: coniiti-frontend
-  #   ports:
-  #     - "5173:80"
-  #   depends_on:
-  #     - nginx
-  #   networks:
-  #     - coniiti-net
-  #   restart: unless-stopped
-
-  # === LOGS CENTRALIZADOS ===
   loki:
     image: grafana/loki:2.9.0
     container_name: coniiti-loki
