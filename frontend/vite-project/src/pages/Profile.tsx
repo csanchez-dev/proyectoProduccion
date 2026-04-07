@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
-import { updatePerfil } from "../services/api"
-import { Scanner } from '@yudiel/react-qr-scanner'
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { updatePerfil } from "../services/api";
+import { Scanner } from '@yudiel/react-qr-scanner';
 
 export default function Profile() {
-    const navigate = useNavigate()
-    const [isEditing, setIsEditing] = useState(false)
+    const navigate = useNavigate();
+    const [isEditing, setIsEditing] = useState(false);
     const [userData, setUserData] = useState({
         fullName: "Cargando...",
         role: "",
@@ -14,18 +14,18 @@ export default function Profile() {
         institutionalCode: "",
         career: "",
         gender: ""
-    })
+    });
 
     // Estado para las conferencias inscritas (Vacío por defecto para nuevos usuarios)
-    const [conferences, setConferences] = useState<any[]>([])
+    const [conferences, setConferences] = useState<any[]>([]);
 
     // Estado del scanner QR
-    const [showScanner, setShowScanner] = useState(false)
-    const [scanResult, setScanResult] = useState<string | null>(null)
+    const [showScanner, setShowScanner] = useState(false);
+    const [scanResult, setScanResult] = useState<string | null>(null);
 
     // Estados para cambio de contraseña
-    const [newPassword, setNewPassword] = useState("")
-    const [confirmPassword, setConfirmPassword] = useState("")
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
 
     const handleChangePassword = async () => {
         if (!newPassword || !confirmPassword) {
@@ -61,7 +61,7 @@ export default function Profile() {
             console.error("Error al cambiar contraseña:", err);
             alert("Hubo un error al intentar cambiar la contraseña.");
         }
-    }
+    };
 
     const loadUserConferences = () => {
         const sessionData = localStorage.getItem("user_session");
@@ -93,9 +93,9 @@ export default function Profile() {
             });
             loadUserConferences();
         } else {
-            navigate("/login")
+            navigate("/login");
         }
-    }
+    };
 
     useEffect(() => {
         // Cargar datos al montar el componente
@@ -106,14 +106,14 @@ export default function Profile() {
             if (e.key === 'user_session') {
                 if (!e.newValue) {
                     // Sesión cerrada en otra pestaña => redirigir
-                    navigate("/login")
+                    navigate("/login");
                 } else {
-                    loadProfileData()
+                    loadProfileData();
                 }
             } else {
-                loadUserConferences()
+                loadUserConferences();
             }
-        }
+        };
 
         window.addEventListener('storage', handleStorage);
         window.addEventListener('user-session-updated', loadProfileData);
@@ -123,7 +123,7 @@ export default function Profile() {
             window.removeEventListener('user-session-updated', loadProfileData);
             window.removeEventListener('site-config-updated', loadUserConferences);
         };
-    }, [])
+    }, []);
 
     const handleSave = async () => {
         try {
@@ -147,14 +147,14 @@ export default function Profile() {
                 carrera: userData.career
             });
 
-            setIsEditing(false)
-            alert("✅ Datos actualizados correctamente en servidor y localmente.")
+            setIsEditing(false);
+            alert("✅ Datos actualizados correctamente en servidor y localmente.");
         } catch (err: any) {
             console.warn("No se pudo conectar al servidor para actualizar:", err);
-            setIsEditing(false)
+            setIsEditing(false);
             alert("✅ (Modo Offline) Datos actualizados y guardados localmente.");
         }
-    }
+    };
 
     const handleCancel = (id: number) => {
         if (confirm("¿Estás seguro de que deseas cancelar tu inscripción a esta conferencia?")) {
@@ -180,7 +180,7 @@ export default function Profile() {
             }
             alert("❌ Inscripción cancelada.");
         }
-    }
+    };
 
     const handleScan = (result: any) => {
         if (result && result[0]) {
@@ -211,7 +211,7 @@ export default function Profile() {
                 setTimeout(() => setScanResult(null), 4000);
             }
         }
-    }
+    };
 
     return (
         <div className="profile-container fade-in">
@@ -438,5 +438,5 @@ export default function Profile() {
                 </div>
             )}
         </div>
-    )
+    );
 }

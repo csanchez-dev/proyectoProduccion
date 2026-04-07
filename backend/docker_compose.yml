@@ -1,46 +1,86 @@
 version: "4"
+
 services:
-    mi_app:
-      build: .
-      ports:
-        - "3000:3000"
+  mi_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      PORT: 3000
+      RABBITMQ_URL: amqp://rabbitmq:5672
+    links:
+      - postgres
+      - rabbitmq
 
-      links:
-        - postgres
-        - rabbitmq
+  postgres:
+    image: postgres:17.9
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: appdb
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
 
-    postgres:
-     image: postgres:17.9
-     ports:
-       - "5432:5432"
-     volumes:
-       - postgres-data:/var/lib/postgresql/data
+  notification-postgres:
+    image: postgres:16
+    ports:
+      - "5437:5432"
+    environment:
+      POSTGRES_USER: notifications_user
+      POSTGRES_PASSWORD: notifications_pass
+      POSTGRES_DB: notifications_db
+    volumes:
+      - notification-postgres-data:/var/lib/postgresql/data
 
-    rabbitmq:
-      image: rabbitmq:4.0-management
-      ports:
-        - "5672:5672"
-        - "15672:15672"
-      environment:
-        RABBITMQ_DEFAULT_USER: user
-        RABBITMQ_DEFAULT_PASS: password
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5673:5672"
+      - "15673:15672"
 
-    frontend-app:
-      build: ../frontend/vite-project
-      ports:
-        - "5173:80"
-      depends_on:
-        - api-gateway
+  notification-service:
+    build:
+      context: ../notification-service
+      dockerfile: Dockerfile
+    ports:
+      - "4001:4000"
+    depends_on:
+      - notification-postgres
+      - rabbitmq
+    environment:
+      PORT: 4000
+      DB_HOST: notification-postgres
+      DB_PORT: 5432
+      DB_USER: notifications_user
+      DB_PASSWORD: notifications_pass
+      DB_NAME: notifications_db
+      RABBITMQ_URL: amqp://rabbitmq:5672
 
-    api-gateway:
-      image: nginx:latest
-      ports:
-        - "8080:80"
-      volumes:
-        - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      depends_on:
-        - mi_app
-        - rabbitmq
+  frontend-app:
+    build: ../frontend/vite-project
+    ports:
+      - "5173:80"
+    depends_on:
+      - api-gateway
+
+  api-gateway:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - mi_app
+      - notification-service
+      - rabbitmq
 
 volumes:
   postgres-data:
+  notification-postgres-data:

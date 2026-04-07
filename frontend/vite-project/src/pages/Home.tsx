@@ -1,14 +1,14 @@
-import { useState, useEffect } from "react"
-import { Link } from "react-router-dom"
-import CountdownTimer from "../components/CountdownTimer"
-import { translations, getTranslation } from "../utils/i18n"
-import type { Language } from "../utils/i18n"
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import CountdownTimer from "../components/CountdownTimer";
+import { translations, getTranslation } from "../utils/i18n";
+import type { Language } from "../utils/i18n";
 
 export default function Home() {
-    const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
+    const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es');
     const [config, setConfig] = useState<any>({});
 
-    const t = (key: keyof typeof translations.es) => getTranslation(key, lang)
+    const t = (key: keyof typeof translations.es) => getTranslation(key, lang);
 
     useEffect(() => {
         const updateLang = () => setLang((localStorage.getItem("app_lang") as Language) || 'es');
@@ -287,5 +287,5 @@ export default function Home() {
                 </div>
             </section>
         </div>
-    )
+    );
 }

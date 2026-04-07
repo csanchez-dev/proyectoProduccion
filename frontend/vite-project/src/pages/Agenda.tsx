@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react";
 import DayTabs, { type DayOption } from "../components/DayTabs";
-import ConferenceCard from "../components/ConferenceCard"
-import { conferences as initialConferences } from "../data/conference_mocks"
+import ConferenceCard from "../components/ConferenceCard";
+import { conferences as initialConferences } from "../data/conference_mocks";
 import { getTranslation, translations } from "../utils/i18n";
-import type { Language } from "../utils/i18n"
+import type { Language } from "../utils/i18n";
 import { getPonencias } from "../services/api";
 
 export default function Agenda() {
@@ -18,7 +18,7 @@ export default function Agenda() {
 
   const [activeDayId, setActiveDayId] = useState<string>(days[0]?.id || "day1");
 
-  const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
+  const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es');
 
   useEffect(() => {
     const updateLang = () => setLang((localStorage.getItem("app_lang") as Language) || 'es');
@@ -28,8 +28,8 @@ export default function Agenda() {
 
   const t = (key: keyof typeof translations.es) => getTranslation(key, lang);
 
-  const [conferencesList, setConferencesList] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [conferencesList, setConferencesList] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchConferences = async () => {
@@ -40,7 +40,7 @@ export default function Agenda() {
           setConferencesList(data);
         } else {
           // API vacía: usar localStorage o mocks
-          const saved = localStorage.getItem("site_conferences")
+          const saved = localStorage.getItem("site_conferences");
           const parsed = saved ? JSON.parse(saved) : null;
           const source = (parsed && parsed.length > 0) ? parsed : initialConferences;
           console.info('[Agenda] Usando datos locales/mocks:', source.length, 'conferencias');
@@ -48,7 +48,7 @@ export default function Agenda() {
         }
       } catch (err) {
         // Error de red o API: siempre usar localStorage o mocks
-        const saved = localStorage.getItem("site_conferences")
+        const saved = localStorage.getItem("site_conferences");
         const parsed = saved ? JSON.parse(saved) : null;
         const source = (parsed && parsed.length > 0) ? parsed : initialConferences;
         console.info('[Agenda] Fallback a datos locales/mocks:', source.length, 'conferencias');
@@ -60,8 +60,8 @@ export default function Agenda() {
     fetchConferences();
   }, []);
 
-  const [searchTerm, setSearchTerm] = useState("")
-  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({})
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
 
   const [filterConfig, setFilterConfig] = useState<any[]>(() => {
     const saved = localStorage.getItem("agenda_filters_config");
@@ -132,7 +132,7 @@ export default function Agenda() {
   const filteredConferences = conferencesList.filter((conf: any) => {
     const matchesSearch =
       conf.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      conf.speaker.name.toLowerCase().includes(searchTerm.toLowerCase())
+      conf.speaker.name.toLowerCase().includes(searchTerm.toLowerCase());
 
     // Lógica de filtrado dinámica
     const matchesDynamicFilters = filterConfig.every(filter => {
@@ -141,18 +141,18 @@ export default function Agenda() {
       return conf[filter.property] === selectedValue;
     });
 
-    const confDayId = conf.dayId ?? conf.day ?? conf.day_id ?? conf.dayNumber ?? conf.date
-    const matchesDay = !confDayId || confDayId === activeDayId
+    const confDayId = conf.dayId ?? conf.day ?? conf.day_id ?? conf.dayNumber ?? conf.date;
+    const matchesDay = !confDayId || confDayId === activeDayId;
 
-    return matchesSearch && matchesDynamicFilters && matchesDay
-  })
+    return matchesSearch && matchesDynamicFilters && matchesDay;
+  });
 
   const clearFilters = () => {
-    setSearchTerm("")
-    setActiveFilters({})
-  }
+    setSearchTerm("");
+    setActiveFilters({});
+  };
 
-  const hasActiveFilters = searchTerm || Object.values(activeFilters).some(v => v !== "all" && v !== "")
+  const hasActiveFilters = searchTerm || Object.values(activeFilters).some(v => v !== "all" && v !== "");
 
   const selectStyle: React.CSSProperties = {
     padding: '0.72rem 1rem',
@@ -165,7 +165,7 @@ export default function Agenda() {
     background: 'white',
     color: '#374151',
     transition: 'border-color 0.2s',
-  }
+  };
 
   return (
     <section className="agenda-page">
@@ -275,5 +275,5 @@ export default function Agenda() {
         )}
       </div>
     </section>
-  )
+  );
 }

@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react"
-import { conferences as initialConferences } from "../data/conference_mocks"
-import { getPonencias } from "../services/api"
+import { useState, useEffect } from "react";
+import { conferences as initialConferences } from "../data/conference_mocks";
+import { getPonencias } from "../services/api";
 
 export default function Invitados() {
-    const [conferences, setConferences] = useState<any[]>([])
+    const [conferences, setConferences] = useState<any[]>([]);
 
     useEffect(() => {
         const fetchGuests = async () => {
@@ -13,12 +13,12 @@ export default function Invitados() {
                     console.info('[Invitados] Datos desde API:', data.length);
                     setConferences(data);
                 } else {
-                    const saved = localStorage.getItem("site_conferences")
+                    const saved = localStorage.getItem("site_conferences");
                     const parsed = saved ? JSON.parse(saved) : null;
                     setConferences((parsed && parsed.length > 0) ? parsed : initialConferences);
                 }
             } catch (err) {
-                const saved = localStorage.getItem("site_conferences")
+                const saved = localStorage.getItem("site_conferences");
                 const parsed = saved ? JSON.parse(saved) : null;
                 setConferences((parsed && parsed.length > 0) ? parsed : initialConferences);
             }
@@ -45,8 +45,8 @@ export default function Invitados() {
 
     // Obtener lista única de ponentes/invitados
     const guests = Array.from(new Set(conferences.map((c: any) => c.speaker.name))).map(name => {
-        return conferences.find((c: any) => c.speaker.name === name)?.speaker
-    })
+        return conferences.find((c: any) => c.speaker.name === name)?.speaker;
+    });
 
     return (
         <div className="invitados-page">
@@ -70,5 +70,5 @@ export default function Invitados() {
                 ))}
             </div>
         </div>
-    )
+    );
 }

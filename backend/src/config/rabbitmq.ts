@@ -1,21 +1,50 @@
-import amqp from 'amqplib';
+import * as amqp from 'amqplib';
 
-const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://user:password@rabbitmq:5672';
+const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://rabbitmq:5672';
+const EXCHANGE_NAME = 'events';
+const EXCHANGE_TYPE = 'topic';
 
-export async function publishEvent(queue: string, message: any) {
+let connection: any = null;
+let channel: any = null;
+
+async function getChannel() {
+  if (channel) return channel;
+
   try {
-    const connection = await amqp.connect(RABBITMQ_URL);
-    const channel = await connection.createChannel();
+    connection = await amqp.connect(RABBITMQ_URL);
+    channel = await connection.createConfirmChannel();
 
-    await channel.assertQueue(queue, { durable: true });
-    channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)));
+    await channel.assertExchange(EXCHANGE_NAME, EXCHANGE_TYPE, {
+      durable: true,
+    });
 
-    console.log(`[Julián - RabbitMQ] Mensaje enviado a la cola ${queue}`);
-
-    setTimeout(() => {
-      connection.close();
-    }, 500);
+    console.log('[Julián & Team - RabbitMQ] Conexión establecida con éxito');
+    return channel;
   } catch (error) {
-    console.error('[Julián - RabbitMQ Error]', error);
+    console.error('[RabbitMQ Connection Error]', error);
+    throw error;
   }
+}
+
+/**
+ * Función mejorada por Julián y el equipo para publicar eventos.
+ */
+export async function publishEvent(
+  routingKey: string,
+  payload: Record<string, unknown>
+): Promise<void> {
+  const ch = await getChannel();
+
+  ch.publish(
+    EXCHANGE_NAME,
+    routingKey,
+    Buffer.from(JSON.stringify(payload)),
+    {
+      persistent: true,
+      contentType: 'application/json',
+    }
+  );
+
+  await ch.waitForConfirms();
+  console.log(`[Julián - Evento] Enviado con éxito a la clave: ${routingKey}`);
 }

@@ -1,14 +1,14 @@
-import { useState, useEffect } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import { translations, getTranslation } from "../utils/i18n"
-import type { Language } from "../utils/i18n"
-import { signIn, register } from "../services/api"
-import { toast } from "sonner"
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { translations, getTranslation } from "../utils/i18n";
+import type { Language } from "../utils/i18n";
+import { signIn, register } from "../services/api";
+import { toast } from "sonner";
 
 export default function Register() {
-  const navigate = useNavigate()
-  const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
-  const [showPolicyModal, setShowPolicyModal] = useState(false)
+  const navigate = useNavigate();
+  const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es');
+  const [showPolicyModal, setShowPolicyModal] = useState(false);
 
   useEffect(() => {
     const updateLang = () => setLang((localStorage.getItem("app_lang") as Language) || 'es');
@@ -16,10 +16,10 @@ export default function Register() {
     return () => window.removeEventListener('app-lang-updated', updateLang);
   }, []);
 
-  const t = (key: keyof typeof translations.es) => getTranslation(key, lang)
+  const t = (key: keyof typeof translations.es) => getTranslation(key, lang);
 
-  const [role, setRole] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+  const [role, setRole] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
     documentType: "CC",
@@ -30,34 +30,34 @@ export default function Register() {
     career: "",
     gender: "",
     acceptTerms: false
-  })
+  });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target as HTMLInputElement;
     setFormData({
       ...formData,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
-    })
-  }
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!formData.acceptTerms) {
       toast.warning("Debes aceptar la política de tratamiento de datos.");
-      return
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       const mappedRole = role === "student" ? "ESTUDIANTE" : role === "professor" ? "DOCENTE" : "INVITADO";
 
       try {
-        await register({ ...formData, rol: mappedRole })
-        const { error: authError } = await signIn(formData.email, formData.password)
+        await register({ ...formData, rol: mappedRole });
+        const { error: authError } = await signIn(formData.email, formData.password);
 
         if (authError) {
-          navigate("/login")
-          return
+          navigate("/login");
+          return;
         }
       } catch (backendError: any) {
         const errorMsg = backendError.message || "";
@@ -81,10 +81,10 @@ export default function Register() {
         fullName: formData.fullName,
         role: mappedRole,
         gender: formData.gender
-      }
-      localStorage.setItem("user_session", JSON.stringify(userData))
-      sessionStorage.setItem("session_active", "1")
-      window.dispatchEvent(new Event('user-session-updated'))
+      };
+      localStorage.setItem("user_session", JSON.stringify(userData));
+      sessionStorage.setItem("session_active", "1");
+      window.dispatchEvent(new Event('user-session-updated'));
 
       setFormData({
         fullName: "",
@@ -98,13 +98,13 @@ export default function Register() {
         acceptTerms: false
       });
       setRole("student");
-      navigate("/perfil")
+      navigate("/perfil");
     } catch (err: any) {
       toast.error(err.message || 'Error al registrarse');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="register-container">
@@ -221,5 +221,5 @@ export default function Register() {
         </div>
       )}
     </div>
-  )
+  );
 }
