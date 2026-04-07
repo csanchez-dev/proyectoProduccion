@@ -149,6 +149,13 @@ services:
       DB_NAME: notifications_db
       RABBITMQ_URL: amqp://rabbitmq:5672
 
+  frontend-app:
+    build: ../frontend/vite-project
+    ports:
+      - "5173:80"
+    depends_on:
+      - api-gateway
+
   api-gateway:
     image: nginx:latest
     ports:
@@ -164,6 +171,7 @@ services:
       - agenda-service
       - inscription-service
       - notification-service
+      - rabbitmq
 
 volumes:
   postgres_data:
