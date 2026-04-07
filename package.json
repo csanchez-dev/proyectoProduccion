@@ -3,10 +3,12 @@
     "dev": "npx concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend/vite-project\""
   },
   "devDependencies": {
+    "@types/amqplib": "^0.10.8",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3"
   },
   "dependencies": {
+    "amqplib": "^1.0.3",
     "concurrently": "^9.2.1"
   }
 }
