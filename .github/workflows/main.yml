@@ -1,7 +1,7 @@
 name: Prueba de Conexion Azure
 on:
   push:
-    branches: [ main ] # Se activa cada vez que subas cambios
+    branches: [ main, desarrollo-diseño ] # Se activa en main y desarrollo-diseño
 
 jobs:
   test-azure-login:
