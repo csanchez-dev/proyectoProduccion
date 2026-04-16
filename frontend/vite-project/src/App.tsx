@@ -6,7 +6,7 @@ import Agenda from "./pages/Agenda";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
-import Admin from "./pages/Admin";
+import {Admin} from "./pages/Admin";
 import Invitados from "./pages/Invitados";
 import Home from "./pages/Home";
 import Gallery from "./pages/Gallery";
