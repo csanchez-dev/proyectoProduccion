@@ -10,8 +10,9 @@ import {
 } from 'recharts';
 import QRCode from 'react-qr-code';
 import { toast } from "sonner";
+import { getNotifications, markNotificationAsRead } from "../services/api";
 
-export default function Admin() {
+export function Admin() {
     const [userRole, setUserRole] = useState<string | null>(null);
     const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es');
 
@@ -29,7 +30,7 @@ export default function Admin() {
         return saved ? JSON.parse(saved) : [];
     });
 
-    const [activeTab, setActiveTab] = useState("conferences");
+    const [activeTab, setActiveTab] = useState<string>("conferences");
     const [bannerPreview, setBannerPreview] = useState(localStorage.getItem("site_banner") || "/banner-header.png");
     const [logoUniPreview, setLogoUniPreview] = useState(localStorage.getItem("site_logo_uni") || "/ucatolica-logo.png");
     const [logoEventPreview, setLogoEventPreview] = useState(localStorage.getItem("site_logo_evento") || "/logo-coniiti.png");
@@ -62,16 +63,27 @@ export default function Admin() {
         performance: 'bar'
     });
     const [selectedPerfPage, setSelectedPerfPage] = useState("/");
-    const [settingsTab, setSettingsTab] = useState("general");
+    const [settingsTab, setSettingsTab] = useState<string>("general");
     const [analyticsYear, setAnalyticsYear] = useState<number>(new Date().getFullYear());
 
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [notificationsLoading, setNotificationsLoading] = useState(false);
+
+    const unreadNotificationsCount = notifications.filter((n: any) => !n.read).length;
     // States for Custom Theme creation
     const [customThemes, setCustomThemes] = useState<any[]>(() => {
         const saved = localStorage.getItem("site_custom_themes");
         return saved ? JSON.parse(saved) : [];
     });
     const [isAddingTheme, setIsAddingTheme] = useState(false);
-    const [newThemeData, setNewThemeData] = useState({ name: '', primary: '#2563EB', secondary: '#1E293B', bg: '#ffffff', text: '#1b1a1a', header: '#1f2a44' });
+    const [newThemeData, setNewThemeData] = useState({
+        name: '',
+        primary: '#2563EB',
+        secondary: '#1E293B',
+        bg: '#ffffff',
+        text: '#1b1a1a',
+        header: '#1f2a44'
+    });
 
     const [adminGallery, setAdminGallery] = useState<any[]>(() => {
         const saved = localStorage.getItem("admin_private_gallery");
@@ -140,7 +152,9 @@ export default function Admin() {
             try {
                 const saved = JSON.parse(localStorage.getItem("site_conferences") || '[]');
                 return saved.length > 0 ? saved : initialConferences;
-            } catch { return initialConferences; }
+            } catch {
+                return initialConferences;
+            }
         })();
         const seedSpeakers: any[] = [];
         const seen = new Set<string>();
@@ -167,7 +181,8 @@ export default function Admin() {
                     seen.add(lsName);
                 }
             });
-        } catch { /* sin datos locales */ }
+        } catch { /* sin datos locales */
+        }
         return seedSpeakers;
     });
     const [registeredUsers, setRegisteredUsers] = useState<any[]>([]);
@@ -180,12 +195,24 @@ export default function Admin() {
         let usuariosData: any[] = [];
 
         try {
-            const { getPonencias, getPonentes, getUsuarios } = await import("../services/api");
+            const {getPonencias, getPonentes, getUsuarios} = await import("../services/api");
 
             // Intentos individuales para no fallar si un endpoint está caído
-            try { ponenciasData = await getPonencias(); } catch (e) { console.warn("API Ponencias falló"); }
-            try { ponentesData = await getPonentes(); } catch (e) { console.warn("API Ponentes falló"); }
-            try { usuariosData = await getUsuarios(); } catch (e) { console.warn("API Usuarios falló"); }
+            try {
+                ponenciasData = await getPonencias();
+            } catch (e) {
+                console.warn("API Ponencias falló");
+            }
+            try {
+                ponentesData = await getPonentes();
+            } catch (e) {
+                console.warn("API Ponentes falló");
+            }
+            try {
+                usuariosData = await getUsuarios();
+            } catch (e) {
+                console.warn("API Usuarios falló");
+            }
 
             // 1. Unificar Conferencias (Agenda)
             const savedConfs = JSON.parse(localStorage.getItem("site_conferences") || '[]');
@@ -261,6 +288,24 @@ export default function Admin() {
     useEffect(() => {
         fetchAllData();
     }, []);
+    useEffect(() => {
+        if (activeTab === "notifications" && userRole === "SUPER_ADMIN") {
+            const loadNotifications = async () => {
+                setNotificationsLoading(true);
+                try {
+                    const data = await getNotifications();
+                    setNotifications(data);
+                } catch (err) {
+                    console.error("Error cargando notificaciones:", err);
+                    toast.error("No se pudieron cargar las notificaciones");
+                } finally {
+                    setNotificationsLoading(false);
+                }
+            };
+
+            loadNotifications();
+        }
+    }, [activeTab, userRole]);
 
     // Persistencia automática de los cambios
     useEffect(() => {
@@ -284,7 +329,7 @@ export default function Admin() {
         if (!confirm("¿Estás seguro de eliminar esta conferencia?")) return;
 
         try {
-            const { deletePonencia } = await import("../services/api");
+            const {deletePonencia} = await import("../services/api");
             await deletePonencia(id);
             setConferences(conferences.filter((c: any) => c.id !== id));
             // alert("Conferencia eliminada");
@@ -303,8 +348,20 @@ export default function Admin() {
         }
     };
 
-    const handleEditConference = (conf: { id: string, title: string, description: string, speakerName?: string, startTime: string, endTime: string, location: string, category: string, level: string, speaker: any, career?: string }) => {
-        setEditingConf({ ...conf });
+    const handleEditConference = (conf: {
+        id: string,
+        title: string,
+        description: string,
+        speakerName?: string,
+        startTime: string,
+        endTime: string,
+        location: string,
+        category: string,
+        level: string,
+        speaker: any,
+        career?: string
+    }) => {
+        setEditingConf({...conf});
     };
 
     // Gestión de Días de la Agenda
@@ -312,9 +369,9 @@ export default function Admin() {
         const saved = localStorage.getItem("agenda_days_info");
         if (saved) return JSON.parse(saved);
         return [
-            { id: "day1", label: "Día 1" },
-            { id: "day2", label: "Día 2" },
-            { id: "day3", label: "Día 3" }
+            {id: "day1", label: "Día 1"},
+            {id: "day2", label: "Día 2"},
+            {id: "day3", label: "Día 3"}
         ];
     });
 
@@ -334,9 +391,9 @@ export default function Admin() {
                 property: "type",
                 icon: "📍",
                 options: [
-                    { value: "all", label: "Todas las Modalidades" },
-                    { value: "presencial", label: "Presencial" },
-                    { value: "virtual", label: "Virtual" }
+                    {value: "all", label: "Todas las Modalidades"},
+                    {value: "presencial", label: "Presencial"},
+                    {value: "virtual", label: "Virtual"}
                 ]
             },
             {
@@ -345,18 +402,18 @@ export default function Admin() {
                 property: "career",
                 icon: "🎓",
                 options: [
-                    { value: "all", label: "Todas las Carreras" },
-                    { value: "Administración de Empresas", label: "Administración de Empresas" },
-                    { value: "Arquitectura", label: "Arquitectura" },
-                    { value: "Derecho", label: "Derecho" },
-                    { value: "Economía", label: "Economía" },
-                    { value: "Ingeniería Civil", label: "Ingeniería Civil" },
-                    { value: "Ingeniería de Sistemas", label: "Ingeniería de Sistemas" },
-                    { value: "Ingeniería Electrónica", label: "Ingeniería Electrónica" },
-                    { value: "Ingeniería Industrial", label: "Ingeniería Industrial" },
-                    { value: "Psicología", label: "Psicología" },
-                    { value: "Diseño Gráfico", label: "Diseño Gráfico" },
-                    { value: "General", label: "General" }
+                    {value: "all", label: "Todas las Carreras"},
+                    {value: "Administración de Empresas", label: "Administración de Empresas"},
+                    {value: "Arquitectura", label: "Arquitectura"},
+                    {value: "Derecho", label: "Derecho"},
+                    {value: "Economía", label: "Economía"},
+                    {value: "Ingeniería Civil", label: "Ingeniería Civil"},
+                    {value: "Ingeniería de Sistemas", label: "Ingeniería de Sistemas"},
+                    {value: "Ingeniería Electrónica", label: "Ingeniería Electrónica"},
+                    {value: "Ingeniería Industrial", label: "Ingeniería Industrial"},
+                    {value: "Psicología", label: "Psicología"},
+                    {value: "Diseño Gráfico", label: "Diseño Gráfico"},
+                    {value: "General", label: "General"}
                 ]
             }
         ];
@@ -387,14 +444,14 @@ export default function Admin() {
         setIsLoading(true);
 
         try {
-            const { createPonencia } = await import("../services/api");
+            const {createPonencia} = await import("../services/api");
 
             // Buscar ID del ponente
             let finalSpeaker = speakers.find(s => s.name === newConf.speakerName);
 
             // Si es nuevo ponente (simplificado: crear uno básico si no existe)
             if (newConf.speakerName === "OTRO") {
-                const { createPonente } = await import("../services/api");
+                const {createPonente} = await import("../services/api");
                 const newSpeakerName = (window as any)._tempNewSpeaker || "Invitado Especial";
                 finalSpeaker = await createPonente({
                     nombre: newSpeakerName,
@@ -416,7 +473,12 @@ export default function Admin() {
                 dayId: newConf.dayId, // Para compatibilidad con el frontend
                 documentUrl: newConf.documentUrl,
                 documentFile: newConf.documentFile,
-                speaker: { name: finalSpeaker.name, organization: finalSpeaker.organization, avatar: "/default-avatar.png", bio: "" }
+                speaker: {
+                    name: finalSpeaker.name,
+                    organization: finalSpeaker.organization,
+                    avatar: "/default-avatar.png",
+                    bio: ""
+                }
             };
 
             try {
@@ -426,13 +488,13 @@ export default function Admin() {
             }
 
             // Actualizar localmente para respuesta inmediata
-            const updatedConfs = [...conferences, { ...ponenciaData, id: Date.now().toString() }];
+            const updatedConfs = [...conferences, {...ponenciaData, id: Date.now().toString()}];
             setConferences(updatedConfs);
             localStorage.setItem("site_conferences", JSON.stringify(updatedConfs));
 
             // alert("¡Conferencia guardada!");
             setShowConfForm(false);
-            setNewConf({ ...newConf, title: "", description: "" });
+            setNewConf({...newConf, title: "", description: ""});
         } catch (err: any) {
             console.error("Error saving conference:", err);
             // alert(`Error: ${err.message}`);
@@ -450,7 +512,7 @@ export default function Admin() {
 
             // Intentar actualizar en API si tenemos endpoint (opcional según el backend actual)
             try {
-                const { updatePonencia } = await import("../services/api");
+                const {updatePonencia} = await import("../services/api");
                 if (updatePonencia) await updatePonencia(editingConf.id, editingConf);
             } catch (apiErr) {
                 console.warn("No se pudo actualizar en API (posible endpoint inexistente), cambios guardados localmente");
@@ -501,9 +563,9 @@ export default function Admin() {
         if (file) {
             setIsLoading(true);
             try {
-                const { compressImage } = await import("../utils/imageCompressor");
+                const {compressImage} = await import("../utils/imageCompressor");
                 const compressed = await compressImage(file, 800, 800, 0.7);
-                setNewGuest({ ...newGuest, avatar: compressed });
+                setNewGuest({...newGuest, avatar: compressed});
             } catch (err) {
                 console.error("Error al comprimir imagen", err);
             } finally {
@@ -517,7 +579,7 @@ export default function Admin() {
         setIsLoading(true);
 
         try {
-            const { createPonente } = await import("../services/api");
+            const {createPonente} = await import("../services/api");
 
             const guestData = {
                 nombre: newGuest.name,
@@ -531,7 +593,7 @@ export default function Admin() {
                 savedSpeaker = await createPonente(guestData);
             } catch (apiErr) {
                 console.warn("Error API al crear ponente, usando simulación local:", apiErr);
-                savedSpeaker = { ...guestData, id: `local-${Date.now()}` };
+                savedSpeaker = {...guestData, id: `local-${Date.now()}`};
             }
 
             // 1. Actualizar lista de speakers (esto hará que aparezca en configuración)
@@ -560,7 +622,7 @@ export default function Admin() {
 
             setConferences([...conferences, simulatedConf]);
             setShowGuestForm(false);
-            setNewGuest({ name: "", organization: "", bio: "", avatar: "" });
+            setNewGuest({name: "", organization: "", bio: "", avatar: ""});
             // alert("¡Invitado agregado exitosamente!");
         } catch (err) {
             console.error("Error al agregar invitado:", err);
@@ -656,15 +718,25 @@ export default function Admin() {
                             <button
                                 className={activeTab === "settings" ? "active" : ""}
                                 onClick={() => setActiveTab("settings")}
-                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '10px' }}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    width: '100%',
+                                    gap: '10px'
+                                }}
                             >
-                                <span style={{display:'flex', alignItems:'center', gap:'10px'}}>⚙️ Configuración Page</span>
+                                <span style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px'
+                                }}>⚙️ Configuración Page</span>
                                 {pendingPhotos.length > 0 && (
                                     <span style={{
-                                        background: '#ef4444', 
-                                        color: 'white', 
-                                        borderRadius: '20px', 
-                                        padding: '2px 8px', 
+                                        background: '#ef4444',
+                                        color: 'white',
+                                        borderRadius: '20px',
+                                        padding: '2px 8px',
                                         fontSize: '0.7rem',
                                         fontWeight: 'bold',
                                         animation: 'pulse 2s infinite'
@@ -674,16 +746,22 @@ export default function Admin() {
                                 )}
                             </button>
                             <button
+                                className={activeTab === "notifications" ? "active" : ""}
+                                onClick={() => setActiveTab("notifications")}
+                            >
+                                🔔 Notificaciones {unreadNotificationsCount > 0 ? `(${unreadNotificationsCount})` : ""}
+                            </button>
+                            <button
                                 className={activeTab === "users" ? "active" : ""}
                                 onClick={() => setActiveTab("users")}
-                                style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+                                style={{display: 'flex', alignItems: 'center', gap: '10px'}}
                             >
                                 👤 Usuarios
                             </button>
                             <button
                                 className={activeTab === "performance" ? "active" : ""}
                                 onClick={() => setActiveTab("performance")}
-                                style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+                                style={{display: 'flex', alignItems: 'center', gap: '10px'}}
                             >
                                 ⏱️ Rendimiento
                             </button>
@@ -719,7 +797,7 @@ export default function Admin() {
                                                 type="text"
                                                 required
                                                 value={newConf.title}
-                                                onChange={e => setNewConf({ ...newConf, title: e.target.value })}
+                                                onChange={e => setNewConf({...newConf, title: e.target.value})}
                                             />
                                         </div>
                                         <div className="form-row">
@@ -731,12 +809,13 @@ export default function Admin() {
                                                     value={newConf.speakerName}
                                                     onChange={e => {
                                                         const selectedName = e.target.value;
-                                                        setNewConf({ ...newConf, speakerName: selectedName });
+                                                        setNewConf({...newConf, speakerName: selectedName});
                                                     }}
                                                 >
                                                     <option value="">-- Selecciona un invitado --</option>
                                                     {availableSpeakers.map((s, idx) => (
-                                                        <option key={idx} value={s.name}>{s.name} ({s.organization})</option>
+                                                        <option key={idx}
+                                                                value={s.name}>{s.name} ({s.organization})</option>
                                                     ))}
                                                     <option value="OTRO">+ Otro (Escribir nombre)</option>
                                                 </select>
@@ -759,7 +838,10 @@ export default function Admin() {
                                                 <label>Modalidad</label>
                                                 <select
                                                     value={newConf.type}
-                                                    onChange={e => setNewConf({ ...newConf, type: e.target.value as any })}
+                                                    onChange={e => setNewConf({
+                                                        ...newConf,
+                                                        type: e.target.value as any
+                                                    })}
                                                     className="admin-select"
                                                 >
                                                     <option value="presencial">Presencial</option>
@@ -771,12 +853,13 @@ export default function Admin() {
                                             <label>Ubicación (Salón / Auditorio)</label>
                                             <select
                                                 value={newConf.location}
-                                                onChange={e => setNewConf({ ...newConf, location: e.target.value })}
+                                                onChange={e => setNewConf({...newConf, location: e.target.value})}
                                                 required
                                                 className="admin-select"
                                             >
                                                 {Object.keys(locCapacities).map(loc => (
-                                                    <option key={loc} value={loc}>{loc} (Cap: {locCapacities[loc]})</option>
+                                                    <option key={loc}
+                                                            value={loc}>{loc} (Cap: {locCapacities[loc]})</option>
                                                 ))}
                                             </select>
                                         </div>
@@ -787,7 +870,10 @@ export default function Admin() {
                                                     type="url"
                                                     placeholder="https://zoom.us/j/..."
                                                     value={newConf.virtualLink}
-                                                    onChange={e => setNewConf({ ...newConf, virtualLink: e.target.value })}
+                                                    onChange={e => setNewConf({
+                                                        ...newConf,
+                                                        virtualLink: e.target.value
+                                                    })}
                                                     required
                                                 />
                                             </div>
@@ -796,12 +882,13 @@ export default function Admin() {
                                             <label>Carrera Afín</label>
                                             <select
                                                 value={newConf.career}
-                                                onChange={e => setNewConf({ ...newConf, career: e.target.value })}
+                                                onChange={e => setNewConf({...newConf, career: e.target.value})}
                                                 required
                                                 className="admin-select"
                                             >
                                                 <option value="">Selecciona la carrera</option>
-                                                <option value="Administración de Empresas">Administración de Empresas</option>
+                                                <option value="Administración de Empresas">Administración de Empresas
+                                                </option>
                                                 <option value="Arquitectura">Arquitectura</option>
                                                 <option value="Derecho">Derecho</option>
                                                 <option value="Economía">Economía</option>
@@ -819,7 +906,7 @@ export default function Admin() {
                                                 <label>Día de la Conferencia</label>
                                                 <select
                                                     value={newConf.dayId}
-                                                    onChange={e => setNewConf({ ...newConf, dayId: e.target.value })}
+                                                    onChange={e => setNewConf({...newConf, dayId: e.target.value})}
                                                     required
                                                     className="admin-select"
                                                 >
@@ -834,7 +921,7 @@ export default function Admin() {
                                                     type="time"
                                                     required
                                                     value={newConf.startTime}
-                                                    onChange={e => setNewConf({ ...newConf, startTime: e.target.value })}
+                                                    onChange={e => setNewConf({...newConf, startTime: e.target.value})}
                                                 />
                                             </div>
                                             <div className="form-group">
@@ -843,19 +930,23 @@ export default function Admin() {
                                                     type="time"
                                                     required
                                                     value={newConf.endTime}
-                                                    onChange={e => setNewConf({ ...newConf, endTime: e.target.value })}
+                                                    onChange={e => setNewConf({...newConf, endTime: e.target.value})}
                                                 />
                                             </div>
                                         </div>
 
-                                        <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                        <div className="form-row"
+                                             style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem'}}>
                                             <div className="form-group">
                                                 <label>🔗 Enlace Externo (Material)</label>
                                                 <input
                                                     type="text"
                                                     placeholder="https://ejemplo.com/recurso"
                                                     value={newConf.documentUrl}
-                                                    onChange={e => setNewConf({ ...newConf, documentUrl: e.target.value })}
+                                                    onChange={e => setNewConf({
+                                                        ...newConf,
+                                                        documentUrl: e.target.value
+                                                    })}
                                                 />
                                             </div>
                                             <div className="form-group">
@@ -868,9 +959,9 @@ export default function Admin() {
                                                             setIsLoading(true);
                                                             try {
                                                                 if (file.type.startsWith("image/")) {
-                                                                    const { compressImage } = await import("../utils/imageCompressor");
+                                                                    const {compressImage} = await import("../utils/imageCompressor");
                                                                     const compressed = await compressImage(file, 1200, 1200, 0.7);
-                                                                    setNewConf({ ...newConf, documentFile: compressed });
+                                                                    setNewConf({...newConf, documentFile: compressed});
                                                                 } else {
                                                                     // Pausa diminuta para que el navedor pinte el overlay "Procesando" antes de bloquear la CPU leyendo el archivo
                                                                     await new Promise(r => setTimeout(r, 50));
@@ -880,7 +971,7 @@ export default function Admin() {
                                                                         reader.onerror = reject;
                                                                         reader.readAsDataURL(file);
                                                                     });
-                                                                    setNewConf({ ...newConf, documentFile: base64Data });
+                                                                    setNewConf({...newConf, documentFile: base64Data});
                                                                 }
                                                             } catch (err) {
                                                                 console.error("Error procesando archivo", err);
@@ -899,7 +990,7 @@ export default function Admin() {
                                                 rows={3}
                                                 required
                                                 value={newConf.description}
-                                                onChange={e => setNewConf({ ...newConf, description: e.target.value })}
+                                                onChange={e => setNewConf({...newConf, description: e.target.value})}
                                             ></textarea>
                                         </div>
                                         <button type="submit" className="btn-save-guest">Publicar Conferencia</button>
@@ -909,38 +1000,68 @@ export default function Admin() {
 
                             <table className="admin-table">
                                 <thead>
-                                    <tr>
-                                        <th>Título</th>
-                                        <th>Ponente</th>
-                                        <th>Ubicación</th>
-                                        {userRole !== "VIEWER" && <th>Acciones</th>}
-                                    </tr>
+                                <tr>
+                                    <th>Título</th>
+                                    <th>Ponente</th>
+                                    <th>Ubicación</th>
+                                    {userRole !== "VIEWER" && <th>Acciones</th>}
+                                </tr>
                                 </thead>
                                 <tbody>
-                                    {conferences.map((conf: any) => (
-                                        <tr key={conf.id}>
-                                            <td>{conf.title}</td>
-                                            <td>{conf.speaker.name}</td>
-                                            <td>{conf.location}</td>
-                                            {userRole !== "VIEWER" && (
-                                                <td className="actions">
-                                                    <button className="btn-edit-sm" onClick={() => handleEditConference(conf)}>✏️ Editar</button>
-                                                    <button className="btn-edit-sm" style={{ background: '#27ae60', margin: '0 5px' }} onClick={() => setQrModalConf(conf)}>📷 QR</button>
-                                                    <button className="btn-delete-sm" onClick={() => handleDeleteConference(conf.id)}>🗑️ Borrar</button>
-                                                </td>
-                                            )}
-                                        </tr>
-                                    ))}
+                                {conferences.map((conf: any) => (
+                                    <tr key={conf.id}>
+                                        <td>{conf.title}</td>
+                                        <td>{conf.speaker.name}</td>
+                                        <td>{conf.location}</td>
+                                        {userRole !== "VIEWER" && (
+                                            <td className="actions">
+                                                <button className="btn-edit-sm"
+                                                        onClick={() => handleEditConference(conf)}>✏️ Editar
+                                                </button>
+                                                <button className="btn-edit-sm"
+                                                        style={{background: '#27ae60', margin: '0 5px'}}
+                                                        onClick={() => setQrModalConf(conf)}>📷 QR
+                                                </button>
+                                                <button className="btn-delete-sm"
+                                                        onClick={() => handleDeleteConference(conf.id)}>🗑️ Borrar
+                                                </button>
+                                            </td>
+                                        )}
+                                    </tr>
+                                ))}
                                 </tbody>
                             </table>
                             {/* Modal de QR de Asistencia */}
                             {qrModalConf && (
-                                <div className="modal-overlay" onClick={() => setQrModalConf(null)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <div className="modal-content fade-in" onClick={e => e.stopPropagation()} style={{ background: '#fff', padding: '2rem', borderRadius: '12px', textAlign: 'center', maxWidth: '400px' }}>
+                                <div className="modal-overlay" onClick={() => setQrModalConf(null)} style={{
+                                    position: 'fixed',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    background: 'rgba(0,0,0,0.5)',
+                                    zIndex: 9999,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}>
+                                    <div className="modal-content fade-in" onClick={e => e.stopPropagation()} style={{
+                                        background: '#fff',
+                                        padding: '2rem',
+                                        borderRadius: '12px',
+                                        textAlign: 'center',
+                                        maxWidth: '400px'
+                                    }}>
                                         <h2>Código de Asistencia</h2>
-                                        <p style={{ marginBottom: '1.5rem', color: '#666' }}>{qrModalConf.title}</p>
+                                        <p style={{marginBottom: '1.5rem', color: '#666'}}>{qrModalConf.title}</p>
 
-                                        <div style={{ background: 'white', padding: '16px', display: 'inline-block', borderRadius: '8px', border: '1px solid #eee' }}>
+                                        <div style={{
+                                            background: 'white',
+                                            padding: '16px',
+                                            display: 'inline-block',
+                                            borderRadius: '8px',
+                                            border: '1px solid #eee'
+                                        }}>
                                             <QRCode
                                                 id={`qr-code-svg-${qrModalConf.id}`}
                                                 value={`CONF_ATTENDANCE_${qrModalConf.id}`}
@@ -949,7 +1070,12 @@ export default function Admin() {
                                             />
                                         </div>
 
-                                        <div style={{ marginTop: '2rem', display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                                        <div style={{
+                                            marginTop: '2rem',
+                                            display: 'flex',
+                                            gap: '10px',
+                                            justifyContent: 'center'
+                                        }}>
                                             <button className="btn-submit premium-btn" onClick={downloadQR}>
                                                 ⬇️ Descargar PNG
                                             </button>
@@ -986,7 +1112,7 @@ export default function Admin() {
                                                 type="text"
                                                 required
                                                 value={newGuest.name}
-                                                onChange={(e) => setNewGuest({ ...newGuest, name: e.target.value })}
+                                                onChange={(e) => setNewGuest({...newGuest, name: e.target.value})}
                                             />
                                         </div>
                                         <div className="form-group">
@@ -995,7 +1121,10 @@ export default function Admin() {
                                                 type="text"
                                                 required
                                                 value={newGuest.organization}
-                                                onChange={(e) => setNewGuest({ ...newGuest, organization: e.target.value })}
+                                                onChange={(e) => setNewGuest({
+                                                    ...newGuest,
+                                                    organization: e.target.value
+                                                })}
                                             />
                                         </div>
                                     </div>
@@ -1009,7 +1138,7 @@ export default function Admin() {
                                                 className="file-input"
                                             />
                                             {newGuest.avatar && (
-                                                <img src={newGuest.avatar} alt="Preview" className="upload-preview" />
+                                                <img src={newGuest.avatar} alt="Preview" className="upload-preview"/>
                                             )}
                                         </div>
                                     </div>
@@ -1019,7 +1148,7 @@ export default function Admin() {
                                             rows={3}
                                             required
                                             value={newGuest.bio}
-                                            onChange={(e) => setNewGuest({ ...newGuest, bio: e.target.value })}
+                                            onChange={(e) => setNewGuest({...newGuest, bio: e.target.value})}
                                         ></textarea>
                                     </div>
                                     <button type="submit" className="btn-save-guest">Guardar Invitado</button>
@@ -1037,25 +1166,35 @@ export default function Admin() {
                                         borderRadius: '12px',
                                         border: '2px dashed #e2e8f0'
                                     }}>
-                                        <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>👥</p>
-                                        <p style={{ fontWeight: '600' }}>No hay invitados aún</p>
-                                        <p style={{ fontSize: '0.85rem' }}>Agrega tu primer invitado con el botón de arriba.</p>
+                                        <p style={{fontSize: '2rem', marginBottom: '0.5rem'}}>👥</p>
+                                        <p style={{fontWeight: '600'}}>No hay invitados aún</p>
+                                        <p style={{fontSize: '0.85rem'}}>Agrega tu primer invitado con el botón de
+                                            arriba.</p>
                                     </div>
                                 ) : (
                                     <>
-                                        <p style={{ gridColumn: '1/-1', color: '#64748b', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                                        <p style={{
+                                            gridColumn: '1/-1',
+                                            color: '#64748b',
+                                            fontSize: '0.85rem',
+                                            marginBottom: '0.5rem'
+                                        }}>
                                             {speakers.length} invitado{speakers.length !== 1 ? 's' : ''} registrado{speakers.length !== 1 ? 's' : ''}
                                         </p>
                                         {speakers.map((speaker: any) => (
                                             <div key={speaker.id} className="guest-admin-card fade-in">
-                                                <img src={speaker.avatar_url || speaker.avatar || "/default-avatar.png"} alt={speaker.nombre || speaker.name} />
+                                                <img src={speaker.avatar_url || speaker.avatar || "/default-avatar.png"}
+                                                     alt={speaker.nombre || speaker.name}/>
                                                 <div className="guest-info">
                                                     <h4>{speaker.nombre || speaker.name}</h4>
                                                     <p>{speaker.organizacion || speaker.organization}</p>
                                                 </div>
                                                 {userRole !== "VIEWER" && (
                                                     <div className="guest-actions">
-                                                        <button className="btn-edit-sm" onClick={() => setEditingSpeaker(speaker)}>✏️ Editar Perfil</button>
+                                                        <button className="btn-edit-sm"
+                                                                onClick={() => setEditingSpeaker(speaker)}>✏️ Editar
+                                                            Perfil
+                                                        </button>
                                                     </div>
                                                 )}
                                             </div>
@@ -1080,14 +1219,15 @@ export default function Admin() {
                                 borderBottom: '2px solid #f0f0f0', paddingBottom: '1rem', marginBottom: '2rem'
                             }}>
                                 {[
-                                    { id: "general", icon: "⚙️", label: "General" },
-                                    { id: "pg-inicio", icon: "🏠", label: "Inicio" },
-                                    { id: "pg-invitados", icon: "👥", label: "Invitados" },
-                                    { id: "pg-agenda", icon: "📅", label: "Agenda" },
-                                    { id: "pg-acerca", icon: "ℹ️", label: "Acerca De" },
-                                    { id: "pg-contacto", icon: "✉️", label: "Contacto" },
-                                    { id: "pg-aforos", icon: "🏛️", label: "Aforos y Sedes" },
-                                    { id: "pg-galeria", icon: "🖼️", label: "Galería Admin" },
+                                    {id: "general", icon: "⚙️", label: "General"},
+                                    {id: "pg-inicio", icon: "🏠", label: "Inicio"},
+                                    {id: "pg-invitados", icon: "👥", label: "Invitados"},
+                                    {id: "pg-agenda", icon: "📅", label: "Agenda"},
+                                    {id: "pg-acerca", icon: "ℹ️", label: "Acerca De"},
+                                    {id: "pg-contacto", icon: "✉️", label: "Contacto"},
+                                    {id: "pg-aforos", icon: "🏛️", label: "Aforos y Sedes"},
+                                    {id: "pg-galeria", icon: "🖼️", label: "Galería Admin"},
+                                    {id: "notifications", icon: "🔔", label: "Notificaciones" },
                                 ].map(tab => (
                                     <button
                                         key={tab.id}
@@ -1109,22 +1249,101 @@ export default function Admin() {
                                 ))}
                             </div>
 
+                            {settingsTab === "notifications" && userRole === "SUPER_ADMIN" && (
+                                <div className="admin-view">
+                                    <div className="view-header">
+                                        <h2>🔔 Notificaciones</h2>
+                                        <p>Notificaciones de inicio de sesión, registro e inscripción.</p>
+                                    </div>
+
+                                    {notificationsLoading ? (
+                                        <p>Cargando notificaciones...</p>
+                                    ) : notifications.length === 0 ? (
+                                        <p>No hay notificaciones.</p>
+                                    ) : (
+                                        <div style={{display: "grid", gap: "12px"}}>
+                                            {notifications.map((n: any) => (
+                                                <div key={n.id} style={{
+                                                    border: "1px solid #ddd",
+                                                    borderRadius: "12px",
+                                                    padding: "12px",
+                                                    background: n.read ? "#fff" : "#eef6ff"
+                                                }}>
+                                                    <strong>{n.title}</strong>
+                                                    <p style={{margin: "6px 0"}}>{n.message}</p>
+                                                    <small>{n.type}</small>
+                                                    {!n.read && (
+                                                        <div>
+                                                            <button
+                                                                onClick={async () => {
+                                                                    await markNotificationAsRead(n.id);
+                                                                    setNotifications(prev =>
+                                                                        prev.map((item: any) =>
+                                                                            item.id === n.id ? {
+                                                                                ...item,
+                                                                                read: true
+                                                                            } : item
+                                                                        )
+                                                                    );
+                                                                }}
+                                                            >
+                                                                Marcar leída
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             {/* ── GENERAL ── */}
                             {settingsTab === "general" && (
                                 <form className="settings-form">
-                                    <h3 style={{ marginBottom: '1.5rem', color: 'var(--secondary-color)' }}>⚙️ Configuración General</h3>
+                                    <h3 style={{marginBottom: '1.5rem', color: 'var(--secondary-color)'}}>⚙️
+                                        Configuración General</h3>
                                     <div className="form-group">
                                         <label>Nombre del Evento</label>
-                                        <input type="text" defaultValue="CONIITI 2026" />
+                                        <input type="text" defaultValue="CONIITI 2026"/>
                                     </div>
                                     <div className="form-group">
                                         <label>Tema por País (Colores y Estilos)</label>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginTop: '0.5rem' }}>
+                                        <div style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                                            gap: '1rem',
+                                            marginTop: '0.5rem'
+                                        }}>
                                             {[
-                                                { id: 'default', name: 'Estándar', desc: 'Universidad Católica', colors: ['#2563EB', '#1E293B', '#ffffff'], isPreset: true },
-                                                { id: 'colombia', name: 'Colombia', desc: 'Amarillo, Azul, Rojo', colors: ['#FFD100', '#003893', '#CE1126'], isPreset: true },
-                                                { id: 'italy', name: 'Italia', desc: 'Verde, Blanco, Rojo', colors: ['#009246', '#ffffff', '#CE2B37'], isPreset: true },
-                                                { id: 'mexico', name: 'México', desc: 'Verde Oscuro, Rojo', colors: ['#006341', '#ffffff', '#C8102E'], isPreset: true },
+                                                {
+                                                    id: 'default',
+                                                    name: 'Estándar',
+                                                    desc: 'Universidad Católica',
+                                                    colors: ['#2563EB', '#1E293B', '#ffffff'],
+                                                    isPreset: true
+                                                },
+                                                {
+                                                    id: 'colombia',
+                                                    name: 'Colombia',
+                                                    desc: 'Amarillo, Azul, Rojo',
+                                                    colors: ['#FFD100', '#003893', '#CE1126'],
+                                                    isPreset: true
+                                                },
+                                                {
+                                                    id: 'italy',
+                                                    name: 'Italia',
+                                                    desc: 'Verde, Blanco, Rojo',
+                                                    colors: ['#009246', '#ffffff', '#CE2B37'],
+                                                    isPreset: true
+                                                },
+                                                {
+                                                    id: 'mexico',
+                                                    name: 'México',
+                                                    desc: 'Verde Oscuro, Rojo',
+                                                    colors: ['#006341', '#ffffff', '#C8102E'],
+                                                    isPreset: true
+                                                },
                                                 ...customThemes
                                             ].map(theme => {
                                                 const currentTheme = localStorage.getItem("site_theme") || "default";
@@ -1164,13 +1383,29 @@ export default function Admin() {
                                                             position: 'relative'
                                                         }}
                                                     >
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                            <strong style={{ fontSize: '1.05rem', color: '#1e293b' }}>{theme.name}</strong>
-                                                            {isActive && <span style={{ color: 'var(--primary-color)', fontSize: '1.2rem' }}>✓</span>}
+                                                        <div style={{
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            alignItems: 'center'
+                                                        }}>
+                                                            <strong style={{
+                                                                fontSize: '1.05rem',
+                                                                color: '#1e293b'
+                                                            }}>{theme.name}</strong>
+                                                            {isActive && <span style={{
+                                                                color: 'var(--primary-color)',
+                                                                fontSize: '1.2rem'
+                                                            }}>✓</span>}
                                                             {!theme.isPreset && !isActive && (
                                                                 <button
                                                                     className="btn-delete-sm"
-                                                                    style={{ padding: '2px 6px', fontSize: '0.7rem', position: 'absolute', top: '10px', right: '10px' }}
+                                                                    style={{
+                                                                        padding: '2px 6px',
+                                                                        fontSize: '0.7rem',
+                                                                        position: 'absolute',
+                                                                        top: '10px',
+                                                                        right: '10px'
+                                                                    }}
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
                                                                         if (confirm("¿Eliminar este tema personalizado?")) {
@@ -1182,10 +1417,20 @@ export default function Admin() {
                                                                 >🗑️</button>
                                                             )}
                                                         </div>
-                                                        <span style={{ fontSize: '0.85rem', color: '#64748b' }}>{theme.desc}</span>
-                                                        <div style={{ display: 'flex', height: '24px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                                                        <span style={{
+                                                            fontSize: '0.85rem',
+                                                            color: '#64748b'
+                                                        }}>{theme.desc}</span>
+                                                        <div style={{
+                                                            display: 'flex',
+                                                            height: '24px',
+                                                            borderRadius: '6px',
+                                                            overflow: 'hidden',
+                                                            border: '1px solid #e2e8f0'
+                                                        }}>
                                                             {theme.colors.map((color: string, idx: number) => (
-                                                                <div key={idx} style={{ flex: 1, backgroundColor: color }}></div>
+                                                                <div key={idx}
+                                                                     style={{flex: 1, backgroundColor: color}}></div>
                                                             ))}
                                                         </div>
                                                     </div>
@@ -1193,7 +1438,7 @@ export default function Admin() {
                                             })}
                                         </div>
 
-                                        <div style={{ marginTop: '1rem' }}>
+                                        <div style={{marginTop: '1rem'}}>
                                             <button
                                                 type="button"
                                                 onClick={() => setIsAddingTheme(true)}
@@ -1220,68 +1465,138 @@ export default function Admin() {
                                         {/* Modal para Crear Tema */}
                                         {isAddingTheme && (
                                             <div className="modal-overlay fade-in">
-                                                <div className="modal-content" style={{ maxWidth: '540px' }}>
+                                                <div className="modal-content" style={{maxWidth: '540px'}}>
                                                     <h3>🎨 Crear Nuevo Tema</h3>
-                                                    <div className="form-group" style={{ marginTop: '1rem' }}>
+                                                    <div className="form-group" style={{marginTop: '1rem'}}>
                                                         <label>Nombre del Tema</label>
-                                                        <input type="text" placeholder="Ej: Tema Noche Brillante" value={newThemeData.name} onChange={e => setNewThemeData({ ...newThemeData, name: e.target.value })} />
+                                                        <input type="text" placeholder="Ej: Tema Noche Brillante"
+                                                               value={newThemeData.name}
+                                                               onChange={e => setNewThemeData({
+                                                                   ...newThemeData,
+                                                                   name: e.target.value
+                                                               })}/>
                                                     </div>
-                                                    <div className="color-picker-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                                    <div className="color-picker-grid" style={{
+                                                        display: 'grid',
+                                                        gridTemplateColumns: '1fr 1fr',
+                                                        gap: '1rem'
+                                                    }}>
                                                         <div className="form-group">
                                                             <label>🔵 Color Primario (Botones, Acentos)</label>
-                                                            <div style={{ display: 'flex', gap: '10px' }}>
-                                                                <input type="color" style={{ width: '40px', padding: 0 }} value={newThemeData.primary} onChange={e => setNewThemeData({ ...newThemeData, primary: e.target.value })} />
-                                                                <input type="text" value={newThemeData.primary} onChange={e => setNewThemeData({ ...newThemeData, primary: e.target.value })} style={{ flex: 1 }} />
+                                                            <div style={{display: 'flex', gap: '10px'}}>
+                                                                <input type="color" style={{width: '40px', padding: 0}}
+                                                                       value={newThemeData.primary}
+                                                                       onChange={e => setNewThemeData({
+                                                                           ...newThemeData,
+                                                                           primary: e.target.value
+                                                                       })}/>
+                                                                <input type="text" value={newThemeData.primary}
+                                                                       onChange={e => setNewThemeData({
+                                                                           ...newThemeData,
+                                                                           primary: e.target.value
+                                                                       })} style={{flex: 1}}/>
                                                             </div>
                                                         </div>
                                                         <div className="form-group">
                                                             <label>🔵 Color Secundario (Fondos Sec.)</label>
-                                                            <div style={{ display: 'flex', gap: '10px' }}>
-                                                                <input type="color" style={{ width: '40px', padding: 0 }} value={newThemeData.secondary} onChange={e => setNewThemeData({ ...newThemeData, secondary: e.target.value })} />
-                                                                <input type="text" value={newThemeData.secondary} onChange={e => setNewThemeData({ ...newThemeData, secondary: e.target.value })} style={{ flex: 1 }} />
+                                                            <div style={{display: 'flex', gap: '10px'}}>
+                                                                <input type="color" style={{width: '40px', padding: 0}}
+                                                                       value={newThemeData.secondary}
+                                                                       onChange={e => setNewThemeData({
+                                                                           ...newThemeData,
+                                                                           secondary: e.target.value
+                                                                       })}/>
+                                                                <input type="text" value={newThemeData.secondary}
+                                                                       onChange={e => setNewThemeData({
+                                                                           ...newThemeData,
+                                                                           secondary: e.target.value
+                                                                       })} style={{flex: 1}}/>
                                                             </div>
                                                         </div>
                                                         <div className="form-group">
                                                             <label>⚪ Fondo de Contenido</label>
-                                                            <div style={{ display: 'flex', gap: '10px' }}>
-                                                                <input type="color" style={{ width: '40px', padding: 0 }} value={newThemeData.bg} onChange={e => setNewThemeData({ ...newThemeData, bg: e.target.value })} />
-                                                                <input type="text" value={newThemeData.bg} onChange={e => setNewThemeData({ ...newThemeData, bg: e.target.value })} style={{ flex: 1 }} />
+                                                            <div style={{display: 'flex', gap: '10px'}}>
+                                                                <input type="color" style={{width: '40px', padding: 0}}
+                                                                       value={newThemeData.bg}
+                                                                       onChange={e => setNewThemeData({
+                                                                           ...newThemeData,
+                                                                           bg: e.target.value
+                                                                       })}/>
+                                                                <input type="text" value={newThemeData.bg}
+                                                                       onChange={e => setNewThemeData({
+                                                                           ...newThemeData,
+                                                                           bg: e.target.value
+                                                                       })} style={{flex: 1}}/>
                                                             </div>
                                                         </div>
                                                         <div className="form-group">
                                                             <label>🌑 Fondo de Cabecera y Menús</label>
-                                                            <div style={{ display: 'flex', gap: '10px' }}>
-                                                                <input type="color" style={{ width: '40px', padding: 0 }} value={newThemeData.header} onChange={e => setNewThemeData({ ...newThemeData, header: e.target.value })} />
-                                                                <input type="text" value={newThemeData.header} onChange={e => setNewThemeData({ ...newThemeData, header: e.target.value })} style={{ flex: 1 }} />
+                                                            <div style={{display: 'flex', gap: '10px'}}>
+                                                                <input type="color" style={{width: '40px', padding: 0}}
+                                                                       value={newThemeData.header}
+                                                                       onChange={e => setNewThemeData({
+                                                                           ...newThemeData,
+                                                                           header: e.target.value
+                                                                       })}/>
+                                                                <input type="text" value={newThemeData.header}
+                                                                       onChange={e => setNewThemeData({
+                                                                           ...newThemeData,
+                                                                           header: e.target.value
+                                                                       })} style={{flex: 1}}/>
                                                             </div>
                                                         </div>
                                                         <div className="form-group">
                                                             <label>📝 Color de Texto Principal</label>
-                                                            <div style={{ display: 'flex', gap: '10px' }}>
-                                                                <input type="color" style={{ width: '40px', padding: 0 }} value={newThemeData.text} onChange={e => setNewThemeData({ ...newThemeData, text: e.target.value })} />
-                                                                <input type="text" value={newThemeData.text} onChange={e => setNewThemeData({ ...newThemeData, text: e.target.value })} style={{ flex: 1 }} />
+                                                            <div style={{display: 'flex', gap: '10px'}}>
+                                                                <input type="color" style={{width: '40px', padding: 0}}
+                                                                       value={newThemeData.text}
+                                                                       onChange={e => setNewThemeData({
+                                                                           ...newThemeData,
+                                                                           text: e.target.value
+                                                                       })}/>
+                                                                <input type="text" value={newThemeData.text}
+                                                                       onChange={e => setNewThemeData({
+                                                                           ...newThemeData,
+                                                                           text: e.target.value
+                                                                       })} style={{flex: 1}}/>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', justifyContent: 'flex-end' }}>
-                                                        <button type="button" className="btn-cancel" onClick={() => setIsAddingTheme(false)}>Cancelar</button>
-                                                        <button type="button" className="btn-submit premium-btn" onClick={() => {
-                                                            if (!newThemeData.name.trim()) return toast.error("Por favor ingresa un nombre para el tema");
-                                                            const newTheme = {
-                                                                id: `custom-${Date.now()}`,
-                                                                name: newThemeData.name,
-                                                                desc: 'Tema Personalizado',
-                                                                isPreset: false,
-                                                                colors: [newThemeData.primary, newThemeData.secondary, newThemeData.header],
-                                                                themeData: { ...newThemeData }
-                                                            };
-                                                            const updatedThemes = [...customThemes, newTheme];
-                                                            setCustomThemes(updatedThemes);
-                                                            localStorage.setItem("site_custom_themes", JSON.stringify(updatedThemes));
-                                                            setIsAddingTheme(false);
-                                                            setNewThemeData({ name: '', primary: '#2563EB', secondary: '#1E293B', bg: '#ffffff', text: '#1b1a1a', header: '#1f2a44' });
-                                                            toast.success("Tema creado correctamente");
-                                                        }}>Guardar y Añadir Tema</button>
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        gap: '1rem',
+                                                        marginTop: '1.5rem',
+                                                        justifyContent: 'flex-end'
+                                                    }}>
+                                                        <button type="button" className="btn-cancel"
+                                                                onClick={() => setIsAddingTheme(false)}>Cancelar
+                                                        </button>
+                                                        <button type="button" className="btn-submit premium-btn"
+                                                                onClick={() => {
+                                                                    if (!newThemeData.name.trim()) return toast.error("Por favor ingresa un nombre para el tema");
+                                                                    const newTheme = {
+                                                                        id: `custom-${Date.now()}`,
+                                                                        name: newThemeData.name,
+                                                                        desc: 'Tema Personalizado',
+                                                                        isPreset: false,
+                                                                        colors: [newThemeData.primary, newThemeData.secondary, newThemeData.header],
+                                                                        themeData: {...newThemeData}
+                                                                    };
+                                                                    const updatedThemes = [...customThemes, newTheme];
+                                                                    setCustomThemes(updatedThemes);
+                                                                    localStorage.setItem("site_custom_themes", JSON.stringify(updatedThemes));
+                                                                    setIsAddingTheme(false);
+                                                                    setNewThemeData({
+                                                                        name: '',
+                                                                        primary: '#2563EB',
+                                                                        secondary: '#1E293B',
+                                                                        bg: '#ffffff',
+                                                                        text: '#1b1a1a',
+                                                                        header: '#1f2a44'
+                                                                    });
+                                                                    toast.success("Tema creado correctamente");
+                                                                }}>Guardar y Añadir Tema
+                                                        </button>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1291,8 +1606,13 @@ export default function Admin() {
                                         <label>Imagen de Banner (Cabecera)</label>
                                         <div className="banner-edit-zone">
                                             <div className="file-upload-wrapper">
-                                                <div className="banner-admin-preview" style={{ marginBottom: '1rem' }}>
-                                                    <img src={bannerPreview} alt="Banner Preview" style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: '8px' }} />
+                                                <div className="banner-admin-preview" style={{marginBottom: '1rem'}}>
+                                                    <img src={bannerPreview} alt="Banner Preview" style={{
+                                                        width: '100%',
+                                                        height: '100px',
+                                                        objectFit: 'cover',
+                                                        borderRadius: '8px'
+                                                    }}/>
                                                 </div>
                                                 <input
                                                     type="file"
@@ -1302,7 +1622,7 @@ export default function Admin() {
                                                         if (file) {
                                                             setIsLoading(true);
                                                             try {
-                                                                const { compressImage } = await import("../utils/imageCompressor");
+                                                                const {compressImage} = await import("../utils/imageCompressor");
                                                                 const compressed = await compressImage(file, 1920, 1080, 0.8);
                                                                 localStorage.setItem("site_banner", compressed);
                                                                 dispatchUpdate();
@@ -1318,7 +1638,10 @@ export default function Admin() {
                                                 />
                                             </div>
                                             <div className="banner-actions">
-                                                <button type="button" className="btn-remove-img" onClick={() => { localStorage.removeItem("site_banner"); dispatchUpdate(); }}>
+                                                <button type="button" className="btn-remove-img" onClick={() => {
+                                                    localStorage.removeItem("site_banner");
+                                                    dispatchUpdate();
+                                                }}>
                                                     Restaurar Original
                                                 </button>
                                             </div>
@@ -1330,53 +1653,96 @@ export default function Admin() {
                                             <div className="logo-upload-item">
                                                 <span>Logo Universidad</span>
                                                 <div className="mini-preview">
-                                                    <img src={logoUniPreview} alt="Preview Uni" style={{ height: '40px', objectFit: 'contain', background: '#eee', padding: '5px', borderRadius: '4px' }} />
+                                                    <img src={logoUniPreview} alt="Preview Uni" style={{
+                                                        height: '40px',
+                                                        objectFit: 'contain',
+                                                        background: '#eee',
+                                                        padding: '5px',
+                                                        borderRadius: '4px'
+                                                    }}/>
                                                 </div>
                                                 <input type="file" accept="image/*" onChange={async (e) => {
                                                     const file = e.target.files?.[0];
                                                     if (file) {
                                                         setIsLoading(true);
                                                         try {
-                                                            const { compressImage } = await import("../utils/imageCompressor");
+                                                            const {compressImage} = await import("../utils/imageCompressor");
                                                             const compressed = await compressImage(file, 400, 400, 0.8);
                                                             localStorage.setItem("site_logo_uni", compressed);
                                                             dispatchUpdate();
-                                                        } catch (err) { console.error(err); } finally { setIsLoading(false); }
+                                                        } catch (err) {
+                                                            console.error(err);
+                                                        } finally {
+                                                            setIsLoading(false);
+                                                        }
                                                     }
-                                                }} />
-                                                <button type="button" className="btn-remove-img-sm" onClick={() => { localStorage.removeItem("site_logo_uni"); dispatchUpdate(); }}>Restaurar Original</button>
+                                                }}/>
+                                                <button type="button" className="btn-remove-img-sm" onClick={() => {
+                                                    localStorage.removeItem("site_logo_uni");
+                                                    dispatchUpdate();
+                                                }}>Restaurar Original
+                                                </button>
                                             </div>
                                             <div className="logo-upload-item">
                                                 <span>Logo CONIITI</span>
                                                 <div className="mini-preview">
-                                                    <img src={logoEventPreview} alt="Preview Evento" style={{ height: '40px', objectFit: 'contain', background: '#eee', padding: '5px', borderRadius: '4px' }} />
+                                                    <img src={logoEventPreview} alt="Preview Evento" style={{
+                                                        height: '40px',
+                                                        objectFit: 'contain',
+                                                        background: '#eee',
+                                                        padding: '5px',
+                                                        borderRadius: '4px'
+                                                    }}/>
                                                 </div>
                                                 <input type="file" accept="image/*" onChange={async (e) => {
                                                     const file = e.target.files?.[0];
                                                     if (file) {
                                                         setIsLoading(true);
                                                         try {
-                                                            const { compressImage } = await import("../utils/imageCompressor");
+                                                            const {compressImage} = await import("../utils/imageCompressor");
                                                             const compressed = await compressImage(file, 400, 400, 0.8);
                                                             localStorage.setItem("site_logo_evento", compressed);
                                                             dispatchUpdate();
-                                                        } catch (err) { console.error(err); } finally { setIsLoading(false); }
+                                                        } catch (err) {
+                                                            console.error(err);
+                                                        } finally {
+                                                            setIsLoading(false);
+                                                        }
                                                     }
-                                                }} />
-                                                <button type="button" className="btn-remove-img-sm" onClick={() => { localStorage.removeItem("site_logo_evento"); dispatchUpdate(); }}>Restaurar Original</button>
+                                                }}/>
+                                                <button type="button" className="btn-remove-img-sm" onClick={() => {
+                                                    localStorage.removeItem("site_logo_evento");
+                                                    dispatchUpdate();
+                                                }}>Restaurar Original
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
                                     <div className="form-group">
                                         <label>🌟 Fondo Animado / Interactivo (Global)</label>
-                                        <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                                            <div style={{ marginBottom: '1rem' }}>
-                                                <span style={{ display:'block', fontWeight:'600', marginBottom:'0.5rem', fontSize:'0.9rem' }}>Fondo Global por URL (Video MP4 / GIF)</span>
-                                                <input 
-                                                    type="url" 
-                                                    placeholder="https://pagina.com/video.mp4" 
-                                                    value={globalVideoBg} 
-                                                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }}
+                                        <div style={{
+                                            background: '#f8fafc',
+                                            padding: '1rem',
+                                            borderRadius: '12px',
+                                            border: '1px solid #e2e8f0'
+                                        }}>
+                                            <div style={{marginBottom: '1rem'}}>
+                                                <span style={{
+                                                    display: 'block',
+                                                    fontWeight: '600',
+                                                    marginBottom: '0.5rem',
+                                                    fontSize: '0.9rem'
+                                                }}>Fondo Global por URL (Video MP4 / GIF)</span>
+                                                <input
+                                                    type="url"
+                                                    placeholder="https://pagina.com/video.mp4"
+                                                    value={globalVideoBg}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '10px',
+                                                        borderRadius: '8px',
+                                                        border: '1px solid #ccc'
+                                                    }}
                                                     onChange={(e) => {
                                                         localStorage.setItem("custom_global_video", e.target.value);
                                                         setGlobalVideoBg(e.target.value);
@@ -1384,36 +1750,56 @@ export default function Admin() {
                                                     }}
                                                 />
                                             </div>
-                                            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
-                                                <span style={{ display:'block', fontWeight:'600', marginBottom:'0.5rem', fontSize:'0.9rem' }}>Fondo de Imagen y Efecto Parallax</span>
-                                                <input type="file" accept="image/*" className="file-input" onChange={async (e) => {
-                                                    const file = e.target.files?.[0];
-                                                    if (file) {
-                                                        try {
-                                                            setIsLoading(true);
-                                                            const { compressImage } = await import("../utils/imageCompressor");
-                                                            const compressed = await compressImage(file, 1920, 1080, 0.7);
-                                                            localStorage.setItem("custom_global_image", compressed);
-                                                            dispatchUpdate();
-                                                            toast.success("Imagen de fondo guardada.");
-                                                        } catch (err) { console.error(err); } finally { setIsLoading(false); }
-                                                    }
-                                                }} />
+                                            <div style={{borderTop: '1px solid #e2e8f0', paddingTop: '1rem'}}>
+                                                <span style={{
+                                                    display: 'block',
+                                                    fontWeight: '600',
+                                                    marginBottom: '0.5rem',
+                                                    fontSize: '0.9rem'
+                                                }}>Fondo de Imagen y Efecto Parallax</span>
+                                                <input type="file" accept="image/*" className="file-input"
+                                                       onChange={async (e) => {
+                                                           const file = e.target.files?.[0];
+                                                           if (file) {
+                                                               try {
+                                                                   setIsLoading(true);
+                                                                   const {compressImage} = await import("../utils/imageCompressor");
+                                                                   const compressed = await compressImage(file, 1920, 1080, 0.7);
+                                                                   localStorage.setItem("custom_global_image", compressed);
+                                                                   dispatchUpdate();
+                                                                   toast.success("Imagen de fondo guardada.");
+                                                               } catch (err) {
+                                                                   console.error(err);
+                                                               } finally {
+                                                                   setIsLoading(false);
+                                                               }
+                                                           }
+                                                       }}/>
                                                 <div style={{marginTop: '0.8rem'}}>
-                                                    <label style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize:'0.9rem'}}>
-                                                        <input type="checkbox" defaultChecked={localStorage.getItem("custom_parallax") !== "false"} onChange={(e) => {
-                                                            localStorage.setItem("custom_parallax", String(e.target.checked));
-                                                            dispatchUpdate();
-                                                        }} />
+                                                    <label style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px',
+                                                        cursor: 'pointer',
+                                                        fontSize: '0.9rem'
+                                                    }}>
+                                                        <input type="checkbox"
+                                                               defaultChecked={localStorage.getItem("custom_parallax") !== "false"}
+                                                               onChange={(e) => {
+                                                                   localStorage.setItem("custom_parallax", String(e.target.checked));
+                                                                   dispatchUpdate();
+                                                               }}/>
                                                         <span>Activar Movimiento Fluido con Scroll (Efecto Parallax)</span>
                                                     </label>
                                                 </div>
-                                                <button type="button" className="btn-remove-img-sm" style={{marginTop: '1rem'}} onClick={() => {
+                                                <button type="button" className="btn-remove-img-sm"
+                                                        style={{marginTop: '1rem'}} onClick={() => {
                                                     ["custom_global_image", "custom_global_video"].forEach(k => localStorage.removeItem(k));
                                                     setGlobalVideoBg("");
                                                     dispatchUpdate();
                                                     toast.success("Fondos eliminados");
-                                                }}>Quitar Fondo Global</button>
+                                                }}>Quitar Fondo Global
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -1421,47 +1807,79 @@ export default function Admin() {
                                         <label>🎨 Panel de Personalización de Colores (En Vivo)</label>
                                         <div className="color-picker-grid">
                                             <div className="color-item">
-                                                <span>Fondo de la Página <small style={{display:'block', fontSize:'11px', color:'#666'}}>Afecta toda la aplicación (--bg-page)</small></span>
-                                                <input type="color" value={bgColor} onChange={(e) => { localStorage.setItem("custom_bg_color", e.target.value); setBgColor(e.target.value); dispatchUpdate(); }} />
+                                                <span>Fondo de la Página <small
+                                                    style={{display: 'block', fontSize: '11px', color: '#666'}}>Afecta toda la aplicación (--bg-page)</small></span>
+                                                <input type="color" value={bgColor} onChange={(e) => {
+                                                    localStorage.setItem("custom_bg_color", e.target.value);
+                                                    setBgColor(e.target.value);
+                                                    dispatchUpdate();
+                                                }}/>
                                             </div>
                                             <div className="color-item">
-                                                <span>Texto Principal <small style={{display:'block', fontSize:'11px', color:'#666'}}>Color oscuro de la lectura (--text-primary)</small></span>
-                                                <input type="color" value={textColor} onChange={(e) => { localStorage.setItem("custom_text_color", e.target.value); setTextColor(e.target.value); dispatchUpdate(); }} />
+                                                <span>Texto Principal <small
+                                                    style={{display: 'block', fontSize: '11px', color: '#666'}}>Color oscuro de la lectura (--text-primary)</small></span>
+                                                <input type="color" value={textColor} onChange={(e) => {
+                                                    localStorage.setItem("custom_text_color", e.target.value);
+                                                    setTextColor(e.target.value);
+                                                    dispatchUpdate();
+                                                }}/>
                                             </div>
                                             <div className="color-item">
-                                                <span>Cabecera del Menú <small style={{display:'block', fontSize:'11px', color:'#666'}}>Barra de navegación oscura superior</small></span>
-                                                <input type="color" value={headerColor} onChange={(e) => { localStorage.setItem("custom_header_bg", e.target.value); setHeaderColor(e.target.value); dispatchUpdate(); }} />
+                                                <span>Cabecera del Menú <small
+                                                    style={{display: 'block', fontSize: '11px', color: '#666'}}>Barra de navegación oscura superior</small></span>
+                                                <input type="color" value={headerColor} onChange={(e) => {
+                                                    localStorage.setItem("custom_header_bg", e.target.value);
+                                                    setHeaderColor(e.target.value);
+                                                    dispatchUpdate();
+                                                }}/>
                                             </div>
                                             <div className="color-item">
-                                                <span>Color Primario <small style={{display:'block', fontSize:'11px', color:'#666'}}>Botones, links, y acentos fuertes</small></span>
-                                                <input type="color" value={primaryColor} onChange={(e) => { localStorage.setItem("custom_primary_color", e.target.value); setPrimaryColor(e.target.value); dispatchUpdate(); }} />
+                                                <span>Color Primario <small
+                                                    style={{display: 'block', fontSize: '11px', color: '#666'}}>Botones, links, y acentos fuertes</small></span>
+                                                <input type="color" value={primaryColor} onChange={(e) => {
+                                                    localStorage.setItem("custom_primary_color", e.target.value);
+                                                    setPrimaryColor(e.target.value);
+                                                    dispatchUpdate();
+                                                }}/>
                                             </div>
                                             <div className="color-item">
-                                                <span>Color Secundario <small style={{display:'block', fontSize:'11px', color:'#666'}}>Bordes gruesos y fondos de componentes</small></span>
-                                                <input type="color" value={secondaryColor} onChange={(e) => { localStorage.setItem("custom_secondary_color", e.target.value); setSecondaryColor(e.target.value); dispatchUpdate(); }} />
+                                                <span>Color Secundario <small
+                                                    style={{display: 'block', fontSize: '11px', color: '#666'}}>Bordes gruesos y fondos de componentes</small></span>
+                                                <input type="color" value={secondaryColor} onChange={(e) => {
+                                                    localStorage.setItem("custom_secondary_color", e.target.value);
+                                                    setSecondaryColor(e.target.value);
+                                                    dispatchUpdate();
+                                                }}/>
                                             </div>
                                             <div className="color-item">
-                                                <span>Acento / Resaltes <small style={{display:'block', fontSize:'11px', color:'#666'}}>Detalles interactivos (Cyan, Neón)</small></span>
-                                                <input type="color" value={accentColor} onChange={(e) => { localStorage.setItem("custom_accent_color", e.target.value); setAccentColor(e.target.value); dispatchUpdate(); }} />
+                                                <span>Acento / Resaltes <small
+                                                    style={{display: 'block', fontSize: '11px', color: '#666'}}>Detalles interactivos (Cyan, Neón)</small></span>
+                                                <input type="color" value={accentColor} onChange={(e) => {
+                                                    localStorage.setItem("custom_accent_color", e.target.value);
+                                                    setAccentColor(e.target.value);
+                                                    dispatchUpdate();
+                                                }}/>
                                             </div>
                                         </div>
                                     </div>
                                     <div className="form-group">
                                         <label>Modo de Mantenimiento</label>
-                                        <input type="checkbox" />
+                                        <input type="checkbox"/>
                                     </div>
                                     <div className="admin-actions-footer">
-                                        <button type="button" className="btn-submit" onClick={() => toast.success("Configuración global guardada correctamente")}>
+                                        <button type="button" className="btn-submit"
+                                                onClick={() => toast.success("Configuración global guardada correctamente")}>
                                             Guardar Cambios Globales
                                         </button>
-                                        <button type="button" className="btn-logout" style={{ marginLeft: '1rem', background: '#e74c3c' }}
-                                            onClick={() => {
-                                                if (confirm("¿Seguro que quieres borrar toda la personalización?")) {
-                                                    ["site_banner", "site_logo_uni", "site_logo_evento", "custom_bg_color", "custom_text_color", "custom_header_bg", "custom_primary_color", "custom_secondary_color", "custom_accent_color", "custom_global_image", "custom_global_video", "custom_parallax"].forEach(key => localStorage.removeItem(key));
-                                                    setGlobalVideoBg("");
-                                                    dispatchUpdate();
-                                                }
-                                            }}>
+                                        <button type="button" className="btn-logout"
+                                                style={{marginLeft: '1rem', background: '#e74c3c'}}
+                                                onClick={() => {
+                                                    if (confirm("¿Seguro que quieres borrar toda la personalización?")) {
+                                                        ["site_banner", "site_logo_uni", "site_logo_evento", "custom_bg_color", "custom_text_color", "custom_header_bg", "custom_primary_color", "custom_secondary_color", "custom_accent_color", "custom_global_image", "custom_global_video", "custom_parallax"].forEach(key => localStorage.removeItem(key));
+                                                        setGlobalVideoBg("");
+                                                        dispatchUpdate();
+                                                    }
+                                                }}>
                                             Limpiar y Resetear Diseño
                                         </button>
                                     </div>
@@ -1475,13 +1893,15 @@ export default function Admin() {
                                     <div className="settings-form">
                                         <div className="form-group">
                                             <label>Título Principal (Hero)</label>
-                                            <input type="text" defaultValue={localStorage.getItem("home_hero_title") || "CONIITI 2026"}
-                                                onChange={e => localStorage.setItem("home_hero_title", e.target.value)} />
+                                            <input type="text"
+                                                   defaultValue={localStorage.getItem("home_hero_title") || "CONIITI 2026"}
+                                                   onChange={e => localStorage.setItem("home_hero_title", e.target.value)}/>
                                         </div>
                                         <div className="form-group">
                                             <label>Subtítulo del Hero</label>
-                                            <input type="text" defaultValue={localStorage.getItem("home_hero_subtitle") || "Congreso Internacional de Innovación Tecnológica"}
-                                                onChange={e => localStorage.setItem("home_hero_subtitle", e.target.value)} />
+                                            <input type="text"
+                                                   defaultValue={localStorage.getItem("home_hero_subtitle") || "Congreso Internacional de Innovación Tecnológica"}
+                                                   onChange={e => localStorage.setItem("home_hero_subtitle", e.target.value)}/>
                                         </div>
                                         <div className="form-group">
                                             <label>Imagen de Fondo (Hero)</label>
@@ -1489,17 +1909,23 @@ export default function Admin() {
                                                 const file = e.target.files?.[0];
                                                 if (file) {
                                                     const reader = new FileReader();
-                                                    reader.onloadend = () => { if (reader.result) localStorage.setItem("home_hero_bg", reader.result as string); };
+                                                    reader.onloadend = () => {
+                                                        if (reader.result) localStorage.setItem("home_hero_bg", reader.result as string);
+                                                    };
                                                     reader.readAsDataURL(file);
                                                 }
-                                            }} />
+                                            }}/>
                                         </div>
                                         <div className="form-group">
                                             <label>Texto del Botón Principal</label>
-                                            <input type="text" defaultValue={localStorage.getItem("home_btn_text") || "Ver Agenda"}
-                                                onChange={e => localStorage.setItem("home_btn_text", e.target.value)} />
+                                            <input type="text"
+                                                   defaultValue={localStorage.getItem("home_btn_text") || "Ver Agenda"}
+                                                   onChange={e => localStorage.setItem("home_btn_text", e.target.value)}/>
                                         </div>
-                                        <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); toast.success("Cambios de Inicio guardados."); }}>
+                                        <button className="btn-submit" style={{marginTop: '1rem'}} onClick={() => {
+                                            dispatchUpdate();
+                                            toast.success("Cambios de Inicio guardados.");
+                                        }}>
                                             Guardar Cambios
                                         </button>
                                     </div>
@@ -1515,34 +1941,49 @@ export default function Admin() {
                                     <div className="settings-form">
                                         <div className="form-group">
                                             <label>Título de la Sección</label>
-                                            <input type="text" defaultValue={localStorage.getItem("guests_title") || "Nuestros Invitados"}
-                                                onChange={e => localStorage.setItem("guests_title", e.target.value)} />
+                                            <input type="text"
+                                                   defaultValue={localStorage.getItem("guests_title") || "Nuestros Invitados"}
+                                                   onChange={e => localStorage.setItem("guests_title", e.target.value)}/>
                                         </div>
                                         <div className="form-group">
                                             <label>Subtítulo / Descripción</label>
-                                            <textarea rows={2} defaultValue={localStorage.getItem("guests_subtitle") || "Expertos internacionales que compartirán su conocimiento"}
-                                                onChange={e => localStorage.setItem("guests_subtitle", e.target.value)}></textarea>
+                                            <textarea rows={2}
+                                                      defaultValue={localStorage.getItem("guests_subtitle") || "Expertos internacionales que compartirán su conocimiento"}
+                                                      onChange={e => localStorage.setItem("guests_subtitle", e.target.value)}></textarea>
                                         </div>
                                         <div className="form-group">
                                             <label>Mostrar Organización del Ponente</label>
-                                            <input type="checkbox" defaultChecked={localStorage.getItem("guests_show_org") !== "false"}
-                                                onChange={e => localStorage.setItem("guests_show_org", String(e.target.checked))} />
+                                            <input type="checkbox"
+                                                   defaultChecked={localStorage.getItem("guests_show_org") !== "false"}
+                                                   onChange={e => localStorage.setItem("guests_show_org", String(e.target.checked))}/>
                                         </div>
-                                        <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); toast.success("Cambios de Invitados guardados."); }}>
+                                        <button className="btn-submit" style={{marginTop: '1rem'}} onClick={() => {
+                                            dispatchUpdate();
+                                            toast.success("Cambios de Invitados guardados.");
+                                        }}>
                                             Guardar Cambios
                                         </button>
 
                                         {/* Lista real de invitados (misma fuente que la pestaña Invitados) */}
-                                        <div style={{ marginTop: '2rem', borderTop: '1px solid #e2e8f0', paddingTop: '1.5rem' }}>
-                                            <h4 style={{ marginBottom: '1rem', color: 'var(--primary-color)' }}>
+                                        <div style={{
+                                            marginTop: '2rem',
+                                            borderTop: '1px solid #e2e8f0',
+                                            paddingTop: '1.5rem'
+                                        }}>
+                                            <h4 style={{marginBottom: '1rem', color: 'var(--primary-color)'}}>
                                                 👥 Invitados Registrados ({speakers.length})
                                             </h4>
                                             {speakers.length === 0 ? (
-                                                <p style={{ color: '#94a3b8', fontStyle: 'italic' }}>
-                                                    No hay invitados registrados aún. Agrégalos desde la pestaña "Invitados".
+                                                <p style={{color: '#94a3b8', fontStyle: 'italic'}}>
+                                                    No hay invitados registrados aún. Agrégalos desde la pestaña
+                                                    "Invitados".
                                                 </p>
                                             ) : (
-                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' }}>
+                                                <div style={{
+                                                    display: 'grid',
+                                                    gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                                                    gap: '1rem'
+                                                }}>
                                                     {speakers.map((sp: any) => (
                                                         <div key={sp.id} style={{
                                                             display: 'flex', alignItems: 'center', gap: '12px',
@@ -1552,21 +1993,43 @@ export default function Admin() {
                                                             <img
                                                                 src={sp.avatar_url || sp.avatar || "/default-avatar.png"}
                                                                 alt={sp.nombre || sp.name}
-                                                                style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                                                                style={{
+                                                                    width: '44px',
+                                                                    height: '44px',
+                                                                    borderRadius: '50%',
+                                                                    objectFit: 'cover',
+                                                                    flexShrink: 0
+                                                                }}
                                                             />
-                                                            <div style={{ minWidth: 0 }}>
-                                                                <p style={{ fontWeight: '700', margin: 0, fontSize: '0.9rem', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                            <div style={{minWidth: 0}}>
+                                                                <p style={{
+                                                                    fontWeight: '700',
+                                                                    margin: 0,
+                                                                    fontSize: '0.9rem',
+                                                                    color: '#1e293b',
+                                                                    whiteSpace: 'nowrap',
+                                                                    overflow: 'hidden',
+                                                                    textOverflow: 'ellipsis'
+                                                                }}>
                                                                     {sp.nombre || sp.name}
                                                                 </p>
-                                                                <p style={{ margin: 0, fontSize: '0.78rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                <p style={{
+                                                                    margin: 0,
+                                                                    fontSize: '0.78rem',
+                                                                    color: '#64748b',
+                                                                    whiteSpace: 'nowrap',
+                                                                    overflow: 'hidden',
+                                                                    textOverflow: 'ellipsis'
+                                                                }}>
                                                                     {sp.organizacion || sp.organization || "—"}
                                                                 </p>
                                                             </div>
                                                             <button
                                                                 className="btn-edit-sm"
-                                                                style={{ padding: '6px', fontSize: '10px' }}
+                                                                style={{padding: '6px', fontSize: '10px'}}
                                                                 onClick={() => setEditingSpeaker(sp)}
-                                                            >✏️</button>
+                                                            >✏️
+                                                            </button>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -1583,42 +2046,70 @@ export default function Admin() {
                                     <div className="settings-form">
                                         <div className="form-group">
                                             <label>Título de la Sección</label>
-                                            <input type="text" defaultValue={localStorage.getItem("agenda_title") || "Agenda CONIITI 2026"}
-                                                onChange={e => localStorage.setItem("agenda_title", e.target.value)} />
+                                            <input type="text"
+                                                   defaultValue={localStorage.getItem("agenda_title") || "Agenda CONIITI 2026"}
+                                                   onChange={e => localStorage.setItem("agenda_title", e.target.value)}/>
                                         </div>
                                         <div className="form-group">
                                             <label>Descripción Introductoria</label>
-                                            <textarea rows={2} defaultValue={localStorage.getItem("agenda_subtitle") || "Explora todas las charlas y conferencias del evento"}
-                                                onChange={e => localStorage.setItem("agenda_subtitle", e.target.value)}></textarea>
+                                            <textarea rows={2}
+                                                      defaultValue={localStorage.getItem("agenda_subtitle") || "Explora todas las charlas y conferencias del evento"}
+                                                      onChange={e => localStorage.setItem("agenda_subtitle", e.target.value)}></textarea>
                                         </div>
                                         <div className="form-group">
                                             <label>Mostrar Filtros en la Agenda</label>
-                                            <input type="checkbox" defaultChecked={localStorage.getItem("agenda_show_filters") !== "false"}
-                                                onChange={e => localStorage.setItem("agenda_show_filters", String(e.target.checked))} />
+                                            <input type="checkbox"
+                                                   defaultChecked={localStorage.getItem("agenda_show_filters") !== "false"}
+                                                   onChange={e => localStorage.setItem("agenda_show_filters", String(e.target.checked))}/>
                                         </div>
                                         <div className="form-group">
                                             <label>Número de Columnas (Escritorio)</label>
                                             <select defaultValue={localStorage.getItem("agenda_cols") || "auto"}
-                                                onChange={e => localStorage.setItem("agenda_cols", e.target.value)}>
+                                                    onChange={e => localStorage.setItem("agenda_cols", e.target.value)}>
                                                 <option value="auto">Automático (recomendado)</option>
                                                 <option value="2">2 columnas</option>
                                                 <option value="3">3 columnas</option>
                                                 <option value="4">4 columnas</option>
                                             </select>
                                         </div>
-                                        <div className="form-group" style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                                            <label style={{ fontSize: '1.1rem', color: 'var(--primary-color)', marginBottom: '1rem', display: 'block' }}>🚩 Gestión de Días del Evento</label>
-                                            <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1.5rem' }}>Define cuántos días dura el evento y cómo se llamará cada pestaña en la agenda.</p>
+                                        <div className="form-group" style={{
+                                            marginTop: '2rem',
+                                            padding: '1.5rem',
+                                            background: '#f8fafc',
+                                            borderRadius: '12px',
+                                            border: '1px solid #e2e8f0'
+                                        }}>
+                                            <label style={{
+                                                fontSize: '1.1rem',
+                                                color: 'var(--primary-color)',
+                                                marginBottom: '1rem',
+                                                display: 'block'
+                                            }}>🚩 Gestión de Días del Evento</label>
+                                            <p style={{
+                                                fontSize: '0.85rem',
+                                                color: '#64748b',
+                                                marginBottom: '1.5rem'
+                                            }}>Define cuántos días dura el evento y cómo se llamará cada pestaña en la
+                                                agenda.</p>
 
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                            <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
                                                 {agendaDays.map((day, index) => (
-                                                    <div key={day.id} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                                                        <span style={{ fontWeight: 'bold', minWidth: '60px' }}>#{index + 1}</span>
+                                                    <div key={day.id}
+                                                         style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
+                                                        <span style={{
+                                                            fontWeight: 'bold',
+                                                            minWidth: '60px'
+                                                        }}>#{index + 1}</span>
                                                         <input
                                                             type="text"
                                                             value={day.label}
                                                             placeholder="Título del día (Ej: Día 1...)"
-                                                            style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                                                            style={{
+                                                                flex: 1,
+                                                                padding: '8px 12px',
+                                                                borderRadius: '8px',
+                                                                border: '1px solid #cbd5e1'
+                                                            }}
                                                             onChange={(e) => {
                                                                 const newDays = [...agendaDays];
                                                                 newDays[index].label = e.target.value;
@@ -1628,7 +2119,14 @@ export default function Admin() {
                                                         {agendaDays.length > 1 && (
                                                             <button
                                                                 onClick={() => setAgendaDays(agendaDays.filter(d => d.id !== day.id))}
-                                                                style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer' }}
+                                                                style={{
+                                                                    background: '#fee2e2',
+                                                                    color: '#dc2626',
+                                                                    border: 'none',
+                                                                    padding: '8px 12px',
+                                                                    borderRadius: '8px',
+                                                                    cursor: 'pointer'
+                                                                }}
                                                             >
                                                                 🗑️
                                                             </button>
@@ -1639,27 +2137,70 @@ export default function Admin() {
                                                     type="button"
                                                     onClick={() => {
                                                         const newId = `day${agendaDays.length + 1}_${Date.now()}`;
-                                                        setAgendaDays([...agendaDays, { id: newId, label: `Día ${agendaDays.length + 1}` }]);
+                                                        setAgendaDays([...agendaDays, {
+                                                            id: newId,
+                                                            label: `Día ${agendaDays.length + 1}`
+                                                        }]);
                                                     }}
-                                                    style={{ padding: '10px', border: '2px dashed #cbd5e1', background: 'none', borderRadius: '8px', cursor: 'pointer', color: '#64748b', fontWeight: '600' }}
+                                                    style={{
+                                                        padding: '10px',
+                                                        border: '2px dashed #cbd5e1',
+                                                        background: 'none',
+                                                        borderRadius: '8px',
+                                                        cursor: 'pointer',
+                                                        color: '#64748b',
+                                                        fontWeight: '600'
+                                                    }}
                                                 >
                                                     + Agregar un Día Adicional
                                                 </button>
                                             </div>
                                         </div>
-                                        <div className="form-group" style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                                            <label style={{ fontSize: '1.1rem', color: 'var(--primary-color)', marginBottom: '1rem', display: 'block' }}>🔍 Configuración de la Barra de Búsqueda y Filtros</label>
-                                            <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1.5rem' }}>Agrega, quita o edita los filtros que aparecen en la parte superior de la agenda.</p>
+                                        <div className="form-group" style={{
+                                            marginTop: '2rem',
+                                            padding: '1.5rem',
+                                            background: '#f8fafc',
+                                            borderRadius: '12px',
+                                            border: '1px solid #e2e8f0'
+                                        }}>
+                                            <label style={{
+                                                fontSize: '1.1rem',
+                                                color: 'var(--primary-color)',
+                                                marginBottom: '1rem',
+                                                display: 'block'
+                                            }}>🔍 Configuración de la Barra de Búsqueda y Filtros</label>
+                                            <p style={{
+                                                fontSize: '0.85rem',
+                                                color: '#64748b',
+                                                marginBottom: '1.5rem'
+                                            }}>Agrega, quita o edita los filtros que aparecen en la parte superior de la
+                                                agenda.</p>
 
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                            <div style={{display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
                                                 {agendaFilters.map((filter, fIndex) => (
-                                                    <div key={filter.id} style={{ background: 'white', padding: '1.2rem', borderRadius: '12px', border: '1px solid #cbd5e1' }}>
-                                                        <div style={{ display: 'flex', gap: '10px', marginBottom: '1rem', alignItems: 'center' }}>
+                                                    <div key={filter.id} style={{
+                                                        background: 'white',
+                                                        padding: '1.2rem',
+                                                        borderRadius: '12px',
+                                                        border: '1px solid #cbd5e1'
+                                                    }}>
+                                                        <div style={{
+                                                            display: 'flex',
+                                                            gap: '10px',
+                                                            marginBottom: '1rem',
+                                                            alignItems: 'center'
+                                                        }}>
                                                             <input
                                                                 type="text"
                                                                 value={filter.icon}
                                                                 title="Icono (Emoji)"
-                                                                style={{ width: '45px', padding: '8px', textAlign: 'center', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                                                                style={{
+                                                                    width: '45px',
+                                                                    padding: '8px',
+                                                                    textAlign: 'center',
+                                                                    borderRadius: '8px',
+                                                                    border: '1px solid #e2e8f0'
+                                                                }}
                                                                 onChange={(e) => {
                                                                     const newFilters = [...agendaFilters];
                                                                     newFilters[fIndex].icon = e.target.value;
@@ -1670,7 +2211,13 @@ export default function Admin() {
                                                                 type="text"
                                                                 value={filter.label}
                                                                 placeholder="Nombre del Filtro"
-                                                                style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontWeight: 'bold' }}
+                                                                style={{
+                                                                    flex: 1,
+                                                                    padding: '8px 12px',
+                                                                    borderRadius: '8px',
+                                                                    border: '1px solid #e2e8f0',
+                                                                    fontWeight: 'bold'
+                                                                }}
                                                                 onChange={(e) => {
                                                                     const newFilters = [...agendaFilters];
                                                                     newFilters[fIndex].label = e.target.value;
@@ -1679,22 +2226,59 @@ export default function Admin() {
                                                             />
                                                             <button
                                                                 onClick={() => setAgendaFilters(agendaFilters.filter((_, i) => i !== fIndex))}
-                                                                style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer' }}
+                                                                style={{
+                                                                    background: '#fee2e2',
+                                                                    color: '#dc2626',
+                                                                    border: 'none',
+                                                                    padding: '8px 12px',
+                                                                    borderRadius: '8px',
+                                                                    cursor: 'pointer'
+                                                                }}
                                                                 title="Eliminar Filtro"
-                                                            >🗑️</button>
+                                                            >🗑️
+                                                            </button>
                                                         </div>
 
-                                                        <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px' }}>
-                                                            <label style={{ fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', color: '#64748b', marginBottom: '8px', display: 'block' }}>Opciones del Menú Desplegable:</label>
-                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                        <div style={{
+                                                            background: '#f8fafc',
+                                                            padding: '1rem',
+                                                            borderRadius: '8px'
+                                                        }}>
+                                                            <label style={{
+                                                                fontSize: '0.75rem',
+                                                                fontWeight: '800',
+                                                                textTransform: 'uppercase',
+                                                                color: '#64748b',
+                                                                marginBottom: '8px',
+                                                                display: 'block'
+                                                            }}>Opciones del Menú Desplegable:</label>
+                                                            <div style={{
+                                                                display: 'flex',
+                                                                flexDirection: 'column',
+                                                                gap: '8px'
+                                                            }}>
                                                                 {filter.options.map((opt: any, oIndex: number) => (
-                                                                    <div key={oIndex} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                                                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', minWidth: '80px' }}>{opt.value === 'all' ? 'Predeterm.' : 'Valor:'}</span>
+                                                                    <div key={oIndex} style={{
+                                                                        display: 'flex',
+                                                                        gap: '8px',
+                                                                        alignItems: 'center'
+                                                                    }}>
+                                                                        <span style={{
+                                                                            fontSize: '0.7rem',
+                                                                            color: '#94a3b8',
+                                                                            minWidth: '80px'
+                                                                        }}>{opt.value === 'all' ? 'Predeterm.' : 'Valor:'}</span>
                                                                         <input
                                                                             type="text"
                                                                             value={opt.label}
                                                                             placeholder="Etiqueta"
-                                                                            style={{ flex: 1, padding: '6px 10px', fontSize: '0.85rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}
+                                                                            style={{
+                                                                                flex: 1,
+                                                                                padding: '6px 10px',
+                                                                                fontSize: '0.85rem',
+                                                                                borderRadius: '6px',
+                                                                                border: '1px solid #e2e8f0'
+                                                                            }}
                                                                             onChange={(e) => {
                                                                                 const newFilters = [...agendaFilters];
                                                                                 newFilters[fIndex].options[oIndex].label = e.target.value;
@@ -1708,24 +2292,43 @@ export default function Admin() {
                                                                                     newFilters[fIndex].options = newFilters[fIndex].options.filter((_: any, i: number) => i !== oIndex);
                                                                                     setAgendaFilters(newFilters);
                                                                                 }}
-                                                                                style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.8rem' }}
+                                                                                style={{
+                                                                                    border: 'none',
+                                                                                    background: 'none',
+                                                                                    cursor: 'pointer',
+                                                                                    fontSize: '0.8rem'
+                                                                                }}
                                                                             >❌</button>
                                                                         )}
                                                                     </div>
                                                                 ))}
                                                             </div>
                                                             <button
-                                                                style={{ marginTop: '12px', fontSize: '0.75rem', background: '#fff', color: 'var(--primary-color)', border: '1px solid var(--primary-color)', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+                                                                style={{
+                                                                    marginTop: '12px',
+                                                                    fontSize: '0.75rem',
+                                                                    background: '#fff',
+                                                                    color: 'var(--primary-color)',
+                                                                    border: '1px solid var(--primary-color)',
+                                                                    padding: '5px 12px',
+                                                                    borderRadius: '6px',
+                                                                    cursor: 'pointer',
+                                                                    fontWeight: 'bold'
+                                                                }}
                                                                 onClick={() => {
                                                                     const lab = prompt("Nombre de la opción (ej: Internacional):");
                                                                     const val = prompt("Valor a filtrar (debe coincidir con el campo de la DB/Mock, ej: 'internacional'):");
                                                                     if (val && lab) {
                                                                         const newFilters = [...agendaFilters];
-                                                                        newFilters[fIndex].options.push({ value: val, label: lab });
+                                                                        newFilters[fIndex].options.push({
+                                                                            value: val,
+                                                                            label: lab
+                                                                        });
                                                                         setAgendaFilters(newFilters);
                                                                     }
                                                                 }}
-                                                            >+ Añadir Opción</button>
+                                                            >+ Añadir Opción
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -1742,12 +2345,25 @@ export default function Admin() {
                                                                     label,
                                                                     property: prop,
                                                                     icon: "🏷️",
-                                                                    options: [{ value: "all", label: `Todos los ${label}s` }]
+                                                                    options: [{
+                                                                        value: "all",
+                                                                        label: `Todos los ${label}s`
+                                                                    }]
                                                                 }]);
                                                             }
                                                         }
                                                     }}
-                                                    style={{ width: '100%', padding: '12px', border: '2px dashed #cbd5e1', background: 'white', borderRadius: '12px', cursor: 'pointer', color: '#64748b', fontWeight: '600', transition: 'all 0.2s' }}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '12px',
+                                                        border: '2px dashed #cbd5e1',
+                                                        background: 'white',
+                                                        borderRadius: '12px',
+                                                        cursor: 'pointer',
+                                                        color: '#64748b',
+                                                        fontWeight: '600',
+                                                        transition: 'all 0.2s'
+                                                    }}
                                                     onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--primary-color)'}
                                                     onMouseLeave={(e) => e.currentTarget.style.borderColor = '#cbd5e1'}
                                                 >
@@ -1756,7 +2372,11 @@ export default function Admin() {
                                             </div>
                                         </div>
 
-                                        <button className="btn-submit" style={{ marginTop: '1.5rem', width: '100%' }} onClick={() => { dispatchUpdate(); toast.success("Configuración de Agenda y Días guardada."); }}>
+                                        <button className="btn-submit" style={{marginTop: '1.5rem', width: '100%'}}
+                                                onClick={() => {
+                                                    dispatchUpdate();
+                                                    toast.success("Configuración de Agenda y Días guardada.");
+                                                }}>
                                             Guardar Cambios de Agenda
                                         </button>
                                     </div>
@@ -1770,25 +2390,32 @@ export default function Admin() {
                                     <div className="settings-form">
                                         <div className="form-group">
                                             <label>Título de la Sección</label>
-                                            <input type="text" defaultValue={localStorage.getItem("about_title") || "Acerca del CONIITI"}
-                                                onChange={e => localStorage.setItem("about_title", e.target.value)} />
+                                            <input type="text"
+                                                   defaultValue={localStorage.getItem("about_title") || "Acerca del CONIITI"}
+                                                   onChange={e => localStorage.setItem("about_title", e.target.value)}/>
                                         </div>
                                         <div className="form-group">
                                             <label>Descripción del Evento</label>
-                                            <textarea rows={5} defaultValue={localStorage.getItem("about_description") || "El Congreso Internacional de Innovación Tecnológica reúne a expertos de todo el mundo para compartir avances en ciencia y tecnología."}
-                                                onChange={e => localStorage.setItem("about_description", e.target.value)}></textarea>
+                                            <textarea rows={5}
+                                                      defaultValue={localStorage.getItem("about_description") || "El Congreso Internacional de Innovación Tecnológica reúne a expertos de todo el mundo para compartir avances en ciencia y tecnología."}
+                                                      onChange={e => localStorage.setItem("about_description", e.target.value)}></textarea>
                                         </div>
                                         <div className="form-group">
                                             <label>Fecha del Evento</label>
-                                            <input type="text" defaultValue={localStorage.getItem("about_date") || "2026"}
-                                                onChange={e => localStorage.setItem("about_date", e.target.value)} />
+                                            <input type="text"
+                                                   defaultValue={localStorage.getItem("about_date") || "2026"}
+                                                   onChange={e => localStorage.setItem("about_date", e.target.value)}/>
                                         </div>
                                         <div className="form-group">
                                             <label>Lugar del Evento</label>
-                                            <input type="text" defaultValue={localStorage.getItem("about_location") || "Universidad Católica"}
-                                                onChange={e => localStorage.setItem("about_location", e.target.value)} />
+                                            <input type="text"
+                                                   defaultValue={localStorage.getItem("about_location") || "Universidad Católica"}
+                                                   onChange={e => localStorage.setItem("about_location", e.target.value)}/>
                                         </div>
-                                        <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); toast.success("Cambios de 'Acerca de' guardados."); }}>
+                                        <button className="btn-submit" style={{marginTop: '1rem'}} onClick={() => {
+                                            dispatchUpdate();
+                                            toast.success("Cambios de 'Acerca de' guardados.");
+                                        }}>
                                             Guardar Cambios
                                         </button>
                                     </div>
@@ -1802,30 +2429,38 @@ export default function Admin() {
                                     <div className="settings-form">
                                         <div className="form-group">
                                             <label>Título de la Sección</label>
-                                            <input type="text" defaultValue={localStorage.getItem("contact_title") || "Contáctanos"}
-                                                onChange={e => localStorage.setItem("contact_title", e.target.value)} />
+                                            <input type="text"
+                                                   defaultValue={localStorage.getItem("contact_title") || "Contáctanos"}
+                                                   onChange={e => localStorage.setItem("contact_title", e.target.value)}/>
                                         </div>
                                         <div className="form-group">
                                             <label>Correo Electrónico de Contacto</label>
-                                            <input type="email" defaultValue={localStorage.getItem("contact_email") || "coniiti@ucatolica.edu.co"}
-                                                onChange={e => localStorage.setItem("contact_email", e.target.value)} />
+                                            <input type="email"
+                                                   defaultValue={localStorage.getItem("contact_email") || "coniiti@ucatolica.edu.co"}
+                                                   onChange={e => localStorage.setItem("contact_email", e.target.value)}/>
                                         </div>
                                         <div className="form-group">
                                             <label>Teléfono</label>
-                                            <input type="text" defaultValue={localStorage.getItem("contact_phone") || "+57 (601) 327 7300"}
-                                                onChange={e => localStorage.setItem("contact_phone", e.target.value)} />
+                                            <input type="text"
+                                                   defaultValue={localStorage.getItem("contact_phone") || "+57 (601) 327 7300"}
+                                                   onChange={e => localStorage.setItem("contact_phone", e.target.value)}/>
                                         </div>
                                         <div className="form-group">
                                             <label>Dirección</label>
-                                            <input type="text" defaultValue={localStorage.getItem("contact_address") || "Bogotá, Colombia"}
-                                                onChange={e => localStorage.setItem("contact_address", e.target.value)} />
+                                            <input type="text"
+                                                   defaultValue={localStorage.getItem("contact_address") || "Bogotá, Colombia"}
+                                                   onChange={e => localStorage.setItem("contact_address", e.target.value)}/>
                                         </div>
                                         <div className="form-group">
                                             <label>Mensaje en el formulario de contacto</label>
-                                            <textarea rows={3} defaultValue={localStorage.getItem("contact_form_msg") || "¿Tienes dudas? Escríbenos y te responderemos a la brevedad."}
-                                                onChange={e => localStorage.setItem("contact_form_msg", e.target.value)}></textarea>
+                                            <textarea rows={3}
+                                                      defaultValue={localStorage.getItem("contact_form_msg") || "¿Tienes dudas? Escríbenos y te responderemos a la brevedad."}
+                                                      onChange={e => localStorage.setItem("contact_form_msg", e.target.value)}></textarea>
                                         </div>
-                                        <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); toast.success("Cambios de Contacto guardados."); }}>
+                                        <button className="btn-submit" style={{marginTop: '1rem'}} onClick={() => {
+                                            dispatchUpdate();
+                                            toast.success("Cambios de Contacto guardados.");
+                                        }}>
                                             Guardar Cambios
                                         </button>
                                     </div>
@@ -1835,85 +2470,220 @@ export default function Admin() {
                             {/* ── SECCIÓN: GALERÍA ADMINISTRATIVA ── */}
                             {settingsTab === "pg-galeria" && (
                                 <div className="page-settings-panel fade-in">
-                                    <div style={{ marginBottom: '2rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem' }}>
-                                        <h2 style={{ margin: 0, color: 'var(--primary-color)' }}>📸 Centro de Gestión de Imágenes</h2>
-                                        <p style={{ color: '#64748b', fontSize: '1rem' }}>Administra la galería pública, revisa envíos de usuarios y gestiona tu banco de fotos privado.</p>
+                                    <div style={{
+                                        marginBottom: '2rem',
+                                        borderBottom: '1px solid #e2e8f0',
+                                        paddingBottom: '1rem'
+                                    }}>
+                                        <h2 style={{margin: 0, color: 'var(--primary-color)'}}>📸 Centro de Gestión de
+                                            Imágenes</h2>
+                                        <p style={{color: '#64748b', fontSize: '1rem'}}>Administra la galería pública,
+                                            revisa envíos de usuarios y gestiona tu banco de fotos privado.</p>
                                     </div>
 
                                     {/* Cabecera con Acciones Rápidas */}
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', background: '#f8fafc', padding: '1.5rem', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        marginBottom: '2rem',
+                                        background: '#f8fafc',
+                                        padding: '1.5rem',
+                                        borderRadius: '16px',
+                                        border: '1px solid #e2e8f0'
+                                    }}>
+                                        <div style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            marginBottom: '2rem'
+                                        }}>
                                             <div>
-                                                <h3 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--secondary-color)' }}>🖼️ Gestión Maestra de Galería</h3>
-                                                <p style={{ margin: '5px 0 0 0', color: '#64748b' }}>Control de fotos públicas, pendientes de usuarios y banco privado.</p>
+                                                <h3 style={{
+                                                    margin: 0,
+                                                    fontSize: '1.5rem',
+                                                    color: 'var(--secondary-color)'
+                                                }}>🖼️ Gestión Maestra de Galería</h3>
+                                                <p style={{margin: '5px 0 0 0', color: '#64748b'}}>Control de fotos
+                                                    públicas, pendientes de usuarios y banco privado.</p>
                                                 {pendingPhotos.length > 0 && (
-                                                    <div style={{ marginTop: '10px', display: 'inline-block', background: '#fffbeb', border: '1px solid #fde68a', padding: '5px 12px', borderRadius: '12px', fontSize: '0.85rem', color: '#b45309', fontWeight: 'bold' }}>
-                                                        📩 Tienes {pendingPhotos.length} {pendingPhotos.length === 1 ? 'foto' : 'fotos'} de usuarios esperando tu aprobación.
+                                                    <div style={{
+                                                        marginTop: '10px',
+                                                        display: 'inline-block',
+                                                        background: '#fffbeb',
+                                                        border: '1px solid #fde68a',
+                                                        padding: '5px 12px',
+                                                        borderRadius: '12px',
+                                                        fontSize: '0.85rem',
+                                                        color: '#b45309',
+                                                        fontWeight: 'bold'
+                                                    }}>
+                                                        📩
+                                                        Tienes {pendingPhotos.length} {pendingPhotos.length === 1 ? 'foto' : 'fotos'} de
+                                                        usuarios esperando tu aprobación.
                                                     </div>
                                                 )}
                                             </div>
-                                            <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                                <button onClick={() => document.getElementById('direct-public-upload')?.click()} className="btn-add" style={{ background: '#10b981', color: 'white', border: 'none' }}>
+                                            <div style={{display: 'flex', gap: '0.75rem'}}>
+                                                <button
+                                                    onClick={() => document.getElementById('direct-public-upload')?.click()}
+                                                    className="btn-add"
+                                                    style={{background: '#10b981', color: 'white', border: 'none'}}>
                                                     📤 Subir a Pública
                                                 </button>
-                                                <button onClick={() => document.getElementById('admin-priv-upload')?.click()} className="btn-add" style={{ background: 'var(--secondary-color)', color: 'white', border: 'none' }}>
+                                                <button
+                                                    onClick={() => document.getElementById('admin-priv-upload')?.click()}
+                                                    className="btn-add" style={{
+                                                    background: 'var(--secondary-color)',
+                                                    color: 'white',
+                                                    border: 'none'
+                                                }}>
                                                     🔐 Subir a Privada
                                                 </button>
-                                                <input type="file" id="direct-public-upload" multiple accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
-                                                    const files = e.target.files; if (!files) return;
+                                                <input type="file" id="direct-public-upload" multiple accept="image/*"
+                                                       style={{display: 'none'}} onChange={async (e) => {
+                                                    const files = e.target.files;
+                                                    if (!files) return;
                                                     setIsLoading(true);
                                                     try {
-                                                        const { compressImage } = await import("../utils/imageCompressor");
+                                                        const {compressImage} = await import("../utils/imageCompressor");
                                                         const newImages = [...publicGallery];
                                                         for (let i = 0; i < files.length; i++) {
                                                             const compressed = await compressImage(files[i], 1200, 1200, 0.7);
-                                                            newImages.unshift({ id: `pub-${Date.now()}-${i}`, url: compressed, name: files[i].name, date: new Date().toLocaleString() });
+                                                            newImages.unshift({
+                                                                id: `pub-${Date.now()}-${i}`,
+                                                                url: compressed,
+                                                                name: files[i].name,
+                                                                date: new Date().toLocaleString()
+                                                            });
                                                         }
                                                         setPublicGallery(newImages);
                                                         localStorage.setItem("site_public_gallery", JSON.stringify(newImages));
                                                         window.dispatchEvent(new Event('site-config-updated'));
                                                         toast.success("Subidas directamente a la galería pública.");
-                                                    } catch (err) { toast.error("Error al procesar."); } finally { setIsLoading(false); }
-                                                }} />
-                                                <input type="file" id="admin-priv-upload" multiple accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
-                                                    const files = e.target.files; if (!files) return;
+                                                    } catch (err) {
+                                                        toast.error("Error al procesar.");
+                                                    } finally {
+                                                        setIsLoading(false);
+                                                    }
+                                                }}/>
+                                                <input type="file" id="admin-priv-upload" multiple accept="image/*"
+                                                       style={{display: 'none'}} onChange={async (e) => {
+                                                    const files = e.target.files;
+                                                    if (!files) return;
                                                     setIsLoading(true);
                                                     try {
-                                                        const { compressImage } = await import("../utils/imageCompressor");
+                                                        const {compressImage} = await import("../utils/imageCompressor");
                                                         const newImages = [...adminGallery];
                                                         for (let i = 0; i < files.length; i++) {
                                                             const compressed = await compressImage(files[i], 1200, 1200, 0.7);
-                                                            newImages.unshift({ id: `priv-${Date.now()}-${i}`, url: compressed, name: files[i].name, date: new Date().toLocaleString() });
+                                                            newImages.unshift({
+                                                                id: `priv-${Date.now()}-${i}`,
+                                                                url: compressed,
+                                                                name: files[i].name,
+                                                                date: new Date().toLocaleString()
+                                                            });
                                                         }
                                                         setAdminGallery(newImages);
                                                         localStorage.setItem("admin_private_gallery", JSON.stringify(newImages));
                                                         toast.success("Guardadas en tu espacio privado.");
-                                                    } catch (err) { toast.error("Error al procesar."); } finally { setIsLoading(false); }
-                                                }} />
+                                                    } catch (err) {
+                                                        toast.error("Error al procesar.");
+                                                    } finally {
+                                                        setIsLoading(false);
+                                                    }
+                                                }}/>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Sub-navegación Rápida */}
-                                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', padding: '10px', background: '#f1f5f9', borderRadius: '12px' }}>
-                                        <button onClick={() => document.getElementById('sec-pub')?.scrollIntoView({ behavior: 'smooth' })} style={{ flex: 1, padding: '8px', border: 'none', background: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>🌐 Galería Pública</button>
-                                        <button onClick={() => document.getElementById('sec-pen')?.scrollIntoView({ behavior: 'smooth' })} style={{ flex: 1, padding: '8px', border: 'none', background: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', position: 'relative' }}>
-                                            📩 Pendientes
-                                            {pendingPhotos.length > 0 && <span style={{ position: 'absolute', top: '-5px', right: '-5px', background: '#ef4444', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: '0.7rem' }}>{pendingPhotos.length}</span>}
+                                    <div style={{
+                                        display: 'flex',
+                                        gap: '1rem',
+                                        marginBottom: '2rem',
+                                        padding: '10px',
+                                        background: '#f1f5f9',
+                                        borderRadius: '12px'
+                                    }}>
+                                        <button
+                                            onClick={() => document.getElementById('sec-pub')?.scrollIntoView({behavior: 'smooth'})}
+                                            style={{
+                                                flex: 1,
+                                                padding: '8px',
+                                                border: 'none',
+                                                background: 'white',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer',
+                                                fontWeight: 'bold'
+                                            }}>🌐 Galería Pública
                                         </button>
-                                        <button onClick={() => document.getElementById('sec-pri')?.scrollIntoView({ behavior: 'smooth' })} style={{ flex: 1, padding: '8px', border: 'none', background: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>🔐 Privada (Admin)</button>
+                                        <button
+                                            onClick={() => document.getElementById('sec-pen')?.scrollIntoView({behavior: 'smooth'})}
+                                            style={{
+                                                flex: 1,
+                                                padding: '8px',
+                                                border: 'none',
+                                                background: 'white',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer',
+                                                fontWeight: 'bold',
+                                                position: 'relative'
+                                            }}>
+                                            📩 Pendientes
+                                            {pendingPhotos.length > 0 && <span style={{
+                                                position: 'absolute',
+                                                top: '-5px',
+                                                right: '-5px',
+                                                background: '#ef4444',
+                                                color: 'white',
+                                                borderRadius: '50%',
+                                                padding: '2px 6px',
+                                                fontSize: '0.7rem'
+                                            }}>{pendingPhotos.length}</span>}
+                                        </button>
+                                        <button
+                                            onClick={() => document.getElementById('sec-pri')?.scrollIntoView({behavior: 'smooth'})}
+                                            style={{
+                                                flex: 1,
+                                                padding: '8px',
+                                                border: 'none',
+                                                background: 'white',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer',
+                                                fontWeight: 'bold'
+                                            }}>🔐 Privada (Admin)
+                                        </button>
                                     </div>
 
                                     {/* ── SECCIÓN A: PÚBLICA ── */}
-                                    <div id="sec-pub" style={{ marginBottom: '4rem' }}>
-                                        <h4 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>🌐 Galería Pública (En vivo)</h4>
+                                    <div id="sec-pub" style={{marginBottom: '4rem'}}>
+                                        <h4 style={{
+                                            borderBottom: '2px solid #e2e8f0',
+                                            paddingBottom: '0.5rem',
+                                            marginBottom: '1.5rem'
+                                        }}>🌐 Galería Pública (En vivo)</h4>
                                         {publicGallery.length === 0 ? (
-                                            <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>No hay fotos públicas aún.</div>
+                                            <div style={{textAlign: 'center', padding: '2rem', color: '#94a3b8'}}>No hay
+                                                fotos públicas aún.</div>
                                         ) : (
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1.2rem' }}>
+                                            <div style={{
+                                                display: 'grid',
+                                                gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                                                gap: '1.2rem'
+                                            }}>
                                                 {publicGallery.map(img => (
-                                                    <div key={img.id} style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', border: '1px solid #eee' }}>
-                                                        <img src={img.url} style={{ width: '100%', height: '120px', objectFit: 'cover' }} />
+                                                    <div key={img.id} style={{
+                                                        position: 'relative',
+                                                        borderRadius: '10px',
+                                                        overflow: 'hidden',
+                                                        border: '1px solid #eee'
+                                                    }}>
+                                                        <img src={img.url} style={{
+                                                            width: '100%',
+                                                            height: '120px',
+                                                            objectFit: 'cover'
+                                                        }}/>
                                                         <button onClick={() => {
                                                             if (confirm("¿Borrar definitivamente del sitio público?")) {
                                                                 const updated = publicGallery.filter(i => i.id !== img.id);
@@ -1922,7 +2692,19 @@ export default function Admin() {
                                                                 window.dispatchEvent(new Event('site-config-updated'));
                                                                 toast.success("Eliminada");
                                                             }
-                                                        }} style={{ position: 'absolute', top: '5px', right: '5px', background: 'rgba(239,68,68,0.8)', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', width: '25px', height: '25px' }}>🗑️</button>
+                                                        }} style={{
+                                                            position: 'absolute',
+                                                            top: '5px',
+                                                            right: '5px',
+                                                            background: 'rgba(239,68,68,0.8)',
+                                                            color: 'white',
+                                                            border: 'none',
+                                                            borderRadius: '5px',
+                                                            cursor: 'pointer',
+                                                            width: '25px',
+                                                            height: '25px'
+                                                        }}>🗑️
+                                                        </button>
                                                     </div>
                                                 ))}
                                             </div>
@@ -1930,19 +2712,45 @@ export default function Admin() {
                                     </div>
 
                                     {/* ── SECCIÓN B: PENDIENTES ── */}
-                                    <div id="sec-pen" style={{ marginBottom: '4rem', padding: '2rem', background: '#fffbeb', borderRadius: '20px', border: '1px solid #fde68a' }}>
-                                        <h4 style={{ margin: 0, marginBottom: '1.5rem' }}>📩 Fotos Enviadas por Usuarios ({pendingPhotos.length})</h4>
+                                    <div id="sec-pen" style={{
+                                        marginBottom: '4rem',
+                                        padding: '2rem',
+                                        background: '#fffbeb',
+                                        borderRadius: '20px',
+                                        border: '1px solid #fde68a'
+                                    }}>
+                                        <h4 style={{margin: 0, marginBottom: '1.5rem'}}>📩 Fotos Enviadas por Usuarios
+                                            ({pendingPhotos.length})</h4>
                                         {pendingPhotos.length === 0 ? (
-                                            <div style={{ textAlign: 'center', color: '#d97706' }}>No hay fotos pendientes de revisión. ✨</div>
+                                            <div style={{textAlign: 'center', color: '#d97706'}}>No hay fotos pendientes
+                                                de revisión. ✨</div>
                                         ) : (
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1.5rem' }}>
+                                            <div style={{
+                                                display: 'grid',
+                                                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                                                gap: '1.5rem'
+                                            }}>
                                                 {pendingPhotos.map(img => (
-                                                    <div key={img.id} style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-                                                        <img src={img.url} style={{ width: '100%', height: '140px', objectFit: 'cover' }} />
-                                                        <div style={{ padding: '10px', fontSize: '0.8rem' }}>
-                                                            <div style={{ fontWeight: 'bold' }}>{img.user || 'Visitante'}</div>
-                                                            <div style={{ color: '#64748b' }}>{img.date}</div>
-                                                            <div style={{ display: 'flex', gap: '5px', marginTop: '10px' }}>
+                                                    <div key={img.id} style={{
+                                                        background: 'white',
+                                                        borderRadius: '12px',
+                                                        overflow: 'hidden',
+                                                        boxShadow: '0 4px 6px rgba(0,0,0,0.05)'
+                                                    }}>
+                                                        <img src={img.url} style={{
+                                                            width: '100%',
+                                                            height: '140px',
+                                                            objectFit: 'cover'
+                                                        }}/>
+                                                        <div style={{padding: '10px', fontSize: '0.8rem'}}>
+                                                            <div
+                                                                style={{fontWeight: 'bold'}}>{img.user || 'Visitante'}</div>
+                                                            <div style={{color: '#64748b'}}>{img.date}</div>
+                                                            <div style={{
+                                                                display: 'flex',
+                                                                gap: '5px',
+                                                                marginTop: '10px'
+                                                            }}>
                                                                 <button onClick={() => {
                                                                     const updatedPub = [img, ...publicGallery];
                                                                     const updatedPen = pendingPhotos.filter(p => p.id !== img.id);
@@ -1952,7 +2760,17 @@ export default function Admin() {
                                                                     localStorage.setItem("site_pending_gallery", JSON.stringify(updatedPen));
                                                                     window.dispatchEvent(new Event('site-config-updated'));
                                                                     toast.success("¡Foto aprobada!");
-                                                                }} style={{ flex: 1, padding: '6px', background: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Aprobar</button>
+                                                                }} style={{
+                                                                    flex: 1,
+                                                                    padding: '6px',
+                                                                    background: '#10b981',
+                                                                    color: 'white',
+                                                                    border: 'none',
+                                                                    borderRadius: '6px',
+                                                                    cursor: 'pointer',
+                                                                    fontWeight: 'bold'
+                                                                }}>Aprobar
+                                                                </button>
                                                                 <button onClick={() => {
                                                                     if (confirm("¿Rechazar esta foto?")) {
                                                                         const updatedPen = pendingPhotos.filter(p => p.id !== img.id);
@@ -1960,7 +2778,15 @@ export default function Admin() {
                                                                         localStorage.setItem("site_pending_gallery", JSON.stringify(updatedPen));
                                                                         toast.error("Foto rechazada");
                                                                     }
-                                                                }} style={{ padding: '6px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>✖</button>
+                                                                }} style={{
+                                                                    padding: '6px',
+                                                                    background: '#ef4444',
+                                                                    color: 'white',
+                                                                    border: 'none',
+                                                                    borderRadius: '6px',
+                                                                    cursor: 'pointer'
+                                                                }}>✖
+                                                                </button>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1971,20 +2797,50 @@ export default function Admin() {
 
                                     {/* ── SECCIÓN C: PRIVADA ── */}
                                     <div id="sec-pri">
-                                        <h4 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>🔐 Espacio Privado (Admin Only)</h4>
+                                        <h4 style={{
+                                            borderBottom: '2px solid #e2e8f0',
+                                            paddingBottom: '0.5rem',
+                                            marginBottom: '1.5rem'
+                                        }}>🔐 Espacio Privado (Admin Only)</h4>
                                         {adminGallery.length === 0 ? (
-                                            <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Tu galería privada está vacía.</div>
+                                            <div style={{textAlign: 'center', padding: '2rem', color: '#94a3b8'}}>Tu
+                                                galería privada está vacía.</div>
                                         ) : (
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '1rem' }}>
+                                            <div style={{
+                                                display: 'grid',
+                                                gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+                                                gap: '1rem'
+                                            }}>
                                                 {adminGallery.map(img => (
-                                                    <div key={img.id} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden' }}>
-                                                        <img src={img.url} style={{ width: '100%', height: '110px', objectFit: 'cover' }} />
+                                                    <div key={img.id} style={{
+                                                        position: 'relative',
+                                                        borderRadius: '8px',
+                                                        overflow: 'hidden'
+                                                    }}>
+                                                        <img src={img.url} style={{
+                                                            width: '100%',
+                                                            height: '110px',
+                                                            objectFit: 'cover'
+                                                        }}/>
                                                         <button onClick={() => {
                                                             const updated = adminGallery.filter(i => i.id !== img.id);
                                                             setAdminGallery(updated);
                                                             localStorage.setItem("admin_private_gallery", JSON.stringify(updated));
                                                             toast.success("Eliminada de privados");
-                                                        }} style={{ position: 'absolute', top: '5px', right: '5px', background: 'rgba(30,41,59,0.7)', color: 'white', border: 'none', borderRadius: '50%', cursor: 'pointer', width: '22px', height: '22px', fontSize: '10px' }}>✕</button>
+                                                        }} style={{
+                                                            position: 'absolute',
+                                                            top: '5px',
+                                                            right: '5px',
+                                                            background: 'rgba(30,41,59,0.7)',
+                                                            color: 'white',
+                                                            border: 'none',
+                                                            borderRadius: '50%',
+                                                            cursor: 'pointer',
+                                                            width: '22px',
+                                                            height: '22px',
+                                                            fontSize: '10px'
+                                                        }}>✕
+                                                        </button>
                                                     </div>
                                                 ))}
                                             </div>
@@ -1998,9 +2854,10 @@ export default function Admin() {
                             {settingsTab === "pg-aforos" && (
                                 <div className="page-settings-panel fade-in">
                                     <h3>🏛️ Gestión de Aforos y Auditorios</h3>
-                                    <p className="hint">Configura la capacidad máxima de cada lugar. Los cambios afectarán el límite de inscripciones en la agenda.</p>
+                                    <p className="hint">Configura la capacidad máxima de cada lugar. Los cambios
+                                        afectarán el límite de inscripciones en la agenda.</p>
 
-                                    <div className="settings-form" style={{ marginTop: '1.5rem' }}>
+                                    <div className="settings-form" style={{marginTop: '1.5rem'}}>
                                         <div className="venues-grid" style={{
                                             display: 'grid',
                                             gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
@@ -2020,19 +2877,28 @@ export default function Admin() {
                                                         flexDirection: 'column',
                                                         gap: '0.8rem'
                                                     }}>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                                                        <div style={{
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            alignItems: 'start'
+                                                        }}>
                                                             <div>
-                                                                <h4 style={{ margin: 0, color: '#2d3748' }}>{loc}</h4>
-                                                                <span style={{ fontSize: '0.75rem', color: '#718096', display: 'block', marginTop: '4px' }}>
+                                                                <h4 style={{margin: 0, color: '#2d3748'}}>{loc}</h4>
+                                                                <span style={{
+                                                                    fontSize: '0.75rem',
+                                                                    color: '#718096',
+                                                                    display: 'block',
+                                                                    marginTop: '4px'
+                                                                }}>
                                                                     {conferenceCount} {conferenceCount === 1 ? 'conferencia agendada' : 'conferencias agendadas'}
                                                                 </span>
                                                             </div>
                                                             {!loc.startsWith("Auditorio Paraninfo") && !loc.startsWith("Auditorio Torres") && conferenceCount === 0 && (
                                                                 <button
                                                                     className="btn-delete-sm"
-                                                                    style={{ padding: '4px 8px' }}
+                                                                    style={{padding: '4px 8px'}}
                                                                     onClick={() => {
-                                                                        const newCaps = { ...locCapacities };
+                                                                        const newCaps = {...locCapacities};
                                                                         delete newCaps[loc];
                                                                         setLocCapacities(newCaps);
                                                                     }}
@@ -2042,14 +2908,22 @@ export default function Admin() {
                                                             )}
                                                         </div>
 
-                                                        <div className="form-group" style={{ margin: 0 }}>
-                                                            <label style={{ fontSize: '0.85rem', marginBottom: '4px' }}>Aforo (Personas)</label>
-                                                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                        <div className="form-group" style={{margin: 0}}>
+                                                            <label style={{fontSize: '0.85rem', marginBottom: '4px'}}>Aforo
+                                                                (Personas)</label>
+                                                            <div style={{
+                                                                display: 'flex',
+                                                                gap: '0.5rem',
+                                                                alignItems: 'center'
+                                                            }}>
                                                                 <input
                                                                     type="number"
                                                                     value={locCapacities[loc]}
                                                                     onChange={e => {
-                                                                        setLocCapacities({ ...locCapacities, [loc]: parseInt(e.target.value) || 0 });
+                                                                        setLocCapacities({
+                                                                            ...locCapacities,
+                                                                            [loc]: parseInt(e.target.value) || 0
+                                                                        });
                                                                     }}
                                                                     style={{
                                                                         width: '100%',
@@ -2076,8 +2950,23 @@ export default function Admin() {
                                             position: 'relative',
                                             overflow: 'hidden'
                                         }}>
-                                            <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: 'var(--primary-color)' }}></div>
-                                            <h4 style={{ marginTop: 0, marginBottom: '1.5rem', color: 'var(--primary-color)', fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                width: '4px',
+                                                height: '100%',
+                                                background: 'var(--primary-color)'
+                                            }}></div>
+                                            <h4 style={{
+                                                marginTop: 0,
+                                                marginBottom: '1.5rem',
+                                                color: 'var(--primary-color)',
+                                                fontSize: '1.25rem',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.5rem'
+                                            }}>
                                                 ✨ Registrar Nuevo Sitio / Auditorio
                                             </h4>
                                             <div style={{
@@ -2086,28 +2975,61 @@ export default function Admin() {
                                                 gap: '1.5rem',
                                                 alignItems: 'end'
                                             }}>
-                                                <div className="form-group" style={{ margin: 0 }}>
-                                                    <label style={{ fontWeight: 600, color: '#4a5568', fontSize: '0.9rem', marginBottom: '8px', display: 'block' }}>Nombre Completo del Sitio</label>
+                                                <div className="form-group" style={{margin: 0}}>
+                                                    <label style={{
+                                                        fontWeight: 600,
+                                                        color: '#4a5568',
+                                                        fontSize: '0.9rem',
+                                                        marginBottom: '8px',
+                                                        display: 'block'
+                                                    }}>Nombre Completo del Sitio</label>
                                                     <input
                                                         type="text"
                                                         id="new-loc-name"
                                                         placeholder="Ej: Auditorio Central, Sala 202..."
-                                                        style={{ padding: '12px 16px', borderRadius: '12px', border: '1px solid #e2e8f0', width: '100%', fontSize: '1rem', transition: 'border-color 0.2s' }}
+                                                        style={{
+                                                            padding: '12px 16px',
+                                                            borderRadius: '12px',
+                                                            border: '1px solid #e2e8f0',
+                                                            width: '100%',
+                                                            fontSize: '1rem',
+                                                            transition: 'border-color 0.2s'
+                                                        }}
                                                     />
                                                 </div>
-                                                <div className="form-group" style={{ margin: 0 }}>
-                                                    <label style={{ fontWeight: 600, color: '#4a5568', fontSize: '0.9rem', marginBottom: '8px', display: 'block' }}>Capacidad de Aforo</label>
+                                                <div className="form-group" style={{margin: 0}}>
+                                                    <label style={{
+                                                        fontWeight: 600,
+                                                        color: '#4a5568',
+                                                        fontSize: '0.9rem',
+                                                        marginBottom: '8px',
+                                                        display: 'block'
+                                                    }}>Capacidad de Aforo</label>
                                                     <input
                                                         type="number"
                                                         id="new-loc-cap"
                                                         defaultValue="50"
-                                                        style={{ padding: '12px 16px', borderRadius: '12px', border: '1px solid #e2e8f0', width: '100%', fontSize: '1rem' }}
+                                                        style={{
+                                                            padding: '12px 16px',
+                                                            borderRadius: '12px',
+                                                            border: '1px solid #e2e8f0',
+                                                            width: '100%',
+                                                            fontSize: '1rem'
+                                                        }}
                                                     />
                                                 </div>
                                                 <button
                                                     type="button"
                                                     className="btn-submit"
-                                                    style={{ height: '48px', padding: '0 2.5rem', borderRadius: '12px', fontWeight: '700', fontSize: '1rem', transform: 'translateY(-2px)', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                                                    style={{
+                                                        height: '48px',
+                                                        padding: '0 2.5rem',
+                                                        borderRadius: '12px',
+                                                        fontWeight: '700',
+                                                        fontSize: '1rem',
+                                                        transform: 'translateY(-2px)',
+                                                        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                                                    }}
                                                     onClick={() => {
                                                         const nameInput = document.getElementById('new-loc-name') as HTMLInputElement;
                                                         const capInput = document.getElementById('new-loc-cap') as HTMLInputElement;
@@ -2128,11 +3050,20 @@ export default function Admin() {
                                             </div>
                                         </div>
 
-                                        <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem' }}>
+                                        <div style={{marginTop: '1.5rem', display: 'flex', gap: '1rem'}}>
                                             <button
                                                 type="button"
                                                 className="btn-add"
-                                                style={{ background: '#edf2f7', color: '#4a5568', border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: '600' }}
+                                                style={{
+                                                    background: '#edf2f7',
+                                                    color: '#4a5568',
+                                                    border: 'none',
+                                                    borderRadius: '10px',
+                                                    padding: '10px 20px',
+                                                    fontSize: '0.85rem',
+                                                    cursor: 'pointer',
+                                                    fontWeight: '600'
+                                                }}
                                                 onClick={() => {
                                                     const currentSede4Salas = Object.keys(locCapacities).filter(k => k.includes("Sede 4"));
                                                     const nextNum = currentSede4Salas.length + 1;
@@ -2146,7 +3077,11 @@ export default function Admin() {
                                             </button>
                                         </div>
 
-                                        <button className="btn-submit" style={{ marginTop: '2rem', width: '100%' }} onClick={() => { dispatchUpdate(); toast.success("Configuración de aforos guardada."); }}>
+                                        <button className="btn-submit" style={{marginTop: '2rem', width: '100%'}}
+                                                onClick={() => {
+                                                    dispatchUpdate();
+                                                    toast.success("Configuración de aforos guardada.");
+                                                }}>
                                             Guardar y Aplicar a Toda la Agenda
                                         </button>
                                     </div>
@@ -2169,23 +3104,27 @@ export default function Admin() {
                                 background: 'white', padding: '1rem 1.5rem', borderRadius: '14px',
                                 boxShadow: '0 4px 16px rgba(0,0,0,0.06)', marginBottom: '1.5rem'
                             }}>
-                                <span style={{ fontWeight: '700', color: '#374151', fontSize: '0.95rem' }}>📅 Filtrar por año:</span>
+                                <span style={{fontWeight: '700', color: '#374151', fontSize: '0.95rem'}}>📅 Filtrar por año:</span>
                                 {getAvailableYears().map((yr: number) => (
                                     <button
                                         key={yr}
                                         onClick={() => setAnalyticsYear(yr)}
                                         style={{
-                                            padding: '6px 18px', borderRadius: '20px', border: 'none', cursor: 'pointer',
+                                            padding: '6px 18px',
+                                            borderRadius: '20px',
+                                            border: 'none',
+                                            cursor: 'pointer',
                                             fontWeight: analyticsYear === yr ? '700' : '500',
                                             background: analyticsYear === yr ? 'var(--primary-color, #2563eb)' : '#f0f4ff',
                                             color: analyticsYear === yr ? 'white' : '#374151',
-                                            fontSize: '0.9rem', transition: 'all 0.2s'
+                                            fontSize: '0.9rem',
+                                            transition: 'all 0.2s'
                                         }}
                                     >
                                         {yr}
                                     </button>
                                 ))}
-                                <span style={{ marginLeft: 'auto', fontSize: '0.8rem', color: '#94a3b8' }}>
+                                <span style={{marginLeft: 'auto', fontSize: '0.8rem', color: '#94a3b8'}}>
                                     {getEvents(analyticsYear).length} eventos registrados en {analyticsYear}
                                 </span>
                             </div>
@@ -2200,68 +3139,119 @@ export default function Admin() {
                                     return loads.length ? Math.round(loads.reduce((a, b) => a + b, 0) / loads.length) : 0;
                                 })();
                                 const kpis = [
-                                    { icon: '👁️', label: 'Visitas de Página', value: pageViews.toLocaleString(), color: '#2563eb' },
-                                    { icon: '🖱️', label: 'Clics Registrados', value: clicks.toLocaleString(), color: '#16a34a' },
-                                    { icon: '⚡', label: 'Tiempo Prom. Carga', value: avgLoad ? `${avgLoad} ms` : 'Sin datos', color: '#d97706' },
-                                    { icon: '📋', label: 'Total Eventos', value: evs.length.toLocaleString(), color: '#7c3aed' },
+                                    {
+                                        icon: '👁️',
+                                        label: 'Visitas de Página',
+                                        value: pageViews.toLocaleString(),
+                                        color: '#2563eb'
+                                    },
+                                    {
+                                        icon: '🖱️',
+                                        label: 'Clics Registrados',
+                                        value: clicks.toLocaleString(),
+                                        color: '#16a34a'
+                                    },
+                                    {
+                                        icon: '⚡',
+                                        label: 'Tiempo Prom. Carga',
+                                        value: avgLoad ? `${avgLoad} ms` : 'Sin datos',
+                                        color: '#d97706'
+                                    },
+                                    {
+                                        icon: '📋',
+                                        label: 'Total Eventos',
+                                        value: evs.length.toLocaleString(),
+                                        color: '#7c3aed'
+                                    },
                                 ];
                                 return (
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                                        gap: '1rem',
+                                        marginBottom: '2rem'
+                                    }}>
                                         {kpis.map((k, i) => (
                                             <div key={i} style={{
                                                 background: 'white', borderRadius: '14px', padding: '1.25rem 1rem',
                                                 boxShadow: '0 4px 16px rgba(0,0,0,0.06)', textAlign: 'center',
                                                 borderTop: `4px solid ${k.color}`
                                             }}>
-                                                <div style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>{k.icon}</div>
-                                                <div style={{ fontSize: '1.6rem', fontWeight: '800', color: k.color }}>{k.value}</div>
-                                                <div style={{ fontSize: '0.78rem', color: '#6b7280', marginTop: '0.25rem' }}>{k.label}</div>
+                                                <div style={{fontSize: '2rem', marginBottom: '0.25rem'}}>{k.icon}</div>
+                                                <div style={{
+                                                    fontSize: '1.6rem',
+                                                    fontWeight: '800',
+                                                    color: k.color
+                                                }}>{k.value}</div>
+                                                <div style={{
+                                                    fontSize: '0.78rem',
+                                                    color: '#6b7280',
+                                                    marginTop: '0.25rem'
+                                                }}>{k.label}</div>
                                             </div>
                                         ))}
                                     </div>
                                 );
                             })()}
 
-                            <div className="analytics-dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '2rem', marginTop: '2rem' }}>
+                            <div className="analytics-dashboard-grid" style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))',
+                                gap: '2rem',
+                                marginTop: '2rem'
+                            }}>
 
                                 {/* Gráfica de Visitas */}
-                                <div className="analytics-card premium-card" style={{ padding: '1.5rem', background: 'white', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                        <h4 style={{ margin: 0 }}>Vistas por Página</h4>
+                                <div className="analytics-card premium-card" style={{
+                                    padding: '1.5rem',
+                                    background: 'white',
+                                    borderRadius: '16px',
+                                    boxShadow: '0 10px 30px rgba(0,0,0,0.05)'
+                                }}>
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        marginBottom: '1.5rem'
+                                    }}>
+                                        <h4 style={{margin: 0}}>Vistas por Página</h4>
                                         <select
                                             value={chartTypes.views}
-                                            onChange={(e) => setChartTypes({ ...chartTypes, views: e.target.value })}
-                                            style={{ padding: '5px', borderRadius: '5px', border: '1px solid #ddd' }}
+                                            onChange={(e) => setChartTypes({...chartTypes, views: e.target.value})}
+                                            style={{padding: '5px', borderRadius: '5px', border: '1px solid #ddd'}}
                                         >
                                             <option value="bar">Barras</option>
                                             <option value="line">Líneas</option>
                                             <option value="pie">Circular</option>
                                         </select>
                                     </div>
-                                    <div style={{ width: '100%', height: 300 }}>
+                                    <div style={{width: '100%', height: 300}}>
                                         <ResponsiveContainer>
                                             {chartTypes.views === 'bar' ? (
                                                 <BarChart data={getPageViewsStats()}>
-                                                    <CartesianGrid strokeDasharray="3 3" />
-                                                    <XAxis dataKey="name" />
-                                                    <YAxis />
-                                                    <Tooltip />
-                                                    <Bar dataKey="value" fill="#375fe4" radius={[4, 4, 0, 0]} />
+                                                    <CartesianGrid strokeDasharray="3 3"/>
+                                                    <XAxis dataKey="name"/>
+                                                    <YAxis/>
+                                                    <Tooltip/>
+                                                    <Bar dataKey="value" fill="#375fe4" radius={[4, 4, 0, 0]}/>
                                                 </BarChart>
                                             ) : chartTypes.views === 'line' ? (
                                                 <LineChart data={getPageViewsStats()}>
-                                                    <CartesianGrid strokeDasharray="3 3" />
-                                                    <XAxis dataKey="name" />
-                                                    <YAxis />
-                                                    <Tooltip />
-                                                    <Line type="monotone" dataKey="value" stroke="#375fe4" strokeWidth={3} />
+                                                    <CartesianGrid strokeDasharray="3 3"/>
+                                                    <XAxis dataKey="name"/>
+                                                    <YAxis/>
+                                                    <Tooltip/>
+                                                    <Line type="monotone" dataKey="value" stroke="#375fe4"
+                                                          strokeWidth={3}/>
                                                 </LineChart>
                                             ) : (
                                                 <PieChart>
-                                                    <Pie data={getPageViewsStats()} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                                                        {[0, 1, 2, 3, 4].map((_, index) => <Cell key={`cell-${index}`} fill={['#375fe4', '#4998f1', '#1f2a44', '#e74c3c'][index % 4]} />)}
+                                                    <Pie data={getPageViewsStats()} innerRadius={60} outerRadius={80}
+                                                         paddingAngle={5} dataKey="value">
+                                                        {[0, 1, 2, 3, 4].map((_, index) => <Cell key={`cell-${index}`}
+                                                                                                 fill={['#375fe4', '#4998f1', '#1f2a44', '#e74c3c'][index % 4]}/>)}
                                                     </Pie>
-                                                    <Tooltip />
+                                                    <Tooltip/>
                                                 </PieChart>
                                             )}
                                         </ResponsiveContainer>
@@ -2269,39 +3259,50 @@ export default function Admin() {
                                 </div>
 
                                 {/* Gráfica de Género */}
-                                <div className="analytics-card premium-card" style={{ padding: '1.5rem', background: 'white', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                        <h4 style={{ margin: 0 }}>Distribución por Género</h4>
+                                <div className="analytics-card premium-card" style={{
+                                    padding: '1.5rem',
+                                    background: 'white',
+                                    borderRadius: '16px',
+                                    boxShadow: '0 10px 30px rgba(0,0,0,0.05)'
+                                }}>
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        marginBottom: '1.5rem'
+                                    }}>
+                                        <h4 style={{margin: 0}}>Distribución por Género</h4>
                                         <select
                                             value={chartTypes.gender}
-                                            onChange={(e) => setChartTypes({ ...chartTypes, gender: e.target.value })}
-                                            style={{ padding: '5px', borderRadius: '5px', border: '1px solid #ddd' }}
+                                            onChange={(e) => setChartTypes({...chartTypes, gender: e.target.value})}
+                                            style={{padding: '5px', borderRadius: '5px', border: '1px solid #ddd'}}
                                         >
                                             <option value="pie">Pastel</option>
                                             <option value="bar">Barras</option>
                                         </select>
                                     </div>
-                                    <div style={{ width: '100%', height: 300 }}>
+                                    <div style={{width: '100%', height: 300}}>
                                         <ResponsiveContainer>
                                             {chartTypes.gender === 'pie' ? (
                                                 <PieChart>
-                                                    <Pie data={getGenderStats()} cx="50%" cy="50%" outerRadius={100} label dataKey="value">
-                                                        <Cell fill="#3498db" />
-                                                        <Cell fill="#e91e63" />
-                                                        <Cell fill="#95a5a6" />
+                                                    <Pie data={getGenderStats()} cx="50%" cy="50%" outerRadius={100}
+                                                         label dataKey="value">
+                                                        <Cell fill="#3498db"/>
+                                                        <Cell fill="#e91e63"/>
+                                                        <Cell fill="#95a5a6"/>
                                                     </Pie>
-                                                    <Tooltip />
-                                                    <Legend />
+                                                    <Tooltip/>
+                                                    <Legend/>
                                                 </PieChart>
                                             ) : (
                                                 <BarChart data={getGenderStats()}>
-                                                    <XAxis dataKey="name" />
-                                                    <YAxis />
-                                                    <Tooltip />
+                                                    <XAxis dataKey="name"/>
+                                                    <YAxis/>
+                                                    <Tooltip/>
                                                     <Bar dataKey="value" fill="#3498db">
-                                                        <Cell fill="#3498db" />
-                                                        <Cell fill="#e91e63" />
-                                                        <Cell fill="#95a5a6" />
+                                                        <Cell fill="#3498db"/>
+                                                        <Cell fill="#e91e63"/>
+                                                        <Cell fill="#95a5a6"/>
                                                     </Bar>
                                                 </BarChart>
                                             )}
@@ -2310,34 +3311,48 @@ export default function Admin() {
                                 </div>
 
                                 {/* Gráfica de Conferencias */}
-                                <div className="analytics-card premium-card" style={{ padding: '1.5rem', background: 'white', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                        <h4 style={{ margin: 0 }}>Inscripciones por Conferencia</h4>
+                                <div className="analytics-card premium-card" style={{
+                                    padding: '1.5rem',
+                                    background: 'white',
+                                    borderRadius: '16px',
+                                    boxShadow: '0 10px 30px rgba(0,0,0,0.05)'
+                                }}>
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        marginBottom: '1.5rem'
+                                    }}>
+                                        <h4 style={{margin: 0}}>Inscripciones por Conferencia</h4>
                                         <select
                                             value={chartTypes.conferences}
-                                            onChange={(e) => setChartTypes({ ...chartTypes, conferences: e.target.value })}
-                                            style={{ padding: '5px', borderRadius: '5px', border: '1px solid #ddd' }}
+                                            onChange={(e) => setChartTypes({
+                                                ...chartTypes,
+                                                conferences: e.target.value
+                                            })}
+                                            style={{padding: '5px', borderRadius: '5px', border: '1px solid #ddd'}}
                                         >
                                             <option value="bar">Barras</option>
                                             <option value="scatter">Dispersión</option>
                                         </select>
                                     </div>
-                                    <div style={{ width: '100%', height: 300 }}>
+                                    <div style={{width: '100%', height: 300}}>
                                         <ResponsiveContainer>
                                             {chartTypes.conferences === 'bar' ? (
                                                 <BarChart data={getConferenceStats()} layout="vertical">
-                                                    <XAxis type="number" />
-                                                    <YAxis dataKey="name" type="category" width={100} />
-                                                    <Tooltip />
-                                                    <Bar dataKey="value" fill="#2ecc71" radius={[0, 4, 4, 0]} />
+                                                    <XAxis type="number"/>
+                                                    <YAxis dataKey="name" type="category" width={100}/>
+                                                    <Tooltip/>
+                                                    <Bar dataKey="value" fill="#2ecc71" radius={[0, 4, 4, 0]}/>
                                                 </BarChart>
                                             ) : (
                                                 <ScatterChart>
-                                                    <XAxis dataKey="name" />
-                                                    <YAxis dataKey="value" name="Inscritos" />
-                                                    <ZAxis range={[60, 400]} />
-                                                    <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-                                                    <Scatter name="Conferencias" data={getConferenceStats()} fill="#2ecc71" />
+                                                    <XAxis dataKey="name"/>
+                                                    <YAxis dataKey="value" name="Inscritos"/>
+                                                    <ZAxis range={[60, 400]}/>
+                                                    <Tooltip cursor={{strokeDasharray: '3 3'}}/>
+                                                    <Scatter name="Conferencias" data={getConferenceStats()}
+                                                             fill="#2ecc71"/>
                                                 </ScatterChart>
                                             )}
                                         </ResponsiveContainer>
@@ -2345,13 +3360,24 @@ export default function Admin() {
                                 </div>
 
                                 {/* Log de Actividad Reciente */}
-                                <div className="analytics-card premium-card" style={{ padding: '1.5rem', background: 'white', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
+                                <div className="analytics-card premium-card" style={{
+                                    padding: '1.5rem',
+                                    background: 'white',
+                                    borderRadius: '16px',
+                                    boxShadow: '0 10px 30px rgba(0,0,0,0.05)'
+                                }}>
                                     <h4>Historial de Actividad Global</h4>
-                                    <div style={{ maxHeight: '250px', overflowY: 'auto', fontSize: '0.8rem' }}>
+                                    <div style={{maxHeight: '250px', overflowY: 'auto', fontSize: '0.8rem'}}>
                                         {getEvents().map((log, i) => (
-                                            <div key={i} style={{ padding: '10px 0', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between' }}>
-                                                <span><strong style={{ color: 'var(--primary-color)' }}>{log.type}</strong> en {log.path}</span>
-                                                <span style={{ color: '#888' }}>{log.timestamp}</span>
+                                            <div key={i} style={{
+                                                padding: '10px 0',
+                                                borderBottom: '1px solid #f0f0f0',
+                                                display: 'flex',
+                                                justifyContent: 'space-between'
+                                            }}>
+                                                <span><strong
+                                                    style={{color: 'var(--primary-color)'}}>{log.type}</strong> en {log.path}</span>
+                                                <span style={{color: '#888'}}>{log.timestamp}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -2370,25 +3396,25 @@ export default function Admin() {
                             ) : (
                                 <table className="admin-table">
                                     <thead>
-                                        <tr>
-                                            <th>Título</th>
-                                            <th>Acciones</th>
-                                        </tr>
+                                    <tr>
+                                        <th>Título</th>
+                                        <th>Acciones</th>
+                                    </tr>
                                     </thead>
                                     <tbody>
-                                        {deletedConferences.map(conf => (
-                                            <tr key={conf.id}>
-                                                <td>{conf.title}</td>
-                                                <td className="actions">
-                                                    <button
-                                                        className="btn-edit-sm"
-                                                        onClick={() => handleRestoreConference(conf.id)}
-                                                    >
-                                                        🔄 Restaurar
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                    {deletedConferences.map(conf => (
+                                        <tr key={conf.id}>
+                                            <td>{conf.title}</td>
+                                            <td className="actions">
+                                                <button
+                                                    className="btn-edit-sm"
+                                                    onClick={() => handleRestoreConference(conf.id)}
+                                                >
+                                                    🔄 Restaurar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
                                     </tbody>
                                 </table>
                             )}
@@ -2405,7 +3431,7 @@ export default function Admin() {
                                         <input
                                             type="text"
                                             value={editingConf.title}
-                                            onChange={e => setEditingConf({ ...editingConf, title: e.target.value })}
+                                            onChange={e => setEditingConf({...editingConf, title: e.target.value})}
                                         />
                                     </div>
                                     <div className="form-group">
@@ -2441,7 +3467,10 @@ export default function Admin() {
                                         <label>Modalidad</label>
                                         <select
                                             value={editingConf.type || 'presencial'}
-                                            onChange={e => setEditingConf({ ...editingConf, type: e.target.value as any })}
+                                            onChange={e => setEditingConf({
+                                                ...editingConf,
+                                                type: e.target.value as any
+                                            })}
                                             className="admin-select"
                                         >
                                             <option value="presencial">Presencial</option>
@@ -2452,7 +3481,7 @@ export default function Admin() {
                                         <label>Ubicación</label>
                                         <select
                                             value={editingConf.location}
-                                            onChange={e => setEditingConf({ ...editingConf, location: e.target.value })}
+                                            onChange={e => setEditingConf({...editingConf, location: e.target.value})}
                                             required
                                             className="admin-select"
                                         >
@@ -2467,7 +3496,10 @@ export default function Admin() {
                                             <input
                                                 type="url"
                                                 value={editingConf.virtualLink || ''}
-                                                onChange={e => setEditingConf({ ...editingConf, virtualLink: e.target.value })}
+                                                onChange={e => setEditingConf({
+                                                    ...editingConf,
+                                                    virtualLink: e.target.value
+                                                })}
                                                 placeholder="https://zoom.us/j/..."
                                                 required
                                             />
@@ -2477,10 +3509,11 @@ export default function Admin() {
                                         <label>Carrera Afín</label>
                                         <select
                                             value={editingConf.career}
-                                            onChange={e => setEditingConf({ ...editingConf, career: e.target.value })}
+                                            onChange={e => setEditingConf({...editingConf, career: e.target.value})}
                                             className="admin-select"
                                         >
-                                            <option value="Administración de Empresas">Administración de Empresas</option>
+                                            <option value="Administración de Empresas">Administración de Empresas
+                                            </option>
                                             <option value="Arquitectura">Arquitectura</option>
                                             <option value="Derecho">Derecho</option>
                                             <option value="Economía">Economía</option>
@@ -2493,12 +3526,13 @@ export default function Admin() {
                                             <option value="General">General / Todas</option>
                                         </select>
                                     </div>
-                                    <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                                    <div className="form-row"
+                                         style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem'}}>
                                         <div className="form-group">
                                             <label>Día</label>
                                             <select
                                                 value={editingConf.dayId || 'day1'}
-                                                onChange={e => setEditingConf({ ...editingConf, dayId: e.target.value })}
+                                                onChange={e => setEditingConf({...editingConf, dayId: e.target.value})}
                                                 className="admin-select"
                                             >
                                                 {agendaDays.map(day => (
@@ -2511,7 +3545,10 @@ export default function Admin() {
                                             <input
                                                 type="time"
                                                 value={editingConf.startTime || '09:00'}
-                                                onChange={e => setEditingConf({ ...editingConf, startTime: e.target.value })}
+                                                onChange={e => setEditingConf({
+                                                    ...editingConf,
+                                                    startTime: e.target.value
+                                                })}
                                             />
                                         </div>
                                         <div className="form-group">
@@ -2519,17 +3556,24 @@ export default function Admin() {
                                             <input
                                                 type="time"
                                                 value={editingConf.endTime || '10:00'}
-                                                onChange={e => setEditingConf({ ...editingConf, endTime: e.target.value })}
+                                                onChange={e => setEditingConf({
+                                                    ...editingConf,
+                                                    endTime: e.target.value
+                                                })}
                                             />
                                         </div>
                                     </div>
-                                    <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                    <div className="form-row"
+                                         style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem'}}>
                                         <div className="form-group">
                                             <label>🔗 Enlace Externo</label>
                                             <input
                                                 type="text"
                                                 value={editingConf.documentUrl || ''}
-                                                onChange={e => setEditingConf({ ...editingConf, documentUrl: e.target.value })}
+                                                onChange={e => setEditingConf({
+                                                    ...editingConf,
+                                                    documentUrl: e.target.value
+                                                })}
                                             />
                                         </div>
                                         <div className="form-group">
@@ -2542,9 +3586,12 @@ export default function Admin() {
                                                         setIsLoading(true);
                                                         try {
                                                             if (file.type.startsWith("image/")) {
-                                                                const { compressImage } = await import("../utils/imageCompressor");
+                                                                const {compressImage} = await import("../utils/imageCompressor");
                                                                 const compressed = await compressImage(file, 1200, 1200, 0.7);
-                                                                setEditingConf({ ...editingConf, documentFile: compressed });
+                                                                setEditingConf({
+                                                                    ...editingConf,
+                                                                    documentFile: compressed
+                                                                });
                                                             } else {
                                                                 // Pausa diminuta para que el navegador pinte la animación "Procesando"
                                                                 await new Promise(r => setTimeout(r, 50));
@@ -2554,7 +3601,10 @@ export default function Admin() {
                                                                     reader.onerror = reject;
                                                                     reader.readAsDataURL(file);
                                                                 });
-                                                                setEditingConf({ ...editingConf, documentFile: base64Data });
+                                                                setEditingConf({
+                                                                    ...editingConf,
+                                                                    documentFile: base64Data
+                                                                });
                                                             }
                                                         } catch (err) {
                                                             console.error("Error procesando archivo", err);
@@ -2571,12 +3621,17 @@ export default function Admin() {
                                         <textarea
                                             rows={3}
                                             value={editingConf.description}
-                                            onChange={e => setEditingConf({ ...editingConf, description: e.target.value })}
+                                            onChange={e => setEditingConf({
+                                                ...editingConf,
+                                                description: e.target.value
+                                            })}
                                         />
                                     </div>
                                     <div className="modal-actions">
                                         <button type="submit" className="btn-submit">Guardar Cambios</button>
-                                        <button type="button" className="btn-logout" onClick={() => setEditingConf(null)}>Cancelar</button>
+                                        <button type="button" className="btn-logout"
+                                                onClick={() => setEditingConf(null)}>Cancelar
+                                        </button>
                                     </div>
                                 </form>
                             </div>
@@ -2585,7 +3640,7 @@ export default function Admin() {
 
                     {editingSpeaker && (
                         <div className="modal-overlay fade-in">
-                            <div className="modal-content" style={{ maxWidth: '400px' }}>
+                            <div className="modal-content" style={{maxWidth: '400px'}}>
                                 <h3>👤 Editar Información del Invitado</h3>
                                 <form onSubmit={handleSaveSpeakerEdit}>
                                     <div className="form-group">
@@ -2593,7 +3648,10 @@ export default function Admin() {
                                         <input
                                             type="text"
                                             value={editingSpeaker.nombre || editingSpeaker.name || ''}
-                                            onChange={e => setEditingSpeaker({ ...editingSpeaker, nombre: e.target.value })}
+                                            onChange={e => setEditingSpeaker({
+                                                ...editingSpeaker,
+                                                nombre: e.target.value
+                                            })}
                                             required
                                         />
                                     </div>
@@ -2602,7 +3660,10 @@ export default function Admin() {
                                         <input
                                             type="text"
                                             value={editingSpeaker.organizacion || editingSpeaker.organization || ''}
-                                            onChange={e => setEditingSpeaker({ ...editingSpeaker, organizacion: e.target.value })}
+                                            onChange={e => setEditingSpeaker({
+                                                ...editingSpeaker,
+                                                organizacion: e.target.value
+                                            })}
                                             required
                                         />
                                     </div>
@@ -2611,13 +3672,18 @@ export default function Admin() {
                                         <textarea
                                             rows={4}
                                             value={editingSpeaker.bio || ''}
-                                            onChange={e => setEditingSpeaker({ ...editingSpeaker, bio: e.target.value })}
+                                            onChange={e => setEditingSpeaker({...editingSpeaker, bio: e.target.value})}
                                             required
                                         ></textarea>
                                     </div>
                                     <div className="modal-actions">
-                                        <button type="submit" className="btn-save" style={{ background: 'var(--primary-color)', color: 'white' }}>Actualizar Datos</button>
-                                        <button type="button" className="btn-logout" onClick={() => setEditingSpeaker(null)}>Cancelar</button>
+                                        <button type="submit" className="btn-save"
+                                                style={{background: 'var(--primary-color)', color: 'white'}}>Actualizar
+                                            Datos
+                                        </button>
+                                        <button type="button" className="btn-logout"
+                                                onClick={() => setEditingSpeaker(null)}>Cancelar
+                                        </button>
                                     </div>
                                 </form>
                             </div>
@@ -2631,36 +3697,46 @@ export default function Admin() {
                                 <p>Administra los perfiles de todos los participantes y roles asignados.</p>
                             </div>
 
-                            <div className="table-responsive premium-card" style={{ marginTop: '2rem', background: 'white', padding: '1.5rem', borderRadius: '16px' }}>
+                            <div className="table-responsive premium-card" style={{
+                                marginTop: '2rem',
+                                background: 'white',
+                                padding: '1.5rem',
+                                borderRadius: '16px'
+                            }}>
                                 <table className="admin-table">
                                     <thead>
-                                        <tr>
-                                            <th>Nombre Completo</th>
-                                            <th>Correo Electrónico</th>
-                                            <th>Rol</th>
-                                            <th>Carrera</th>
-                                            <th>Fecha Registro</th>
-                                        </tr>
+                                    <tr>
+                                        <th>Nombre Completo</th>
+                                        <th>Correo Electrónico</th>
+                                        <th>Rol</th>
+                                        <th>Carrera</th>
+                                        <th>Fecha Registro</th>
+                                    </tr>
                                     </thead>
                                     <tbody>
-                                        {registeredUsers.length > 0 ? (
-                                            registeredUsers.map((u: any) => (
-                                                <tr key={u.id}>
-                                                    <td style={{ fontWeight: '600', color: 'var(--primary-color)' }}>{u.nombre_completo}</td>
-                                                    <td>{u.email || "—"}</td>
-                                                    <td><span className={`badge-role ${u.rol.toLowerCase()}`}>{u.rol}</span></td>
-                                                    <td>{u.carrera || "N/A"}</td>
-                                                    <td style={{ color: '#888' }}>{new Date(u.created_at).toLocaleDateString()}</td>
-                                                </tr>
-                                            ))
-                                        ) : (
-                                            <tr>
-                                                <td colSpan={5} style={{ textAlign: "center", padding: "3rem", color: "#666" }}>
-                                                    <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🔍</div>
-                                                    No se encontraron usuarios registrados.
+                                    {registeredUsers.length > 0 ? (
+                                        registeredUsers.map((u: any) => (
+                                            <tr key={u.id}>
+                                                <td style={{
+                                                    fontWeight: '600',
+                                                    color: 'var(--primary-color)'
+                                                }}>{u.nombre_completo}</td>
+                                                <td>{u.email || "—"}</td>
+                                                <td><span className={`badge-role ${u.rol.toLowerCase()}`}>{u.rol}</span>
                                                 </td>
+                                                <td>{u.carrera || "N/A"}</td>
+                                                <td style={{color: '#888'}}>{new Date(u.created_at).toLocaleDateString()}</td>
                                             </tr>
-                                        )}
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan={5}
+                                                style={{textAlign: "center", padding: "3rem", color: "#666"}}>
+                                                <div style={{fontSize: '2rem', marginBottom: '1rem'}}>🔍</div>
+                                                No se encontraron usuarios registrados.
+                                            </td>
+                                        </tr>
+                                    )}
                                     </tbody>
                                 </table>
                             </div>
@@ -2669,42 +3745,85 @@ export default function Admin() {
 
                     {activeTab === "performance" && userRole === "SUPER_ADMIN" && (
                         <div className="admin-view fade-in">
-                            <div className="view-header" style={{ marginBottom: '2rem' }}>
+                            <div className="view-header" style={{marginBottom: '2rem'}}>
                                 <h2>⏱️ Inteligencia de Rendimiento Avanzada</h2>
-                                <p>Análisis estadístico (Media, Moda, Mediana) y carga granular de imágenes por sección.</p>
+                                <p>Análisis estadístico (Media, Moda, Mediana) y carga granular de imágenes por
+                                    sección.</p>
                             </div>
 
                             {/* Resumen Global Rápido */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-                                <div className="premium-card" style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', textAlign: 'center' }}>
-                                    <h4 style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>CARGA GLOBAL MEDIA</h4>
-                                    <p style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: '5px 0', color: 'var(--primary-color)' }}>
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 1fr 1fr',
+                                gap: '1.5rem',
+                                marginBottom: '2rem'
+                            }}>
+                                <div className="premium-card" style={{
+                                    background: '#f8fafc',
+                                    padding: '1rem',
+                                    borderRadius: '12px',
+                                    textAlign: 'center'
+                                }}>
+                                    <h4 style={{margin: 0, fontSize: '0.8rem', color: '#64748b'}}>CARGA GLOBAL
+                                        MEDIA</h4>
+                                    <p style={{
+                                        fontSize: '1.5rem',
+                                        fontWeight: 'bold',
+                                        margin: '5px 0',
+                                        color: 'var(--primary-color)'
+                                    }}>
                                         {Math.round(getLoadTimeStats().reduce((acc: number, curr: any) => acc + curr.value, 0) / (getLoadTimeStats().length || 1))} ms
                                     </p>
                                 </div>
-                                <div className="premium-card" style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', textAlign: 'center' }}>
-                                    <h4 style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>PESO TOTAL ASSETS</h4>
-                                    <p style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: '5px 0', color: '#059669' }}>
+                                <div className="premium-card" style={{
+                                    background: '#f8fafc',
+                                    padding: '1rem',
+                                    borderRadius: '12px',
+                                    textAlign: 'center'
+                                }}>
+                                    <h4 style={{margin: 0, fontSize: '0.8rem', color: '#64748b'}}>PESO TOTAL ASSETS</h4>
+                                    <p style={{
+                                        fontSize: '1.5rem',
+                                        fontWeight: 'bold',
+                                        margin: '5px 0',
+                                        color: '#059669'
+                                    }}>
                                         {getResourceSizeStats().reduce((acc: number, curr: any) => acc + curr.value, 0)} KB
                                     </p>
                                 </div>
-                                <div className="premium-card" style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', textAlign: 'center' }}>
-                                    <h4 style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>IMÁGENES CRÍTICAS</h4>
-                                    <p style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: '5px 0', color: '#dc2626' }}>
+                                <div className="premium-card" style={{
+                                    background: '#f8fafc',
+                                    padding: '1rem',
+                                    borderRadius: '12px',
+                                    textAlign: 'center'
+                                }}>
+                                    <h4 style={{margin: 0, fontSize: '0.8rem', color: '#64748b'}}>IMÁGENES CRÍTICAS</h4>
+                                    <p style={{
+                                        fontSize: '1.5rem',
+                                        fontWeight: 'bold',
+                                        margin: '5px 0',
+                                        color: '#dc2626'
+                                    }}>
                                         {getImageLoadStats().filter(i => i.value > 500).length} Lentas
                                     </p>
                                 </div>
                             </div>
 
                             {/* Selector de Pestaña de Página */}
-                            <div className="perf-page-selector" style={{ display: 'flex', gap: '8px', marginBottom: '2rem', overflowX: 'auto', paddingBottom: '10px' }}>
+                            <div className="perf-page-selector" style={{
+                                display: 'flex',
+                                gap: '8px',
+                                marginBottom: '2rem',
+                                overflowX: 'auto',
+                                paddingBottom: '10px'
+                            }}>
                                 {[
-                                    { id: "/", label: "Inicio", icon: "🏠" },
-                                    { id: "/invitados", label: "Invitados", icon: "👥" },
-                                    { id: "/conferencias", label: "Agenda", icon: "📅" },
-                                    { id: "/perfil", label: "Perfil", icon: "👤" },
-                                    { id: "/login", label: "Auth (Sesión)", icon: "🔐" },
-                                    { id: "/registro", label: "Registro", icon: "📝" }
+                                    {id: "/", label: "Inicio", icon: "🏠"},
+                                    {id: "/invitados", label: "Invitados", icon: "👥"},
+                                    {id: "/conferencias", label: "Agenda", icon: "📅"},
+                                    {id: "/perfil", label: "Perfil", icon: "👤"},
+                                    {id: "/login", label: "Auth (Sesión)", icon: "🔐"},
+                                    {id: "/registro", label: "Registro", icon: "📝"}
                                 ].map(p => (
                                     <button
                                         key={p.id}
@@ -2729,64 +3848,100 @@ export default function Admin() {
                             {(() => {
                                 const stats = getAdvancedStatsByPage(selectedPerfPage);
                                 return (
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                            <div className="premium-card" style={{ background: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-                                                <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>📊 Estadísticas Vitales</h3>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                        <span style={{ color: '#64748b' }}>Media (Promedio):</span>
-                                                        <span style={{ fontWeight: 'bold' }}>{stats.mean} ms</span>
+                                    <div style={{display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem'}}>
+                                        <div style={{display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
+                                            <div className="premium-card" style={{
+                                                background: 'white',
+                                                padding: '1.5rem',
+                                                borderRadius: '16px',
+                                                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
+                                            }}>
+                                                <h3 style={{
+                                                    fontSize: '1.1rem',
+                                                    marginBottom: '1.5rem',
+                                                    borderBottom: '1px solid #eee',
+                                                    paddingBottom: '10px'
+                                                }}>📊 Estadísticas Vitales</h3>
+                                                <div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
+                                                    <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                                                        <span style={{color: '#64748b'}}>Media (Promedio):</span>
+                                                        <span style={{fontWeight: 'bold'}}>{stats.mean} ms</span>
                                                     </div>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                        <span style={{ color: '#64748b' }}>Mediana (Punto Medio):</span>
-                                                        <span style={{ fontWeight: 'bold' }}>{stats.median} ms</span>
+                                                    <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                                                        <span style={{color: '#64748b'}}>Mediana (Punto Medio):</span>
+                                                        <span style={{fontWeight: 'bold'}}>{stats.median} ms</span>
                                                     </div>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                        <span style={{ color: '#64748b' }}>Moda (Frecuencia):</span>
-                                                        <span style={{ fontWeight: 'bold' }}>{stats.mode} ms</span>
+                                                    <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                                                        <span style={{color: '#64748b'}}>Moda (Frecuencia):</span>
+                                                        <span style={{fontWeight: 'bold'}}>{stats.mode} ms</span>
                                                     </div>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed #eee' }}>
-                                                        <span style={{ color: '#64748b' }}>Muestra:</span>
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        marginTop: '10px',
+                                                        paddingTop: '10px',
+                                                        borderTop: '1px dashed #eee'
+                                                    }}>
+                                                        <span style={{color: '#64748b'}}>Muestra:</span>
                                                         <span>{stats.count} registros</span>
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <div className="premium-card" style={{ background: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-                                                <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>📈 Carga por Recursos</h3>
-                                                <div style={{ width: '100%', height: 200 }}>
+                                            <div className="premium-card" style={{
+                                                background: 'white',
+                                                padding: '1.5rem',
+                                                borderRadius: '16px',
+                                                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
+                                            }}>
+                                                <h3 style={{fontSize: '1.1rem', marginBottom: '1rem'}}>📈 Carga por
+                                                    Recursos</h3>
+                                                <div style={{width: '100%', height: 200}}>
                                                     <ResponsiveContainer>
                                                         <PieChart>
-                                                            <Pie data={getResourceSizeStats()} innerRadius={50} outerRadius={70} dataKey="value">
+                                                            <Pie data={getResourceSizeStats()} innerRadius={50}
+                                                                 outerRadius={70} dataKey="value">
                                                                 {getResourceSizeStats().map((_, idx) => (
-                                                                    <Cell key={`cell-${idx}`} fill={['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b'][idx % 4]} />
+                                                                    <Cell key={`cell-${idx}`}
+                                                                          fill={['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b'][idx % 4]}/>
                                                                 ))}
                                                             </Pie>
-                                                            <Tooltip />
+                                                            <Tooltip/>
                                                         </PieChart>
                                                     </ResponsiveContainer>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="premium-card" style={{ background: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-                                            <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem' }}>🖼️ Tiempo de Carga de Imágenes ({selectedPerfPage})</h3>
-                                            <div className="table-responsive" style={{ maxHeight: '450px', overflowY: 'auto' }}>
+                                        <div className="premium-card" style={{
+                                            background: 'white',
+                                            padding: '1.5rem',
+                                            borderRadius: '16px',
+                                            boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
+                                        }}>
+                                            <h3 style={{fontSize: '1.1rem', marginBottom: '1.5rem'}}>🖼️ Tiempo de Carga
+                                                de Imágenes ({selectedPerfPage})</h3>
+                                            <div className="table-responsive"
+                                                 style={{maxHeight: '450px', overflowY: 'auto'}}>
                                                 <table className="admin-table">
                                                     <thead>
-                                                        <tr>
-                                                            <th>Nombre del Recurso</th>
-                                                            <th>Demora</th>
-                                                            <th>Evaluación</th>
-                                                        </tr>
+                                                    <tr>
+                                                        <th>Nombre del Recurso</th>
+                                                        <th>Demora</th>
+                                                        <th>Evaluación</th>
+                                                    </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {stats.images.length > 0 ? stats.images.map((img, idx) => (
-                                                            <tr key={idx}>
-                                                                <td style={{ fontSize: '0.8rem', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{img.name}</td>
-                                                                <td style={{ fontWeight: 'bold' }}>{img.duration} ms</td>
-                                                                <td>
+                                                    {stats.images.length > 0 ? stats.images.map((img, idx) => (
+                                                        <tr key={idx}>
+                                                            <td style={{
+                                                                fontSize: '0.8rem',
+                                                                maxWidth: '200px',
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis'
+                                                            }}>{img.name}</td>
+                                                            <td style={{fontWeight: 'bold'}}>{img.duration} ms</td>
+                                                            <td>
                                                                     <span style={{
                                                                         padding: '2px 8px',
                                                                         borderRadius: '10px',
@@ -2796,11 +3951,18 @@ export default function Admin() {
                                                                     }}>
                                                                         {img.duration < 150 ? 'Excelente' : img.duration < 400 ? 'Normal' : 'Crítico'}
                                                                     </span>
-                                                                </td>
-                                                            </tr>
-                                                        )) : (
-                                                            <tr><td colSpan={3} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Navega a esta pestaña para recolectar datos de imágenes.</td></tr>
-                                                        )}
+                                                            </td>
+                                                        </tr>
+                                                    )) : (
+                                                        <tr>
+                                                            <td colSpan={3} style={{
+                                                                textAlign: 'center',
+                                                                padding: '2rem',
+                                                                color: '#94a3b8'
+                                                            }}>Navega a esta pestaña para recolectar datos de imágenes.
+                                                            </td>
+                                                        </tr>
+                                                    )}
                                                     </tbody>
                                                 </table>
                                             </div>
@@ -2812,7 +3974,7 @@ export default function Admin() {
                     )}
 
                 </section>
-            </div >
+            </div>
 
             {/* ── MODAL: EDITAR INVITADO ── */}
             {
@@ -2825,55 +3987,103 @@ export default function Admin() {
                             background: 'white', borderRadius: '16px', padding: '2rem',
                             width: '100%', maxWidth: '520px', boxShadow: '0 20px 50px rgba(0,0,0,0.3)'
                         }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                <h3 style={{ margin: 0, fontSize: '1.3rem', color: '#1e293b' }}>✏️ Editar Invitado</h3>
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: '1.5rem'
+                            }}>
+                                <h3 style={{margin: 0, fontSize: '1.3rem', color: '#1e293b'}}>✏️ Editar Invitado</h3>
                                 <button onClick={() => setEditingSpeaker(null)} style={{
-                                    background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#94a3b8'
-                                }}>✕</button>
+                                    background: 'none',
+                                    border: 'none',
+                                    fontSize: '1.5rem',
+                                    cursor: 'pointer',
+                                    color: '#94a3b8'
+                                }}>✕
+                                </button>
                             </div>
 
-                            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+                            <div style={{display: 'flex', justifyContent: 'center', marginBottom: '1.5rem'}}>
                                 <img
                                     src={editingSpeaker.avatar_url || editingSpeaker.avatar || '/default-avatar.png'}
                                     alt="Preview"
-                                    style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #2563eb' }}
+                                    style={{
+                                        width: '80px',
+                                        height: '80px',
+                                        borderRadius: '50%',
+                                        objectFit: 'cover',
+                                        border: '3px solid #2563eb'
+                                    }}
                                 />
                             </div>
 
-                            <form onSubmit={handleSaveSpeakerEdit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <form onSubmit={handleSaveSpeakerEdit}
+                                  style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
                                 <div className="form-group">
-                                    <label style={{ fontWeight: '600', color: '#374151', fontSize: '0.9rem' }}>Nombre Completo</label>
+                                    <label style={{fontWeight: '600', color: '#374151', fontSize: '0.9rem'}}>Nombre
+                                        Completo</label>
                                     <input
                                         type="text"
                                         required
                                         value={editingSpeaker.nombre || editingSpeaker.name || ''}
-                                        onChange={(e) => setEditingSpeaker({ ...editingSpeaker, nombre: e.target.value, name: e.target.value })}
-                                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem' }}
+                                        onChange={(e) => setEditingSpeaker({
+                                            ...editingSpeaker,
+                                            nombre: e.target.value,
+                                            name: e.target.value
+                                        })}
+                                        style={{
+                                            width: '100%',
+                                            padding: '10px 12px',
+                                            borderRadius: '8px',
+                                            border: '1px solid #d1d5db',
+                                            fontSize: '0.95rem'
+                                        }}
                                     />
                                 </div>
 
                                 <div className="form-group">
-                                    <label style={{ fontWeight: '600', color: '#374151', fontSize: '0.9rem' }}>Organización / Universidad</label>
+                                    <label style={{fontWeight: '600', color: '#374151', fontSize: '0.9rem'}}>Organización /
+                                        Universidad</label>
                                     <input
                                         type="text"
                                         value={editingSpeaker.organizacion || editingSpeaker.organization || ''}
-                                        onChange={(e) => setEditingSpeaker({ ...editingSpeaker, organizacion: e.target.value, organization: e.target.value })}
-                                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem' }}
+                                        onChange={(e) => setEditingSpeaker({
+                                            ...editingSpeaker,
+                                            organizacion: e.target.value,
+                                            organization: e.target.value
+                                        })}
+                                        style={{
+                                            width: '100%',
+                                            padding: '10px 12px',
+                                            borderRadius: '8px',
+                                            border: '1px solid #d1d5db',
+                                            fontSize: '0.95rem'
+                                        }}
                                     />
                                 </div>
 
                                 <div className="form-group">
-                                    <label style={{ fontWeight: '600', color: '#374151', fontSize: '0.9rem' }}>Bio / Perfil Profesional</label>
+                                    <label style={{fontWeight: '600', color: '#374151', fontSize: '0.9rem'}}>Bio / Perfil
+                                        Profesional</label>
                                     <textarea
                                         rows={3}
                                         value={editingSpeaker.bio || ''}
-                                        onChange={(e) => setEditingSpeaker({ ...editingSpeaker, bio: e.target.value })}
-                                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem', resize: 'vertical' }}
+                                        onChange={(e) => setEditingSpeaker({...editingSpeaker, bio: e.target.value})}
+                                        style={{
+                                            width: '100%',
+                                            padding: '10px 12px',
+                                            borderRadius: '8px',
+                                            border: '1px solid #d1d5db',
+                                            fontSize: '0.95rem',
+                                            resize: 'vertical'
+                                        }}
                                     />
                                 </div>
 
                                 <div className="form-group">
-                                    <label style={{ fontWeight: '600', color: '#374151', fontSize: '0.9rem' }}>Foto del Invitado (cambiar)</label>
+                                    <label style={{fontWeight: '600', color: '#374151', fontSize: '0.9rem'}}>Foto del
+                                        Invitado (cambiar)</label>
                                     <input
                                         type="file"
                                         accept="image/*"
@@ -2882,9 +4092,13 @@ export default function Admin() {
                                             if (file) {
                                                 setIsLoading(true);
                                                 try {
-                                                    const { compressImage } = await import("../utils/imageCompressor");
+                                                    const {compressImage} = await import("../utils/imageCompressor");
                                                     const compressed = await compressImage(file, 800, 800, 0.7);
-                                                    setEditingSpeaker({ ...editingSpeaker, avatar_url: compressed, avatar: compressed });
+                                                    setEditingSpeaker({
+                                                        ...editingSpeaker,
+                                                        avatar_url: compressed,
+                                                        avatar: compressed
+                                                    });
                                                 } catch (err) {
                                                     console.error(err);
                                                     toast.error("Error al procesar la imagen");
@@ -2893,11 +4107,11 @@ export default function Admin() {
                                                 }
                                             }
                                         }}
-                                        style={{ width: '100%' }}
+                                        style={{width: '100%'}}
                                     />
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                                <div style={{display: 'flex', gap: '1rem', marginTop: '0.5rem'}}>
                                     <button
                                         type="button"
                                         onClick={() => setEditingSpeaker(null)}
@@ -2941,6 +4155,6 @@ export default function Admin() {
                     color: white;
                 }
             `}</style>
-        </div >
+        </div>
     );
 }
