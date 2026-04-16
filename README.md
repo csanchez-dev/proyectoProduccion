@@ -1,4 +1,4 @@
-﻿# CONIITI 2026 - Plataforma de Gestión
+# CONIITI 2026 - Plataforma de Gestión
 
 Plataforma integral para la gestión del **Congreso Internacional de Innovación y Tendencias en Ingeniería (CONIITI) 2026**. Esta aplicación permite a los usuarios registrarse, inscribirse en conferencias y a los administradores gestionar ponentes, agenda y configuraciones globales.
 
@@ -7,24 +7,22 @@ Plataforma integral para la gestión del **Congreso Internacional de Innovación
 Sigue estos pasos para poner en marcha el proyecto en tu máquina local:
 
 ### 1. Requisitos Previos
-asegurate de tener instalado **Node.js** (v16+) en tu sistema.
+Asegúrate de tener instalado **Docker** y **Docker Compose** en tu sistema.
 
 ### 2. Comandos en el Terminal
 
-Abre tu terminal (PowerShell, CMD o Bash) en la raíz del proyecto y ejecuta:
+Abre tu terminal en la raíz del proyecto y ejecuta:
 
-```powershell.
-# Entrar a la carpeta del código
-cd vite-project
-
-# Instalar las librerías necesarias
-npm install
-
-# Iniciar el servidor local
-npm run dev
+```bash
+# Iniciar todos los servicios, bases de datos y Traefik (fondo)
+docker-compose up -d --build
 ```
 
-Una vez iniciado, abre la URL que aparece en pantalla (normalmente `http://localhost:5173`).
+Una vez iniciados los contenedores, la aplicación y los servicios estarán expuestos a través de **Traefik**:
+
+- **Frontend**: http://localhost
+- **Backend/API Gateway**: http://localhost/api
+- **Dashboard de Traefik**: http://localhost:8090
 
 ---
 

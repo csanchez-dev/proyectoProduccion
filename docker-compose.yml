@@ -1,0 +1,258 @@
+
+networks:
+  coniiti-net:
+    driver: bridge
+
+services:
+
+  # ===================================================================
+  # TRAEFIK — Reverse Proxy / Load Balancer
+  # Dashboard: http://localhost:8090
+  # ===================================================================
+  traefik:
+    image: traefik:v3.0
+    container_name: coniiti-traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"           # HTTP
+      - "443:443"         # HTTPS (para producción)
+      - "8090:8080"       # Dashboard de Traefik
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - traefik_logs:/logs
+    networks:
+      - coniiti-net
+    labels:
+      - "traefik.enable=true"
+      # Dashboard
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=web"
+
+  # ===================================================================
+  # BASES DE DATOS
+  # ===================================================================
+  postgres:
+    image: postgres:15
+    container_name: coniiti-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: coniiti_main
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - coniiti-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  notification-postgres:
+    image: postgres:16
+    container_name: coniiti-notification-postgres
+    environment:
+      POSTGRES_USER: notifications_user
+      POSTGRES_PASSWORD: notifications_pass
+      POSTGRES_DB: notifications_db
+    volumes:
+      - notification-postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5437:5432"
+    networks:
+      - coniiti-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notifications_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===================================================================
+  # REDIS
+  # ===================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: coniiti-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - coniiti-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===================================================================
+  # RABBITMQ
+  # ===================================================================
+  rabbitmq:
+    image: rabbitmq:4.0-management
+    container_name: coniiti-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    networks:
+      - coniiti-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===================================================================
+  # MICROSERVICIOS (comunicación interna — sin exposición directa)
+  # ===================================================================
+  auth-service:
+    build: ./services/auth-service
+    container_name: coniiti-auth
+    environment:
+      DB_HOST: postgres
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://user:password@rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - coniiti-net
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=false"   # Solo accesible vía backend gateway
+
+  agenda-service:
+    build: ./services/agenda-service
+    container_name: coniiti-agenda
+    environment:
+      DB_HOST: postgres
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - coniiti-net
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=false"
+
+  inscription-service:
+    build: ./services/inscription-service
+    container_name: coniiti-inscription
+    environment:
+      DB_HOST: postgres
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      RABBITMQ_URL: amqp://user:password@rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - coniiti-net
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=false"
+
+  notification-service:
+    build: ./services/notification-service
+    container_name: coniiti-notification
+    environment:
+      PORT: 4000
+      DB_HOST: notification-postgres
+      DB_PORT: 5432
+      DB_USER: notifications_user
+      DB_PASSWORD: notifications_pass
+      DB_NAME: notifications_db
+      RABBITMQ_URL: amqp://user:password@rabbitmq:5672
+    depends_on:
+      notification-postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - coniiti-net
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=false"
+
+  # ===================================================================
+  # BACKEND GATEWAY — Traefik lo expone en / api/*
+  # Acceso: http://localhost/api/*
+  # ===================================================================
+  backend:
+    build: ./services/backend
+    container_name: coniiti-backend-gateway
+    environment:
+      AUTH_SERVICE_URL: http://auth-service:3000
+      AGENDA_SERVICE_URL: http://agenda-service:3001
+      INSCRIPTION_SERVICE_URL: http://inscription-service:3002
+      NOTIFICATION_SERVICE_URL: http://notification-service:4000
+    depends_on:
+      - auth-service
+      - agenda-service
+      - inscription-service
+      - notification-service
+      - rabbitmq
+    networks:
+      - coniiti-net
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`localhost`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend.entrypoints=web"
+      - "traefik.http.routers.backend.middlewares=rate-limit@file,security-headers@file,compress@file"
+      - "traefik.http.services.backend.loadbalancer.server.port=3000"
+      # Health check interno de Traefik
+      - "traefik.http.services.backend.loadbalancer.healthcheck.path=/api/health"
+      - "traefik.http.services.backend.loadbalancer.healthcheck.interval=10s"
+
+  # ===================================================================
+  # FRONTEND — Traefik lo expone en /
+  # Acceso: http://localhost
+  # ===================================================================
+  frontend-app:
+    build: ./frontend/vite-project
+    container_name: coniiti-frontend
+    depends_on:
+      - backend
+    networks:
+      - coniiti-net
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`localhost`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.routers.frontend.priority=1"
+      - "traefik.http.routers.backend.priority=10"   # backend tiene mayor prioridad que frontend
+      - "traefik.http.routers.frontend.middlewares=compress@file"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+
+volumes:
+  postgres_data:
+  notification-postgres-data:
+  redis_data:
+  loki_data:
+  grafana_data:
+  traefik_logs:
