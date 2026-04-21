@@ -1,9 +1,9 @@
 import express from 'express'
 import cors from 'cors'
 
-import eventoRoutes from './routes/evento.routes'
-import ponenciaRoutes from './routes/ponencia.routes'
-import ponenteRoutes from './routes/ponente.routes'
+import eventoRoutes from './src/routes/evento.routes'
+import ponenciaRoutes from './src/routes/ponencia.routes'
+import ponenteRoutes from './src/routes/ponente.routes'
 
 const app = express()
 app.use(cors())

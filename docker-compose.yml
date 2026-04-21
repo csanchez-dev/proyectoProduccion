@@ -3,12 +3,40 @@ networks:
     driver: bridge
 
 services:
+  # ===================================================================
+  # TRAEFIK — Reverse Proxy / Load Balancer
+  # Dashboard: http://localhost:8090
+  # ===================================================================
+  traefik:
+    image: traefik:v3.0
+    container_name: coniiti-traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"           # HTTP
+      - "443:443"         # HTTPS (para producción)
+      - "8090:8080"       # Dashboard de Traefik
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - traefik_logs:/logs
+    networks:
+      - coniiti-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=web"
+
+  # ===================================================================
+  # BASES DE DATOS
+  # ===================================================================
   postgres:
     image: postgres:15
     container_name: coniiti-postgres
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
       POSTGRES_DB: coniiti_main
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -18,10 +46,14 @@ services:
       - coniiti-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
   notification-postgres:
     image: postgres:16
@@ -42,7 +74,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 150M
 
+  # ===================================================================
+  # REDIS
+  # ===================================================================
   redis:
     image: redis:7-alpine
     container_name: coniiti-redis
@@ -59,7 +98,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 64M
 
+  # ===================================================================
+  # RABBITMQ
+  # ===================================================================
   rabbitmq:
     image: rabbitmq:4.0-management
     container_name: coniiti-rabbitmq
@@ -77,7 +123,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
+  # ===================================================================
+  # MICROSERVICIOS (comunicación interna — sin exposición directa)
+  # ===================================================================
   auth-service:
     build: ./services/auth-service
     container_name: coniiti-auth
@@ -85,10 +138,11 @@ services:
       - .env.auth
     environment:
       DB_HOST: postgres
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
       REDIS_URL: redis://redis:6379
       RABBITMQ_URL: amqp://user:password@rabbitmq:5672
+      NODE_OPTIONS: "--max-old-space-size=128"
     depends_on:
       postgres:
         condition: service_healthy
@@ -99,29 +153,43 @@ services:
     networks:
       - coniiti-net
     restart: unless-stopped
+    labels:
+      - "traefik.enable=false"
+    deploy:
+      resources:
+        limits:
+          memory: 150M
 
   agenda-service:
     build: ./services/agenda-service
     container_name: coniiti-agenda
     environment:
       DB_HOST: postgres
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      NODE_OPTIONS: "--max-old-space-size=128"
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - coniiti-net
     restart: unless-stopped
+    labels:
+      - "traefik.enable=false"
+    deploy:
+      resources:
+        limits:
+          memory: 150M
 
   inscription-service:
     build: ./services/inscription-service
     container_name: coniiti-inscription
     environment:
       DB_HOST: postgres
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
       RABBITMQ_URL: amqp://user:password@rabbitmq:5672
+      NODE_OPTIONS: "--max-old-space-size=128"
     depends_on:
       postgres:
         condition: service_healthy
@@ -130,9 +198,15 @@ services:
     networks:
       - coniiti-net
     restart: unless-stopped
+    labels:
+      - "traefik.enable=false"
+    deploy:
+      resources:
+        limits:
+          memory: 150M
 
   notification-service:
-    build: ./notification-service
+    build: ./services/notification-service
     container_name: coniiti-notification
     environment:
       PORT: 4000
@@ -142,6 +216,7 @@ services:
       DB_PASSWORD: notifications_pass
       DB_NAME: notifications_db
       RABBITMQ_URL: amqp://user:password@rabbitmq:5672
+      NODE_OPTIONS: "--max-old-space-size=128"
     depends_on:
       notification-postgres:
         condition: service_healthy
@@ -150,24 +225,85 @@ services:
     networks:
       - coniiti-net
     restart: unless-stopped
+    labels:
+      - "traefik.enable=false"
+    deploy:
+      resources:
+        limits:
+          memory: 150M
+
+  # ===================================================================
+  # BACKEND GATEWAY — Traefik lo expone en / api/*
+  # ===================================================================
+  backend:
+    build: ./services/backend
+    container_name: coniiti-backend-gateway
+    environment:
+      AUTH_SERVICE_URL: http://auth-service:3000
+      AGENDA_SERVICE_URL: http://agenda-service:3001
+      INSCRIPTION_SERVICE_URL: http://inscription-service:3002
+      NOTIFICATION_SERVICE_URL: http://notification-service:4000
+      NODE_OPTIONS: "--max-old-space-size=128"
+    depends_on:
+      - auth-service
+      - agenda-service
+      - inscription-service
+      - notification-service
+      - rabbitmq
+    networks:
+      - coniiti-net
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`localhost`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend.entrypoints=web"
+      - "traefik.http.routers.backend.middlewares=rate-limit@file,security-headers@file,compress@file"
+      - "traefik.http.services.backend.loadbalancer.server.port=3000"
+      - "traefik.http.services.backend.loadbalancer.healthcheck.path=/api/health"
+      - "traefik.http.services.backend.loadbalancer.healthcheck.interval=10s"
+    deploy:
+      resources:
+        limits:
+          memory: 150M
+
+  # ===================================================================
+  # FRONTEND — Traefik lo expone en /
+  # ===================================================================
+  frontend-app:
+    build: ./frontend/vite-project
+    container_name: coniiti-frontend
+    depends_on:
+      - backend
+    networks:
+      - coniiti-net
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`localhost`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.routers.frontend.priority=1"
+      - "traefik.http.routers.backend.priority=10"
+      - "traefik.http.routers.frontend.middlewares=compress@file"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+    deploy:
+      resources:
+        limits:
+          memory: 100M
 
   nginx:
     image: nginx:alpine
     container_name: coniiti-nginx
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      # Si tienes el build del frontend, descomenta la siguiente línea:
-      # - ./frontend/vite-project/dist:/usr/share/nginx/html:ro
     ports:
-      - "80:80"
-    depends_on:
-      - auth-service
-      - agenda-service
-      - inscription-service
-      - notification-service
+      - "8081:80"
     networks:
       - coniiti-net
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 50M
 
   loki:
     image: grafana/loki:2.9.0
@@ -179,6 +315,10 @@ services:
     networks:
       - coniiti-net
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 150M
 
   promtail:
     image: grafana/promtail:2.9.0
@@ -193,12 +333,16 @@ services:
     networks:
       - coniiti-net
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 100M
 
   grafana:
     image: grafana/grafana:10.1.0
     container_name: coniiti-grafana
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
     volumes:
       - grafana_data:/var/lib/grafana
     ports:
@@ -208,6 +352,10 @@ services:
     networks:
       - coniiti-net
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 150M
 
 volumes:
   postgres_data:
@@ -215,3 +363,4 @@ volumes:
   redis_data:
   loki_data:
   grafana_data:
+  traefik_logs:

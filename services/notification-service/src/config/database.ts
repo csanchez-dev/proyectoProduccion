@@ -12,10 +12,9 @@ const pool = new Pool({
 export async function connectDatabase(): Promise<void> {
   try {
     const client = await pool.connect();
-
     await client.query(`
       CREATE TABLE IF NOT EXISTS notifications (
-        id UUID PRIMARY KEY,
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         type VARCHAR(100) NOT NULL,
         title VARCHAR(255) NOT NULL,
         message TEXT NOT NULL,
@@ -23,12 +22,10 @@ export async function connectDatabase(): Promise<void> {
         read BOOLEAN NOT NULL DEFAULT FALSE
       );
     `);
-
     client.release();
     console.log('Connected to PostgreSQL and notifications table ready');
   } catch (error) {
-    console.error('Error connecting to PostgreSQL:', error);
-    process.exit(1);
+    console.warn('[DB] No se pudo conectar a PostgreSQL. El servicio seguirá intentando en segundo plano.');
   }
 }
 

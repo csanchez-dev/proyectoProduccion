@@ -1,17 +1,18 @@
-# Dockerfile - agenda-service
-FROM node:22.14.0
-
+FROM node:22.14.0-alpine AS builder
+# Install dependencies for Prisma
+RUN apk add --no-cache openssl libc6-compat
 WORKDIR /app
-
-# Copiar package.json y package-lock.json para instalar dependencias
 COPY package*.json ./
-RUN npm install
-
-# Copiar todo el código
+# tsconfig.json might not be in the root of agenda-service, checking...
 COPY . .
+RUN npm install
+RUN DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy npx prisma generate
+RUN npm run build
 
-# Exponer el puerto del servicio
+FROM node:22.14.0-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --production
+COPY --from=builder /app/dist ./dist
 EXPOSE 3001
-
-# Comando para desarrollo
-CMD ["npx", "ts-node-dev", "--esm", "--respawn", "src/server.ts"]
+CMD ["npm", "start"]
