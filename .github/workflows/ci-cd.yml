@@ -15,7 +15,7 @@ jobs:
       - name: 2. Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           cache: 'npm'
 
       - name: 3. Instalar dependencias
@@ -23,12 +23,12 @@ jobs:
 
       - name: 4. Construir el proyecto (Build)
         # Esto genera la carpeta 'dist' o 'build' necesaria para producción
-        run: npm run build --if-present
+        run: npm run build --workspaces --if-present
 
       - name: 5. Desplegar en Azure App Service
         uses: azure/webapps-deploy@v2
         with:
-          # Aquí debes poner el nombre exacto de tu App Service en Azure
-          app-name: 'TU-NOMBRE-DE-APP-AQUI' 
+          # Nombre exacto del App Service en Azure
+          app-name: 'coniiti' 
           # Este perfil lo descargas desde el portal de Azure (Get Publish Profile)
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
