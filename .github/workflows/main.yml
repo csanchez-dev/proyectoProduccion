@@ -1,0 +1,22 @@
+name: Prueba de Conexion Azure
+on:
+  push:
+    branches: [ main, desarrollo-diseño ] # Se activa en main y desarrollo-diseño
+
+jobs:
+  test-azure-login:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del codigo
+        uses: actions/checkout@v3
+
+      - name: Login en Azure Container Registry
+        uses: azure/docker-login@v1
+        with:
+          login-server: coniitijlsmcd.azurecr.io
+          username: ConiitiJLSMCD
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Validar acceso al ACR
+        run: |
+          echo "Conexión exitosa al servidor coniitijlsmcd.azurecr.io"

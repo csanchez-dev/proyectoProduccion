@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? 'http://localhost:8000';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? 'test';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
     // Intentar obtener la sesión para el token

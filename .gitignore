@@ -29,6 +29,9 @@ logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+# Traefik access log (generado en runtime)
+traefik/logs/access.log
+!traefik/logs/.gitkeep
 
 # =========================
 # BASES DE DATOS LOCALES
