@@ -46,7 +46,7 @@ export default function Agenda() {
           console.info('[Agenda] Usando datos locales/mocks:', source.length, 'conferencias');
           setConferencesList(source);
         }
-      } catch (err) {
+      } catch (_err) {
         // Error de red o API: siempre usar localStorage o mocks
         const saved = localStorage.getItem("site_conferences");
         const parsed = saved ? JSON.parse(saved) : null;

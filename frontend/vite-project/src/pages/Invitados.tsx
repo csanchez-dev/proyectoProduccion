@@ -17,7 +17,7 @@ export default function Invitados() {
                     const parsed = saved ? JSON.parse(saved) : null;
                     setConferences((parsed && parsed.length > 0) ? parsed : initialConferences);
                 }
-            } catch (err) {
+            } catch (_err) {
                 const saved = localStorage.getItem("site_conferences");
                 const parsed = saved ? JSON.parse(saved) : null;
                 setConferences((parsed && parsed.length > 0) ? parsed : initialConferences);
