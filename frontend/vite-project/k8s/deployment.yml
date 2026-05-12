@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: frontend # <--- IMPORTANTE: El nombre que usaste en "docker build"
+        imagePullPolicy: Never # Fuerza a K8s a usar la imagen local
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+spec:
+  type: NodePort # O LoadBalancer si estás en la nube
+  selector:
+    app: vite-web
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30001 # Podrás entrar por localhost:30001
