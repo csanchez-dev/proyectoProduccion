@@ -3,19 +3,19 @@ kind: Deployment
 metadata:
   name: frontend-deployment
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
-      app: frontend
+      app: frontend-web
   template:
     metadata:
       labels:
-        app: frontend
+        app: frontend-web
     spec:
       containers:
-      - name: frontend
-        image: frontend # <--- IMPORTANTE: El nombre que usaste en "docker build"
-        imagePullPolicy: Never # Fuerza a K8s a usar la imagen local
+      - name: frontend-container
+        image: frontend-app:v1
+        imagePullPolicy: Never # Importante si usas un cluster local en Codespaces
         ports:
         - containerPort: 80
 ---
@@ -24,10 +24,11 @@ kind: Service
 metadata:
   name: frontend-service
 spec:
-  type: NodePort # O LoadBalancer si estás en la nube
+  type: NodePort
   selector:
-    app: vite-web
+    app: frontend-web
   ports:
-    - port: 80
-      targetPort: 80
-      nodePort: 30001 # Podrás entrar por localhost:30001
+    - protocol: TCP
+      port: 80         # Puerto del servicio
+      targetPort: 80    # El puerto que EXPOSE tu Dockerfile (Nginx)
+      nodePort: 30001   # El puerto externo
