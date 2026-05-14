@@ -1,0 +1,265 @@
+﻿Name:             auth-service-deployment-5475bbb7b7-fdqf9
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             desktop-control-plane/172.18.0.2
+Start Time:       Tue, 12 May 2026 13:25:19 -0500
+Labels:           app=auth-service
+                  pod-template-hash=5475bbb7b7
+Annotations:      <none>
+Status:           Pending
+IP:               10.244.0.6
+IPs:
+  IP:           10.244.0.6
+Controlled By:  ReplicaSet/auth-service-deployment-5475bbb7b7
+Containers:
+  auth-service:
+    Container ID:   
+    Image:          coniiti/auth-service:latest
+    Image ID:       
+    Port:           3000/TCP
+    Host Port:      0/TCP
+    State:          Waiting
+      Reason:       ImagePullBackOff
+    Ready:          False
+    Restart Count:  0
+    Limits:
+      cpu:     250m
+      memory:  256Mi
+    Requests:
+      cpu:     100m
+      memory:  128Mi
+    Environment Variables from:
+      auth-service-config   ConfigMap  Optional: false
+      auth-service-secrets  Secret     Optional: false
+    Environment:            <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-tvn46 (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True 
+  Initialized                 True 
+  Ready                       False 
+  ContainersReady             False 
+  PodScheduled                True 
+Volumes:
+  kube-api-access-tvn46:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason     Age                     From               Message
+  ----     ------     ----                    ----               -------
+  Normal   Scheduled  10m                     default-scheduler  Successfully assigned default/auth-service-deployment-5475bbb7b7-fdqf9 to desktop-control-plane
+  Normal   Pulling    6m56s (x5 over 10m)     kubelet            Pulling image "coniiti/auth-service:latest"
+  Warning  Failed     6m38s (x5 over 9m56s)   kubelet            Failed to pull image "coniiti/auth-service:latest": failed to pull and unpack image "docker.io/coniiti/auth-service:latest": failed to resolve reference "docker.io/coniiti/auth-service:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+  Warning  Failed     6m38s (x5 over 9m56s)   kubelet            Error: ErrImagePull
+  Warning  Failed     4m52s (x19 over 9m56s)  kubelet            Error: ImagePullBackOff
+  Normal   BackOff    4m25s (x21 over 9m56s)  kubelet            Back-off pulling image "coniiti/auth-service:latest"
+
+
+Name:             auth-service-deployment-5475bbb7b7-tzz55
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             desktop-control-plane/172.18.0.2
+Start Time:       Tue, 12 May 2026 13:25:19 -0500
+Labels:           app=auth-service
+                  pod-template-hash=5475bbb7b7
+Annotations:      <none>
+Status:           Pending
+IP:               10.244.0.7
+IPs:
+  IP:           10.244.0.7
+Controlled By:  ReplicaSet/auth-service-deployment-5475bbb7b7
+Containers:
+  auth-service:
+    Container ID:   
+    Image:          coniiti/auth-service:latest
+    Image ID:       
+    Port:           3000/TCP
+    Host Port:      0/TCP
+    State:          Waiting
+      Reason:       ImagePullBackOff
+    Ready:          False
+    Restart Count:  0
+    Limits:
+      cpu:     250m
+      memory:  256Mi
+    Requests:
+      cpu:     100m
+      memory:  128Mi
+    Environment Variables from:
+      auth-service-config   ConfigMap  Optional: false
+      auth-service-secrets  Secret     Optional: false
+    Environment:            <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-smpvn (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True 
+  Initialized                 True 
+  Ready                       False 
+  ContainersReady             False 
+  PodScheduled                True 
+Volumes:
+  kube-api-access-smpvn:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason     Age                     From               Message
+  ----     ------     ----                    ----               -------
+  Normal   Scheduled  10m                     default-scheduler  Successfully assigned default/auth-service-deployment-5475bbb7b7-tzz55 to desktop-control-plane
+  Normal   Pulling    6m56s (x5 over 10m)     kubelet            Pulling image "coniiti/auth-service:latest"
+  Warning  Failed     6m37s (x5 over 9m55s)   kubelet            Failed to pull image "coniiti/auth-service:latest": failed to pull and unpack image "docker.io/coniiti/auth-service:latest": failed to resolve reference "docker.io/coniiti/auth-service:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+  Warning  Failed     6m37s (x5 over 9m55s)   kubelet            Error: ErrImagePull
+  Warning  Failed     4m41s (x19 over 9m55s)  kubelet            Error: ImagePullBackOff
+  Normal   BackOff    4m18s (x21 over 9m55s)  kubelet            Back-off pulling image "coniiti/auth-service:latest"
+
+
+Name:             auth-service-deployment-849bc975c-xvbzb
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             desktop-control-plane/172.18.0.2
+Start Time:       Tue, 12 May 2026 13:31:43 -0500
+Labels:           app=auth-service
+                  pod-template-hash=849bc975c
+Annotations:      <none>
+Status:           Pending
+IP:               10.244.0.8
+IPs:
+  IP:           10.244.0.8
+Controlled By:  ReplicaSet/auth-service-deployment-849bc975c
+Containers:
+  auth-service:
+    Container ID:   
+    Image:          coniiti/auth-service:latest
+    Image ID:       
+    Port:           3000/TCP
+    Host Port:      0/TCP
+    State:          Waiting
+      Reason:       ImagePullBackOff
+    Ready:          False
+    Restart Count:  0
+    Limits:
+      cpu:     250m
+      memory:  256Mi
+    Requests:
+      cpu:     100m
+      memory:  128Mi
+    Environment Variables from:
+      auth-service-config   ConfigMap  Optional: false
+      auth-service-secrets  Secret     Optional: false
+    Environment:            <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-vp448 (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True 
+  Initialized                 True 
+  Ready                       False 
+  ContainersReady             False 
+  PodScheduled                True 
+Volumes:
+  kube-api-access-vp448:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason     Age                  From               Message
+  ----     ------     ----                 ----               -------
+  Normal   Scheduled  3m36s                default-scheduler  Successfully assigned default/auth-service-deployment-849bc975c-xvbzb to desktop-control-plane
+  Normal   Pulling    37s (x5 over 3m35s)  kubelet            Pulling image "coniiti/auth-service:latest"
+  Warning  Failed     36s (x5 over 3m34s)  kubelet            Failed to pull image "coniiti/auth-service:latest": failed to pull and unpack image "docker.io/coniiti/auth-service:latest": failed to resolve reference "docker.io/coniiti/auth-service:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+  Warning  Failed     36s (x5 over 3m34s)  kubelet            Error: ErrImagePull
+  Normal   BackOff    8s (x12 over 3m34s)  kubelet            Back-off pulling image "coniiti/auth-service:latest"
+  Warning  Failed     8s (x12 over 3m34s)  kubelet            Error: ImagePullBackOff
+
+
+Name:             postgres-deployment-5476ffcfd5-6prz5
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             desktop-control-plane/172.18.0.2
+Start Time:       Tue, 12 May 2026 13:25:18 -0500
+Labels:           app=postgres
+                  pod-template-hash=5476ffcfd5
+Annotations:      <none>
+Status:           Running
+IP:               10.244.0.5
+IPs:
+  IP:           10.244.0.5
+Controlled By:  ReplicaSet/postgres-deployment-5476ffcfd5
+Containers:
+  postgres:
+    Container ID:   containerd://68ef9ca39253cae1454d11caffa77c892608f288c13930fc6ef0cc26ba0933ca
+    Image:          postgres:15
+    Image ID:       docker.io/library/postgres@sha256:32016c79bea24c14917660106bc23a03341d94b9983aeb41f4130b4f3fbd6dd0
+    Port:           5432/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Tue, 12 May 2026 13:28:40 -0500
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     500m
+      memory:  256Mi
+    Requests:
+      cpu:     500m
+      memory:  256Mi
+    Environment:
+      POSTGRES_USER:      postgres
+      POSTGRES_PASSWORD:  postgres
+      POSTGRES_DB:        coniiti_main
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-x5cmh (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True 
+  Initialized                 True 
+  Ready                       True 
+  ContainersReady             True 
+  PodScheduled                True 
+Volumes:
+  kube-api-access-x5cmh:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   Guaranteed
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason     Age                     From               Message
+  ----     ------     ----                    ----               -------
+  Normal   Scheduled  10m                     default-scheduler  Successfully assigned default/postgres-deployment-5476ffcfd5-6prz5 to desktop-control-plane
+  Warning  Failed     8m32s (x4 over 9m57s)   kubelet            Failed to pull image "postgres:15": failed to pull and unpack image "docker.io/library/postgres:15": short read: expected 10237 bytes but got 0: unexpected EOF
+  Warning  Failed     8m32s (x4 over 9m57s)   kubelet            Error: ErrImagePull
+  Normal   BackOff    7m14s (x10 over 9m57s)  kubelet            Back-off pulling image "postgres:15"
+  Warning  Failed     7m14s (x10 over 9m57s)  kubelet            Error: ImagePullBackOff
+  Normal   Pulling    7m2s (x5 over 10m)      kubelet            Pulling image "postgres:15"
+  Normal   Pulled     6m39s                   kubelet            Successfully pulled image "postgres:15" in 22.727s (22.728s including waiting). Image size: 158060797 bytes.
+  Normal   Created    6m39s                   kubelet            Created container: postgres
+  Normal   Started    6m39s                   kubelet            Started container postgres

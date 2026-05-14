@@ -1,0 +1,106 @@
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+    <meta charset='utf-8'>
+    <title>Informe Técnico - Transición a Kubernetes</title>
+    <style>
+        body { font-family: 'Calibri', 'Arial', sans-serif; line-height: 1.6; color: #333; margin: 40px; }
+        h1 { color: #2E74B5; border-bottom: 3px solid #2E74B5; padding-bottom: 10px; margin-top: 30px; text-transform: uppercase; text-align: center; }
+        h2 { color: #2E74B5; border-bottom: 1px solid #D9D9D9; margin-top: 40px; padding-bottom: 5px; background-color: #F8F9FA; padding-left: 10px; }
+        h3 { color: #1F4E78; margin-top: 25px; border-left: 4px solid #2E74B5; padding-left: 15px; }
+        p, li { font-size: 11pt; text-align: justify; }
+        .section { margin-bottom: 30px; }
+        .highlight { background-color: #F4F7FB; padding: 20px; border: 1px solid #2E74B5; border-left: 10px solid #2E74B5; margin: 20px 0; border-radius: 4px; }
+        .code-block { font-family: 'Consolas', 'Courier New', monospace; background-color: #F2F2F2; padding: 15px; border: 1px solid #DDD; font-size: 9pt; margin: 10px 0; }
+        .footer { font-size: 9pt; color: #666; margin-top: 60px; border-top: 1px solid #EEE; padding-top: 15px; text-align: center; }
+        .badge { background-color: #2E74B5; color: white; padding: 2px 8px; border-radius: 10px; font-size: 9pt; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Taller: Transición a Infraestructura Orquestada (K8s)</h1>
+    <p><strong>Autor:</strong> David Artunduaga</p>
+    <p><strong>Proyecto:</strong> Coniiti 2026</p>
+    <p><strong>Infraestructura:</strong> Microservicios con Nginx Unified Gateway</p>
+
+    <div class="highlight">
+        <p><strong>Objetivo Técnico:</strong> Transformar el despliegue actual de microservicios independientes en una arquitectura orquestada y resiliente mediante Kubernetes, eliminando puntos únicos de fallo y automatizando el ciclo de vida de los servicios.</p>
+    </div>
+
+    <!-- 1. FASE TEÓRICA -->
+    <h2>1. Fase Teórica: Diagnóstico de la Arquitectura Actual</h2>
+    <div class="section">
+        <h3>1.1. Análisis de Escalabilidad Técnica</h3>
+        <p>En el modelo actual de Docker Compose, el escalado es <strong>vertical</strong> y <strong>manual</strong>. El proceso técnico requiere la ejecución del comando <span style="font-family: monospace; font-weight: bold;">docker-compose up --scale [servicio]=N</span>. </p>
+        <p><strong>Gestión del Balanceo:</strong> Se utiliza un único contenedor de <strong>Nginx</strong> configurado con bloques <em>upstream</em>. El balanceo de carga se realiza mediante el algoritmo <em>Round Robin</em>. Sin embargo, este esquema presenta una limitación crítica: Nginx debe ser recargado manualmente para reconocer nuevas instancias si el DNS interno no se actualiza dinámicamente, lo que genera una latencia en la disponibilidad de nuevas réplicas ante picos de demanda.</p>
+
+        <h3>1.2. Gestión de Fallos y Recuperación</h3>
+        <p>La resiliencia actual se basa exclusivamente en las políticas de reinicio de la capa de ejecución (Docker Engine):</p>
+        <ul>
+            <li><strong>Fallo de Contenedor:</strong> Gestionado por <span style="font-family: monospace;">restart: unless-stopped</span>. Si un microservicio como <em>auth-service</em> falla, Docker intenta reiniciarlo localmente.</li>
+            <li><strong>Fallo de Nodo:</strong> Ante una caída del servidor físico, el sistema no tiene capacidad de recuperación. <strong>No existe Alta Disponibilidad (HA)</strong> real, ya que no hay orquestación entre múltiples nodos físicos para mover las cargas de trabajo.</li>
+        </ul>
+
+        <h3>1.3. Configuración y Manejo de Secretos</h3>
+        <p>El manejo de variables sensibles se realiza mediante archivos <span style="font-family: monospace;">.env</span> inyectados en tiempo de ejecución. </p>
+        <p><strong>Evaluación de Seguridad:</strong> Nivel de riesgo <strong>MEDIO-ALTO</strong>. Las credenciales de bases de datos y APIs externas residen en texto plano dentro del sistema de archivos. No se cuenta con una bóveda de secretos cifrada ni con mecanismos de rotación automática, lo que expone al sistema ante posibles brechas de seguridad en el host.</p>
+    </div>
+
+    <!-- 2. FASE DE DISEÑO -->
+    <h2>2. Fase de Diseño: Especificación de Componentes K8s</h2>
+    <div class="section">
+        <h3>2.1. Deployments</h3>
+        <p>Se define un objeto <strong>Deployment</strong> para cada microservicio (Auth, Agenda, Inscription, Notification):</p>
+        <ul>
+            <li><strong>Réplicas:</strong> Se establecen <strong>2 réplicas mínimas</strong> por servicio para garantizar tolerancia a fallos.</li>
+            <li><strong>Estrategia de Actualización:</strong> <em>RollingUpdate</em> con <span style="font-family: monospace;">maxSurge: 1</span> y <span style="font-family: monospace;">maxUnavailable: 0</span>, asegurando disponibilidad continua durante despliegues de nuevas versiones.</li>
+        </ul>
+
+        <h3>2.2. Services</h3>
+        <ul>
+            <li><strong>ClusterIP:</strong> Utilizado para la intercomunicación <em>East-West</em> entre microservicios, proporcionando un balanceo de carga interno y descubrimiento de servicios mediante DNS.</li>
+            <li><strong>NodePort / LoadBalancer:</strong> Configurado para el punto de entrada del Ingress Controller, exponiendo el puerto 80/443 hacia la red externa.</li>
+        </ul>
+
+        <h3>2.3. Ingress Controller (Nginx)</h3>
+        <p>Se implementa <strong>Ingress Nginx</strong> como puerta de enlace de Capa 7. Las reglas de enrutamiento son:</p>
+        <ul>
+            <li><span class=badge>Ruta: /api/</span> &rarr; Backend Gateway Service (Puerto 3000)</li>
+            <li><span class=badge>Ruta: /</span> &rarr; Frontend App Service (Puerto 80)</li>
+        </ul>
+    </div>
+
+    <!-- 3. ENTREGABLE TÉCNICO -->
+    <h2>3. Entregable Técnico: Manifiestos YAML (Ejemplo Auth-Service)</h2>
+    <div class="section">
+        <p>Se adjuntan los archivos de configuración para el despliegue en un clúster local (Minikube/Docker Desktop):</p>
+        <div class="code-block">
+            apiVersion: apps/v1<br>
+            kind: Deployment<br>
+            metadata:<br>
+            &nbsp;&nbsp;name: auth-service<br>
+            spec:<br>
+            &nbsp;&nbsp;replicas: 2<br>
+            &nbsp;&nbsp;template:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;spec:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;containers:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- name: auth<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;resources:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;limits:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cpu: "250m"<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;memory: "256Mi"<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;envFrom:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- configMapRef: { name: auth-config }<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- secretRef: { name: auth-secrets }
+        </div>
+    </div>
+
+    <!-- 4. JUSTIFICACIÓN -->
+    <h2>4. Justificación de Implementación</h2>
+    <div class="highlight" style="border-left-color: #1F4E78;">
+        <p>La migración a Kubernetes es una decisión estratégica que transforma la infraestructura de un modelo estático a uno elástico y resiliente. Los beneficios inmediatos incluyen la <strong>disponibilidad del 99.9%</strong> gracias al <em>Self-healing</em> y al balanceo de carga nativo de K8s. En el ciclo CI/CD, Kubernetes estandariza el artefacto de despliegue, permitiendo que el mismo manifiesto se use en desarrollo, pruebas y producción sin cambios manuales. Aunque introduce una mayor complejidad técnica inicial, la relación costo-beneficio es altamente positiva: el tiempo de recuperación ante desastres se reduce drásticamente de minutos a segundos, y la utilización de recursos se optimiza mediante la gestión automatizada de contenedores, garantizando un entorno de producción robusto y escalable.</p>
+    </div>
+
+    <div class="footer">
+        <p>Generado por Antigravity AI - Proyecto CONIITI 2026</p>
+    </div>
+</body>
+</html>

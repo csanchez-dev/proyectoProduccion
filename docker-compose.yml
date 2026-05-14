@@ -4,29 +4,26 @@ networks:
 
 services:
   # ===================================================================
-  # TRAEFIK — Reverse Proxy / Load Balancer
-  # Dashboard: http://localhost:8090
+  # NGINX — UNIFIED REVERSE PROXY / LOAD BALANCER
   # ===================================================================
-  traefik:
-    image: traefik:v3.0
-    container_name: coniiti-traefik
-    restart: unless-stopped
-    ports:
-      - "80:80"           # HTTP
-      - "443:443"         # HTTPS (para producción)
-      - "8090:8080"       # Dashboard de Traefik
+  nginx:
+    image: nginx:alpine
+    container_name: coniiti-nginx
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
-      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
-      - traefik_logs:/logs
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"           # HTTP principal
+      - "443:443"         # HTTPS (preparado)
     networks:
       - coniiti-net
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.localhost`)"
-      - "traefik.http.routers.traefik-dashboard.service=api@internal"
-      - "traefik.http.routers.traefik-dashboard.entrypoints=web"
+    restart: unless-stopped
+    depends_on:
+      - frontend-app
+      - backend
+    deploy:
+      resources:
+        limits:
+          memory: 100M
 
   # ===================================================================
   # BASES DE DATOS
@@ -129,7 +126,7 @@ services:
           memory: 256M
 
   # ===================================================================
-  # MICROSERVICIOS (comunicación interna — sin exposición directa)
+  # MICROSERVICIOS
   # ===================================================================
   auth-service:
     build: ./services/auth-service
@@ -153,8 +150,6 @@ services:
     networks:
       - coniiti-net
     restart: unless-stopped
-    labels:
-      - "traefik.enable=false"
     deploy:
       resources:
         limits:
@@ -174,8 +169,6 @@ services:
     networks:
       - coniiti-net
     restart: unless-stopped
-    labels:
-      - "traefik.enable=false"
     deploy:
       resources:
         limits:
@@ -198,8 +191,6 @@ services:
     networks:
       - coniiti-net
     restart: unless-stopped
-    labels:
-      - "traefik.enable=false"
     deploy:
       resources:
         limits:
@@ -225,15 +216,13 @@ services:
     networks:
       - coniiti-net
     restart: unless-stopped
-    labels:
-      - "traefik.enable=false"
     deploy:
       resources:
         limits:
           memory: 150M
 
   # ===================================================================
-  # BACKEND GATEWAY — Traefik lo expone en / api/*
+  # BACKEND GATEWAY
   # ===================================================================
   backend:
     build: ./services/backend
@@ -253,21 +242,13 @@ services:
     networks:
       - coniiti-net
     restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`localhost`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.backend.entrypoints=web"
-      - "traefik.http.routers.backend.middlewares=rate-limit@file,security-headers@file,compress@file"
-      - "traefik.http.services.backend.loadbalancer.server.port=3000"
-      - "traefik.http.services.backend.loadbalancer.healthcheck.path=/api/health"
-      - "traefik.http.services.backend.loadbalancer.healthcheck.interval=10s"
     deploy:
       resources:
         limits:
           memory: 150M
 
   # ===================================================================
-  # FRONTEND — Traefik lo expone en /
+  # FRONTEND
   # ===================================================================
   frontend-app:
     build: ./frontend/vite-project
@@ -277,34 +258,14 @@ services:
     networks:
       - coniiti-net
     restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`localhost`)"
-      - "traefik.http.routers.frontend.entrypoints=web"
-      - "traefik.http.routers.frontend.priority=1"
-      - "traefik.http.routers.backend.priority=10"
-      - "traefik.http.routers.frontend.middlewares=compress@file"
-      - "traefik.http.services.frontend.loadbalancer.server.port=80"
     deploy:
       resources:
         limits:
           memory: 100M
 
-  nginx:
-    image: nginx:alpine
-    container_name: coniiti-nginx
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    ports:
-      - "8081:80"
-    networks:
-      - coniiti-net
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 50M
-
+  # ===================================================================
+  # MONITORING
+  # ===================================================================
   loki:
     image: grafana/loki:2.9.0
     container_name: coniiti-loki
@@ -363,4 +324,3 @@ volumes:
   redis_data:
   loki_data:
   grafana_data:
-  traefik_logs:
