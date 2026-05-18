@@ -1,4 +1,16 @@
 apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
 kind: Service
 metadata:
   name: postgres-service
@@ -34,10 +46,17 @@ spec:
             - name: POSTGRES_USER
               value: "postgres"
             - name: POSTGRES_PASSWORD
-              value: "postgres"
+              value: "123456"
             - name: POSTGRES_DB
               value: "coniiti_main"
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
           resources:
             limits:
               memory: "256Mi"
               cpu: "500m"
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: postgres-pvc

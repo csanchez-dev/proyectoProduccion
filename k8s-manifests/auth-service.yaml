@@ -7,6 +7,7 @@ data:
   DB_HOST: "postgres-service"
   REDIS_URL: "redis://redis-service:6379"
   RABBITMQ_URL: "amqp://user:password@rabbitmq-service:5672"
+  DATABASE_URL: "postgresql://postgres:123456@postgres-service:5432/coniiti_main"
 
 ---
 apiVersion: v1
@@ -18,7 +19,7 @@ type: Opaque
 data:
   # Base64 encoded values (Example: postgres -> cG9zdGdyZXM=)
   DB_USER: cG9zdGdyZXM=
-  DB_PASSWORD: cG9zdGdyZXM=
+  DB_PASSWORD: MTIzNDU2
 
 ---
 apiVersion: apps/v1
@@ -44,8 +45,8 @@ spec:
     spec:
       containers:
       - name: auth-service
-        image: auth-service:v1
-        imagePullPolicy: Never
+        image: auth-service:v2
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000
         resources:

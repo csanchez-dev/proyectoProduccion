@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: agenda-service
+  namespace: default
+spec:
+  ports:
+    - port: 3001
+      targetPort: 3001
+  selector:
+    app: agenda-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agenda-service-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agenda-service
+  template:
+    metadata:
+      labels:
+        app: agenda-service
+    spec:
+      containers:
+        - name: agenda-service
+          image: agenda-service:v2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3001
+          envFrom:
+            - secretRef:
+                name: auth-service-secrets
+          env:
+            - name: DB_HOST
+              value: "postgres-service"
+            - name: DATABASE_URL
+              value: "postgresql://postgres:123456@postgres-service:5432/coniiti_main?schema=public"
+            - name: NODE_OPTIONS
+              value: "--max-old-space-size=128"
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"

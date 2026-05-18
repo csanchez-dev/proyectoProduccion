@@ -46,7 +46,6 @@ model Ponencia {
   cupo_maximo  Int
   estado       String     @default("programada")
   ponentes     PonenciaPonente[]
-  inscripciones InscripcionPonencia[]
 }
 
 model Ponente {
