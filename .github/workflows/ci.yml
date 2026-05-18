@@ -1,0 +1,51 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main", "desarrollo-rediseño-david", "desarrollo-diseño" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  validate_frontend:
+    name: Validar Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend/vite-project
+    steps:
+    - name: Checkout del código
+      uses: actions/checkout@v4
+    - name: Configurar Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    - name: Instalar dependencias
+      run: npm install --include=optional
+    - name: Linting
+      run: npm run lint
+    - name: Pruebas Unitarias
+      run: npm run test
+    - name: Build Estricto
+      run: CI=true npm run build
+
+  validate_backend:
+    name: Validar Backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./services/backend
+    steps:
+    - name: Checkout del código
+      uses: actions/checkout@v4
+    - name: Configurar Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    - name: Instalar dependencias
+      run: npm install
+    - name: Build Estricto
+      run: npm run build

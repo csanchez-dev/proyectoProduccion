@@ -1,0 +1,52 @@
+################################################################
+# Traefik Dynamic Configuration
+# Proyecto CONIITI 2026
+################################################################
+
+http:
+  # ─── MIDDLEWARES ─────────────────────────────────────────────
+  middlewares:
+
+    # Añade prefijo /api a requests hacia el backend
+    strip-api-prefix:
+      stripPrefix:
+        prefixes:
+          - "/api"
+
+    # Rate limiting global
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 50
+
+    # Cabeceras de seguridad
+    security-headers:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+        accessControlAllowOriginList:
+          - "http://localhost"
+          - "http://localhost:80"
+          - "http://localhost:5173"
+        accessControlMaxAge: 100
+        addVaryHeader: true
+        frameDeny: true
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: false
+        referrerPolicy: "strict-origin-when-cross-origin"
+
+    # Redirect HTTP → HTTPS (descomenta en producción)
+    # redirect-to-https:
+    #   redirectScheme:
+    #     scheme: https
+    #     permanent: true
+
+    # Compresión gzip
+    compress:
+      compress: {}

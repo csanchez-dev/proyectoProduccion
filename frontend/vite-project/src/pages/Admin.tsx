@@ -1,19 +1,19 @@
-﻿import React, { useState, useEffect } from "react" // v2-ui-refresh
-import { useNavigate } from "react-router-dom"
-import { conferences as initialConferences } from "../data/conference_mocks"
-import { getEvents, getGenderStats, getConferenceStats, getPageViewsStats, getLoadTimeStats, getImageLoadStats, getResourceSizeStats, getAdvancedStatsByPage, getAvailableYears } from "../utils/tracker"
-import { translations, getTranslation } from "../utils/i18n"
-import type { Language } from "../utils/i18n"
+import React, { useState, useEffect } from "react"; // v2-ui-refresh
+import { useNavigate } from "react-router-dom";
+import { conferences as initialConferences } from "../data/conference_mocks";
+import { getEvents, getGenderStats, getConferenceStats, getPageViewsStats, getLoadTimeStats, getImageLoadStats, getResourceSizeStats, getAdvancedStatsByPage, getAvailableYears } from "../utils/tracker";
+import { translations, getTranslation } from "../utils/i18n";
+import type { Language } from "../utils/i18n";
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     PieChart, Pie, Cell, LineChart, Line, ScatterChart, Scatter, ZAxis
-} from 'recharts'
-import QRCode from 'react-qr-code'
-import { toast } from "sonner"
+} from 'recharts';
+import QRCode from 'react-qr-code';
+import { toast } from "sonner";
 
 export default function Admin() {
-    const [userRole, setUserRole] = useState<string | null>(null)
-    const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
+    const [userRole, setUserRole] = useState<string | null>(null);
+    const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es');
 
     useEffect(() => {
         const updateLang = () => setLang((localStorage.getItem("app_lang") as Language) || 'es');
@@ -21,25 +21,27 @@ export default function Admin() {
         return () => window.removeEventListener('app-lang-updated', updateLang);
     }, []);
 
-    const t = (key: keyof typeof translations.es) => getTranslation(key, lang)
+    const t = (key: keyof typeof translations.es) => getTranslation(key, lang);
 
-    const [conferences, setConferences] = useState<any[]>([])
+    const [conferences, setConferences] = useState<any[]>([]);
     const [deletedConferences, setDeletedConferences] = useState<any[]>(() => {
-        const saved = localStorage.getItem("site_deleted_conferences")
-        return saved ? JSON.parse(saved) : []
-    })
+        const saved = localStorage.getItem("site_deleted_conferences");
+        return saved ? JSON.parse(saved) : [];
+    });
 
-    const [activeTab, setActiveTab] = useState("conferences")
-    const [bannerPreview, setBannerPreview] = useState(localStorage.getItem("site_banner") || "/banner-header.png")
-    const [logoUniPreview, setLogoUniPreview] = useState(localStorage.getItem("site_logo_uni") || "/ucatolica-logo.png")
-    const [logoEventPreview, setLogoEventPreview] = useState(localStorage.getItem("site_logo_evento") || "/logo-coniiti.png")
+    const [activeTab, setActiveTab] = useState("conferences");
+    const [bannerPreview, setBannerPreview] = useState(localStorage.getItem("site_banner") || "/banner-header.png");
+    const [logoUniPreview, setLogoUniPreview] = useState(localStorage.getItem("site_logo_uni") || "/ucatolica-logo.png");
+    const [logoEventPreview, setLogoEventPreview] = useState(localStorage.getItem("site_logo_evento") || "/logo-coniiti.png");
 
     // Estados para colores
-    const [bgColor, setBgColor] = useState(localStorage.getItem("custom_bg_color") || "#ffffff")
-    const [textColor, setTextColor] = useState(localStorage.getItem("custom_text_color") || "#1b1a1a")
-    const [headerColor, setHeaderColor] = useState(localStorage.getItem("custom_header_bg") || "#1f2a44")
-    const [primaryColor, setPrimaryColor] = useState(localStorage.getItem("custom_primary_color") || "#2563EB")
-    const [secondaryColor, setSecondaryColor] = useState(localStorage.getItem("custom_secondary_color") || "#1E293B")
+    const [bgColor, setBgColor] = useState(localStorage.getItem("custom_bg_color") || "#ffffff");
+    const [textColor, setTextColor] = useState(localStorage.getItem("custom_text_color") || "#1b1a1a");
+    const [headerColor, setHeaderColor] = useState(localStorage.getItem("custom_header_bg") || "#1f2a44");
+    const [primaryColor, setPrimaryColor] = useState(localStorage.getItem("custom_primary_color") || "#2563EB");
+    const [secondaryColor, setSecondaryColor] = useState(localStorage.getItem("custom_secondary_color") || "#1E293B");
+    const [accentColor, setAccentColor] = useState(localStorage.getItem("custom_accent_color") || "#00D2FF");
+    const [globalVideoBg, setGlobalVideoBg] = useState(localStorage.getItem("custom_global_video") || "");
 
     const dispatchUpdate = () => {
         window.dispatchEvent(new Event('site-config-updated'));
@@ -51,16 +53,17 @@ export default function Admin() {
         setHeaderColor(localStorage.getItem("custom_header_bg") || "#1f2a44");
         setPrimaryColor(localStorage.getItem("custom_primary_color") || "#2563EB");
         setSecondaryColor(localStorage.getItem("custom_secondary_color") || "#1E293B");
+        setAccentColor(localStorage.getItem("custom_accent_color") || "#00D2FF");
     };
     const [chartTypes, setChartTypes] = useState<any>({
         views: 'bar',
         gender: 'pie',
         conferences: 'bar',
         performance: 'bar'
-    })
-    const [selectedPerfPage, setSelectedPerfPage] = useState("/")
-    const [settingsTab, setSettingsTab] = useState("general")
-    const [analyticsYear, setAnalyticsYear] = useState<number>(new Date().getFullYear())
+    });
+    const [selectedPerfPage, setSelectedPerfPage] = useState("/");
+    const [settingsTab, setSettingsTab] = useState("general");
+    const [analyticsYear, setAnalyticsYear] = useState<number>(new Date().getFullYear());
 
     // States for Custom Theme creation
     const [customThemes, setCustomThemes] = useState<any[]>(() => {
@@ -69,7 +72,22 @@ export default function Admin() {
     });
     const [isAddingTheme, setIsAddingTheme] = useState(false);
     const [newThemeData, setNewThemeData] = useState({ name: '', primary: '#2563EB', secondary: '#1E293B', bg: '#ffffff', text: '#1b1a1a', header: '#1f2a44' });
-    const navigate = useNavigate()
+
+    const [adminGallery, setAdminGallery] = useState<any[]>(() => {
+        const saved = localStorage.getItem("admin_private_gallery");
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    const [publicGallery, setPublicGallery] = useState<any[]>(() => {
+        const saved = localStorage.getItem("site_public_gallery");
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    const [pendingPhotos, setPendingPhotos] = useState<any[]>(() => {
+        const saved = localStorage.getItem("site_pending_gallery");
+        return saved ? JSON.parse(saved) : [];
+    });
+    const navigate = useNavigate();
 
     // Gestión de Capacidad de Auditorios
     const [locCapacities, setLocCapacities] = useState(() => {
@@ -92,18 +110,29 @@ export default function Admin() {
     }, [locCapacities]);
 
     useEffect(() => {
-        const session = localStorage.getItem("user_session")
+        const refreshRealtime = () => {
+            const savedPen = localStorage.getItem("site_pending_gallery");
+            if (savedPen) setPendingPhotos(JSON.parse(savedPen));
+            const savedPub = localStorage.getItem("site_public_gallery");
+            if (savedPub) setPublicGallery(JSON.parse(savedPub));
+        };
+        window.addEventListener('site-config-updated', refreshRealtime);
+        return () => window.removeEventListener('site-config-updated', refreshRealtime);
+    }, []);
+
+    useEffect(() => {
+        const session = localStorage.getItem("user_session");
         if (session) {
-            const user = JSON.parse(session)
+            const user = JSON.parse(session);
             if (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "VIEWER" || user.role === "CONTENT_MANAGER") {
-                setUserRole(user.role)
+                setUserRole(user.role);
             } else {
-                navigate("/") // No tiene permisos
+                navigate("/"); // No tiene permisos
             }
         } else {
-            navigate("/login") // No hay sesión
+            navigate("/login"); // No hay sesión
         }
-    }, [navigate])
+    }, [navigate]);
 
     const [speakers, setSpeakers] = useState<any[]>(() => {
         // Inicializar con los datos de los mocks + locales para que nunca esté vacía la lista
@@ -140,9 +169,9 @@ export default function Admin() {
             });
         } catch { /* sin datos locales */ }
         return seedSpeakers;
-    })
-    const [registeredUsers, setRegisteredUsers] = useState<any[]>([])
-    const [isLoading, setIsLoading] = useState(false)
+    });
+    const [registeredUsers, setRegisteredUsers] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
 
     const fetchAllData = async () => {
         setIsLoading(true);
@@ -154,9 +183,9 @@ export default function Admin() {
             const { getPonencias, getPonentes, getUsuarios } = await import("../services/api");
 
             // Intentos individuales para no fallar si un endpoint está caído
-            try { ponenciasData = await getPonencias(); } catch (e) { console.warn("API Ponencias falló"); }
-            try { ponentesData = await getPonentes(); } catch (e) { console.warn("API Ponentes falló"); }
-            try { usuariosData = await getUsuarios(); } catch (e) { console.warn("API Usuarios falló"); }
+            try { ponenciasData = await getPonencias(); } catch (_e) { console.warn("API Ponencias falló"); }
+            try { ponentesData = await getPonentes(); } catch (_e) { console.warn("API Ponentes falló"); }
+            try { usuariosData = await getUsuarios(); } catch (_e) { console.warn("API Usuarios falló"); }
 
             // 1. Unificar Conferencias (Agenda)
             const savedConfs = JSON.parse(localStorage.getItem("site_conferences") || '[]');
@@ -235,21 +264,21 @@ export default function Admin() {
 
     // Persistencia automática de los cambios
     useEffect(() => {
-        localStorage.setItem("site_conferences", JSON.stringify(conferences))
-    }, [conferences])
+        localStorage.setItem("site_conferences", JSON.stringify(conferences));
+    }, [conferences]);
 
     useEffect(() => {
-        localStorage.setItem("site_deleted_conferences", JSON.stringify(deletedConferences))
-    }, [deletedConferences])
+        localStorage.setItem("site_deleted_conferences", JSON.stringify(deletedConferences));
+    }, [deletedConferences]);
 
     useEffect(() => {
         if (speakers.length > 0) {
-            localStorage.setItem("site_speakers", JSON.stringify(speakers))
+            localStorage.setItem("site_speakers", JSON.stringify(speakers));
         }
-    }, [speakers])
+    }, [speakers]);
 
-    const [editingConf, setEditingConf] = useState<any | null>(null)
-    const [editingSpeaker, setEditingSpeaker] = useState<any | null>(null)
+    const [editingConf, setEditingConf] = useState<any | null>(null);
+    const [editingSpeaker, setEditingSpeaker] = useState<any | null>(null);
 
     const handleDeleteConference = async (id: string) => {
         if (!confirm("¿Estás seguro de eliminar esta conferencia?")) return;
@@ -263,20 +292,20 @@ export default function Admin() {
             console.error("Error deleting conference:", err);
             // alert("No se pudo eliminar de la base de datos.");
         }
-    }
+    };
 
     const handleRestoreConference = (id: string) => {
-        const confToRestore = deletedConferences.find((c: any) => c.id === id)
+        const confToRestore = deletedConferences.find((c: any) => c.id === id);
         if (confToRestore) {
-            setConferences([...conferences, confToRestore])
-            setDeletedConferences(deletedConferences.filter((c: any) => c.id !== id))
+            setConferences([...conferences, confToRestore]);
+            setDeletedConferences(deletedConferences.filter((c: any) => c.id !== id));
             // alert("Conferencia restaurada")
         }
-    }
+    };
 
     const handleEditConference = (conf: { id: string, title: string, description: string, speakerName?: string, startTime: string, endTime: string, location: string, category: string, level: string, speaker: any, career?: string }) => {
-        setEditingConf({ ...conf })
-    }
+        setEditingConf({ ...conf });
+    };
 
     // Gestión de Días de la Agenda
     const [agendaDays, setAgendaDays] = useState<{ id: string, label: string }[]>(() => {
@@ -337,7 +366,7 @@ export default function Admin() {
         localStorage.setItem("agenda_filters_config", JSON.stringify(agendaFilters));
     }, [agendaFilters]);
 
-    const [showConfForm, setShowConfForm] = useState(false)
+    const [showConfForm, setShowConfForm] = useState(false);
     const [newConf, setNewConf] = useState({
         title: "",
         location: "Auditorio Paraninfo",
@@ -351,11 +380,11 @@ export default function Admin() {
         virtualLink: "",
         documentUrl: "",
         documentFile: ""
-    })
+    });
 
     const handleAddConference = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setIsLoading(true)
+        e.preventDefault();
+        setIsLoading(true);
 
         try {
             const { createPonencia } = await import("../services/api");
@@ -410,10 +439,10 @@ export default function Admin() {
         } finally {
             setIsLoading(false);
         }
-    }
+    };
 
     const handleSaveEdit = async (e: React.FormEvent) => {
-        e.preventDefault()
+        e.preventDefault();
         try {
             const updatedConfs = conferences.map((c: any) => c.id === editingConf.id ? editingConf : c);
             setConferences(updatedConfs);
@@ -423,20 +452,20 @@ export default function Admin() {
             try {
                 const { updatePonencia } = await import("../services/api");
                 if (updatePonencia) await updatePonencia(editingConf.id, editingConf);
-            } catch (apiErr) {
+            } catch (_apiErr) {
                 console.warn("No se pudo actualizar en API (posible endpoint inexistente), cambios guardados localmente");
             }
 
-            setEditingConf(null)
-            toast.success("Cambios guardados correctamente")
+            setEditingConf(null);
+            toast.success("Cambios guardados correctamente");
         } catch (err) {
             console.error("Error al guardar cambios:", err);
             // alert("No se pudieron guardar los cambios");
         }
-    }
+    };
 
-    const [showGuestForm, setShowGuestForm] = useState(false)
-    const [qrModalConf, setQrModalConf] = useState<any | null>(null)
+    const [showGuestForm, setShowGuestForm] = useState(false);
+    const [qrModalConf, setQrModalConf] = useState<any | null>(null);
 
     const downloadQR = () => {
         const svg = document.getElementById(`qr-code-svg-${qrModalConf?.id}`);
@@ -459,16 +488,16 @@ export default function Admin() {
             }
         };
         img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
-    }
+    };
     const [newGuest, setNewGuest] = useState({
         name: "",
         organization: "",
         bio: "",
         avatar: ""
-    })
+    });
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]
+        const file = e.target.files?.[0];
         if (file) {
             setIsLoading(true);
             try {
@@ -481,11 +510,11 @@ export default function Admin() {
                 setIsLoading(false);
             }
         }
-    }
+    };
 
     const handleAddGuest = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setIsLoading(true)
+        e.preventDefault();
+        setIsLoading(true);
 
         try {
             const { createPonente } = await import("../services/api");
@@ -539,7 +568,7 @@ export default function Admin() {
         } finally {
             setIsLoading(false);
         }
-    }
+    };
 
     const handleSaveSpeakerEdit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -569,7 +598,7 @@ export default function Admin() {
         // alert("✅ Información del invitado actualizada.");
     };
 
-    if (!userRole) return <div className="loading">{lang === 'es' ? 'Cargando panel...' : 'Loading panel...'}</div>
+    if (!userRole) return <div className="loading">{lang === 'es' ? 'Cargando panel...' : 'Loading panel...'}</div>;
 
     return (
         <div className="admin-container fade-in">
@@ -618,7 +647,7 @@ export default function Admin() {
                             className={activeTab === "analytics" ? "active" : ""}
                             onClick={() => setActiveTab("analytics")}
                         >
-                            📊 Analíticas
+                            📊 Análisis
                         </button>
                     )}
 
@@ -627,9 +656,22 @@ export default function Admin() {
                             <button
                                 className={activeTab === "settings" ? "active" : ""}
                                 onClick={() => setActiveTab("settings")}
-                                style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '10px' }}
                             >
-                                ⚙️ Configuración Página
+                                <span style={{display:'flex', alignItems:'center', gap:'10px'}}>⚙️ Configuración Page</span>
+                                {pendingPhotos.length > 0 && (
+                                    <span style={{
+                                        background: '#ef4444', 
+                                        color: 'white', 
+                                        borderRadius: '20px', 
+                                        padding: '2px 8px', 
+                                        fontSize: '0.7rem',
+                                        fontWeight: 'bold',
+                                        animation: 'pulse 2s infinite'
+                                    }}>
+                                        {pendingPhotos.length}
+                                    </span>
+                                )}
                             </button>
                             <button
                                 className={activeTab === "users" ? "active" : ""}
@@ -649,7 +691,7 @@ export default function Admin() {
                     )}
                 </aside>
 
-                <main className="admin-content">
+                <section className="admin-content">
                     {activeTab === "conferences" && (
                         <div className="admin-view">
                             <div className="view-header">
@@ -1045,6 +1087,7 @@ export default function Admin() {
                                     { id: "pg-acerca", icon: "ℹ️", label: "Acerca De" },
                                     { id: "pg-contacto", icon: "✉️", label: "Contacto" },
                                     { id: "pg-aforos", icon: "🏛️", label: "Aforos y Sedes" },
+                                    { id: "pg-galeria", icon: "🖼️", label: "Galería Admin" },
                                 ].map(tab => (
                                     <button
                                         key={tab.id}
@@ -1052,10 +1095,10 @@ export default function Admin() {
                                         style={{
                                             padding: '8px 18px',
                                             borderRadius: '10px',
-                                            border: 'none',
+                                            border: tab.id === 'pg-galeria' ? '2px solid var(--primary-color)' : 'none',
                                             cursor: 'pointer',
-                                            fontWeight: settingsTab === tab.id ? '700' : '500',
-                                            background: settingsTab === tab.id ? 'var(--primary-color)' : '#f0f4ff',
+                                            fontWeight: (settingsTab === tab.id || tab.id === 'pg-galeria') ? '700' : '500',
+                                            background: settingsTab === tab.id ? 'var(--primary-color)' : (tab.id === 'pg-galeria' ? '#e0e7ff' : '#f0f4ff'),
                                             color: settingsTab === tab.id ? 'white' : '#374151',
                                             transition: 'all 0.2s',
                                             fontSize: '0.9rem'
@@ -1103,6 +1146,7 @@ export default function Admin() {
                                                                 localStorage.setItem("custom_primary_color", theme.themeData.primary);
                                                                 localStorage.setItem("custom_secondary_color", theme.themeData.secondary);
                                                                 localStorage.setItem("custom_header_bg", theme.themeData.header);
+                                                                localStorage.setItem("custom_accent_color", "#00D2FF"); // Default param para presets
                                                             }
                                                             dispatchUpdate();
                                                         }}
@@ -1324,27 +1368,81 @@ export default function Admin() {
                                         </div>
                                     </div>
                                     <div className="form-group">
-                                        <label>Personalización de Colores</label>
+                                        <label>🌟 Fondo Animado / Interactivo (Global)</label>
+                                        <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                            <div style={{ marginBottom: '1rem' }}>
+                                                <span style={{ display:'block', fontWeight:'600', marginBottom:'0.5rem', fontSize:'0.9rem' }}>Fondo Global por URL (Video MP4 / GIF)</span>
+                                                <input 
+                                                    type="url" 
+                                                    placeholder="https://pagina.com/video.mp4" 
+                                                    value={globalVideoBg} 
+                                                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }}
+                                                    onChange={(e) => {
+                                                        localStorage.setItem("custom_global_video", e.target.value);
+                                                        setGlobalVideoBg(e.target.value);
+                                                        dispatchUpdate();
+                                                    }}
+                                                />
+                                            </div>
+                                            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
+                                                <span style={{ display:'block', fontWeight:'600', marginBottom:'0.5rem', fontSize:'0.9rem' }}>Fondo de Imagen y Efecto Parallax</span>
+                                                <input type="file" accept="image/*" className="file-input" onChange={async (e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) {
+                                                        try {
+                                                            setIsLoading(true);
+                                                            const { compressImage } = await import("../utils/imageCompressor");
+                                                            const compressed = await compressImage(file, 1920, 1080, 0.7);
+                                                            localStorage.setItem("custom_global_image", compressed);
+                                                            dispatchUpdate();
+                                                            toast.success("Imagen de fondo guardada.");
+                                                        } catch (err) { console.error(err); } finally { setIsLoading(false); }
+                                                    }
+                                                }} />
+                                                <div style={{marginTop: '0.8rem'}}>
+                                                    <label style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize:'0.9rem'}}>
+                                                        <input type="checkbox" defaultChecked={localStorage.getItem("custom_parallax") !== "false"} onChange={(e) => {
+                                                            localStorage.setItem("custom_parallax", String(e.target.checked));
+                                                            dispatchUpdate();
+                                                        }} />
+                                                        <span>Activar Movimiento Fluido con Scroll (Efecto Parallax)</span>
+                                                    </label>
+                                                </div>
+                                                <button type="button" className="btn-remove-img-sm" style={{marginTop: '1rem'}} onClick={() => {
+                                                    ["custom_global_image", "custom_global_video"].forEach(k => localStorage.removeItem(k));
+                                                    setGlobalVideoBg("");
+                                                    dispatchUpdate();
+                                                    toast.success("Fondos eliminados");
+                                                }}>Quitar Fondo Global</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="form-group">
+                                        <label>🎨 Panel de Personalización de Colores (En Vivo)</label>
                                         <div className="color-picker-grid">
                                             <div className="color-item">
-                                                <span>Fondo General</span>
+                                                <span>Fondo de la Página <small style={{display:'block', fontSize:'11px', color:'#666'}}>Afecta toda la aplicación (--bg-page)</small></span>
                                                 <input type="color" value={bgColor} onChange={(e) => { localStorage.setItem("custom_bg_color", e.target.value); setBgColor(e.target.value); dispatchUpdate(); }} />
                                             </div>
                                             <div className="color-item">
-                                                <span>Texto Principal</span>
+                                                <span>Texto Principal <small style={{display:'block', fontSize:'11px', color:'#666'}}>Color oscuro de la lectura (--text-primary)</small></span>
                                                 <input type="color" value={textColor} onChange={(e) => { localStorage.setItem("custom_text_color", e.target.value); setTextColor(e.target.value); dispatchUpdate(); }} />
                                             </div>
                                             <div className="color-item">
-                                                <span>Color de Cabecera</span>
+                                                <span>Cabecera del Menú <small style={{display:'block', fontSize:'11px', color:'#666'}}>Barra de navegación oscura superior</small></span>
                                                 <input type="color" value={headerColor} onChange={(e) => { localStorage.setItem("custom_header_bg", e.target.value); setHeaderColor(e.target.value); dispatchUpdate(); }} />
                                             </div>
                                             <div className="color-item">
-                                                <span>Color Primario (Botones)</span>
+                                                <span>Color Primario <small style={{display:'block', fontSize:'11px', color:'#666'}}>Botones, links, y acentos fuertes</small></span>
                                                 <input type="color" value={primaryColor} onChange={(e) => { localStorage.setItem("custom_primary_color", e.target.value); setPrimaryColor(e.target.value); dispatchUpdate(); }} />
                                             </div>
                                             <div className="color-item">
-                                                <span>Color Secundario</span>
+                                                <span>Color Secundario <small style={{display:'block', fontSize:'11px', color:'#666'}}>Bordes gruesos y fondos de componentes</small></span>
                                                 <input type="color" value={secondaryColor} onChange={(e) => { localStorage.setItem("custom_secondary_color", e.target.value); setSecondaryColor(e.target.value); dispatchUpdate(); }} />
+                                            </div>
+                                            <div className="color-item">
+                                                <span>Acento / Resaltes <small style={{display:'block', fontSize:'11px', color:'#666'}}>Detalles interactivos (Cyan, Neón)</small></span>
+                                                <input type="color" value={accentColor} onChange={(e) => { localStorage.setItem("custom_accent_color", e.target.value); setAccentColor(e.target.value); dispatchUpdate(); }} />
                                             </div>
                                         </div>
                                     </div>
@@ -1359,7 +1457,8 @@ export default function Admin() {
                                         <button type="button" className="btn-logout" style={{ marginLeft: '1rem', background: '#e74c3c' }}
                                             onClick={() => {
                                                 if (confirm("¿Seguro que quieres borrar toda la personalización?")) {
-                                                    ["site_banner", "site_logo_uni", "site_logo_evento", "custom_bg_color", "custom_text_color", "custom_header_bg", "custom_primary_color", "custom_secondary_color"].forEach(key => localStorage.removeItem(key));
+                                                    ["site_banner", "site_logo_uni", "site_logo_evento", "custom_bg_color", "custom_text_color", "custom_header_bg", "custom_primary_color", "custom_secondary_color", "custom_accent_color", "custom_global_image", "custom_global_video", "custom_parallax"].forEach(key => localStorage.removeItem(key));
+                                                    setGlobalVideoBg("");
                                                     dispatchUpdate();
                                                 }
                                             }}>
@@ -1732,6 +1831,168 @@ export default function Admin() {
                                     </div>
                                 </div>
                             )}
+
+                            {/* ── SECCIÓN: GALERÍA ADMINISTRATIVA ── */}
+                            {settingsTab === "pg-galeria" && (
+                                <div className="page-settings-panel fade-in">
+                                    <div style={{ marginBottom: '2rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem' }}>
+                                        <h2 style={{ margin: 0, color: 'var(--primary-color)' }}>📸 Centro de Gestión de Imágenes</h2>
+                                        <p style={{ color: '#64748b', fontSize: '1rem' }}>Administra la galería pública, revisa envíos de usuarios y gestiona tu banco de fotos privado.</p>
+                                    </div>
+
+                                    {/* Cabecera con Acciones Rápidas */}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', background: '#f8fafc', padding: '1.5rem', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                                            <div>
+                                                <h3 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--secondary-color)' }}>🖼️ Gestión Maestra de Galería</h3>
+                                                <p style={{ margin: '5px 0 0 0', color: '#64748b' }}>Control de fotos públicas, pendientes de usuarios y banco privado.</p>
+                                                {pendingPhotos.length > 0 && (
+                                                    <div style={{ marginTop: '10px', display: 'inline-block', background: '#fffbeb', border: '1px solid #fde68a', padding: '5px 12px', borderRadius: '12px', fontSize: '0.85rem', color: '#b45309', fontWeight: 'bold' }}>
+                                                        📩 Tienes {pendingPhotos.length} {pendingPhotos.length === 1 ? 'foto' : 'fotos'} de usuarios esperando tu aprobación.
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                                <button onClick={() => document.getElementById('direct-public-upload')?.click()} className="btn-add" style={{ background: '#10b981', color: 'white', border: 'none' }}>
+                                                    📤 Subir a Pública
+                                                </button>
+                                                <button onClick={() => document.getElementById('admin-priv-upload')?.click()} className="btn-add" style={{ background: 'var(--secondary-color)', color: 'white', border: 'none' }}>
+                                                    🔐 Subir a Privada
+                                                </button>
+                                                <input type="file" id="direct-public-upload" multiple accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
+                                                    const files = e.target.files; if (!files) return;
+                                                    setIsLoading(true);
+                                                    try {
+                                                        const { compressImage } = await import("../utils/imageCompressor");
+                                                        const newImages = [...publicGallery];
+                                                        for (let i = 0; i < files.length; i++) {
+                                                            const compressed = await compressImage(files[i], 1200, 1200, 0.7);
+                                                            newImages.unshift({ id: `pub-${Date.now()}-${i}`, url: compressed, name: files[i].name, date: new Date().toLocaleString() });
+                                                        }
+                                                        setPublicGallery(newImages);
+                                                        localStorage.setItem("site_public_gallery", JSON.stringify(newImages));
+                                                        window.dispatchEvent(new Event('site-config-updated'));
+                                                        toast.success("Subidas directamente a la galería pública.");
+                                                    } catch (_err) { toast.error("Error al procesar."); } finally { setIsLoading(false); }
+                                                }} />
+                                                <input type="file" id="admin-priv-upload" multiple accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
+                                                    const files = e.target.files; if (!files) return;
+                                                    setIsLoading(true);
+                                                    try {
+                                                        const { compressImage } = await import("../utils/imageCompressor");
+                                                        const newImages = [...adminGallery];
+                                                        for (let i = 0; i < files.length; i++) {
+                                                            const compressed = await compressImage(files[i], 1200, 1200, 0.7);
+                                                            newImages.unshift({ id: `priv-${Date.now()}-${i}`, url: compressed, name: files[i].name, date: new Date().toLocaleString() });
+                                                        }
+                                                        setAdminGallery(newImages);
+                                                        localStorage.setItem("admin_private_gallery", JSON.stringify(newImages));
+                                                        toast.success("Guardadas en tu espacio privado.");
+                                                    } catch (_err) { toast.error("Error al procesar."); } finally { setIsLoading(false); }
+                                                }} />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Sub-navegación Rápida */}
+                                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', padding: '10px', background: '#f1f5f9', borderRadius: '12px' }}>
+                                        <button onClick={() => document.getElementById('sec-pub')?.scrollIntoView({ behavior: 'smooth' })} style={{ flex: 1, padding: '8px', border: 'none', background: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>🌐 Galería Pública</button>
+                                        <button onClick={() => document.getElementById('sec-pen')?.scrollIntoView({ behavior: 'smooth' })} style={{ flex: 1, padding: '8px', border: 'none', background: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', position: 'relative' }}>
+                                            📩 Pendientes
+                                            {pendingPhotos.length > 0 && <span style={{ position: 'absolute', top: '-5px', right: '-5px', background: '#ef4444', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: '0.7rem' }}>{pendingPhotos.length}</span>}
+                                        </button>
+                                        <button onClick={() => document.getElementById('sec-pri')?.scrollIntoView({ behavior: 'smooth' })} style={{ flex: 1, padding: '8px', border: 'none', background: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>🔐 Privada (Admin)</button>
+                                    </div>
+
+                                    {/* ── SECCIÓN A: PÚBLICA ── */}
+                                    <div id="sec-pub" style={{ marginBottom: '4rem' }}>
+                                        <h4 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>🌐 Galería Pública (En vivo)</h4>
+                                        {publicGallery.length === 0 ? (
+                                            <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>No hay fotos públicas aún.</div>
+                                        ) : (
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1.2rem' }}>
+                                                {publicGallery.map(img => (
+                                                    <div key={img.id} style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', border: '1px solid #eee' }}>
+                                                        <img src={img.url} style={{ width: '100%', height: '120px', objectFit: 'cover' }} />
+                                                        <button onClick={() => {
+                                                            if (confirm("¿Borrar definitivamente del sitio público?")) {
+                                                                const updated = publicGallery.filter(i => i.id !== img.id);
+                                                                setPublicGallery(updated);
+                                                                localStorage.setItem("site_public_gallery", JSON.stringify(updated));
+                                                                window.dispatchEvent(new Event('site-config-updated'));
+                                                                toast.success("Eliminada");
+                                                            }
+                                                        }} style={{ position: 'absolute', top: '5px', right: '5px', background: 'rgba(239,68,68,0.8)', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', width: '25px', height: '25px' }}>🗑️</button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* ── SECCIÓN B: PENDIENTES ── */}
+                                    <div id="sec-pen" style={{ marginBottom: '4rem', padding: '2rem', background: '#fffbeb', borderRadius: '20px', border: '1px solid #fde68a' }}>
+                                        <h4 style={{ margin: 0, marginBottom: '1.5rem' }}>📩 Fotos Enviadas por Usuarios ({pendingPhotos.length})</h4>
+                                        {pendingPhotos.length === 0 ? (
+                                            <div style={{ textAlign: 'center', color: '#d97706' }}>No hay fotos pendientes de revisión. ✨</div>
+                                        ) : (
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1.5rem' }}>
+                                                {pendingPhotos.map(img => (
+                                                    <div key={img.id} style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+                                                        <img src={img.url} style={{ width: '100%', height: '140px', objectFit: 'cover' }} />
+                                                        <div style={{ padding: '10px', fontSize: '0.8rem' }}>
+                                                            <div style={{ fontWeight: 'bold' }}>{img.user || 'Visitante'}</div>
+                                                            <div style={{ color: '#64748b' }}>{img.date}</div>
+                                                            <div style={{ display: 'flex', gap: '5px', marginTop: '10px' }}>
+                                                                <button onClick={() => {
+                                                                    const updatedPub = [img, ...publicGallery];
+                                                                    const updatedPen = pendingPhotos.filter(p => p.id !== img.id);
+                                                                    setPublicGallery(updatedPub);
+                                                                    setPendingPhotos(updatedPen);
+                                                                    localStorage.setItem("site_public_gallery", JSON.stringify(updatedPub));
+                                                                    localStorage.setItem("site_pending_gallery", JSON.stringify(updatedPen));
+                                                                    window.dispatchEvent(new Event('site-config-updated'));
+                                                                    toast.success("¡Foto aprobada!");
+                                                                }} style={{ flex: 1, padding: '6px', background: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Aprobar</button>
+                                                                <button onClick={() => {
+                                                                    if (confirm("¿Rechazar esta foto?")) {
+                                                                        const updatedPen = pendingPhotos.filter(p => p.id !== img.id);
+                                                                        setPendingPhotos(updatedPen);
+                                                                        localStorage.setItem("site_pending_gallery", JSON.stringify(updatedPen));
+                                                                        toast.error("Foto rechazada");
+                                                                    }
+                                                                }} style={{ padding: '6px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>✖</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* ── SECCIÓN C: PRIVADA ── */}
+                                    <div id="sec-pri">
+                                        <h4 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>🔐 Espacio Privado (Admin Only)</h4>
+                                        {adminGallery.length === 0 ? (
+                                            <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Tu galería privada está vacía.</div>
+                                        ) : (
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '1rem' }}>
+                                                {adminGallery.map(img => (
+                                                    <div key={img.id} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden' }}>
+                                                        <img src={img.url} style={{ width: '100%', height: '110px', objectFit: 'cover' }} />
+                                                        <button onClick={() => {
+                                                            const updated = adminGallery.filter(i => i.id !== img.id);
+                                                            setAdminGallery(updated);
+                                                            localStorage.setItem("admin_private_gallery", JSON.stringify(updated));
+                                                            toast.success("Eliminada de privados");
+                                                        }} style={{ position: 'absolute', top: '5px', right: '5px', background: 'rgba(30,41,59,0.7)', color: 'white', border: 'none', borderRadius: '50%', cursor: 'pointer', width: '22px', height: '22px', fontSize: '10px' }}>✕</button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
 
                             {/* ── PÁGINA: AFOROS ── */}
                             {settingsTab === "pg-aforos" && (
@@ -2550,117 +2811,136 @@ export default function Admin() {
                         </div>
                     )}
 
-                </main>
-            </div>
+                </section>
+            </div >
 
             {/* ── MODAL: EDITAR INVITADO ── */}
-            {editingSpeaker && (
-                <div className="modal-overlay" style={{
-                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-                    zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
-                }}>
-                    <div className="modal-content fade-in" style={{
-                        background: 'white', borderRadius: '16px', padding: '2rem',
-                        width: '100%', maxWidth: '520px', boxShadow: '0 20px 50px rgba(0,0,0,0.3)'
+            {
+                editingSpeaker && (
+                    <div className="modal-overlay" style={{
+                        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+                        zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
                     }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                            <h3 style={{ margin: 0, fontSize: '1.3rem', color: '#1e293b' }}>✏️ Editar Invitado</h3>
-                            <button onClick={() => setEditingSpeaker(null)} style={{
-                                background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#94a3b8'
-                            }}>✕</button>
-                        </div>
+                        <div className="modal-content fade-in" style={{
+                            background: 'white', borderRadius: '16px', padding: '2rem',
+                            width: '100%', maxWidth: '520px', boxShadow: '0 20px 50px rgba(0,0,0,0.3)'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                <h3 style={{ margin: 0, fontSize: '1.3rem', color: '#1e293b' }}>✏️ Editar Invitado</h3>
+                                <button onClick={() => setEditingSpeaker(null)} style={{
+                                    background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#94a3b8'
+                                }}>✕</button>
+                            </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
-                            <img
-                                src={editingSpeaker.avatar_url || editingSpeaker.avatar || '/default-avatar.png'}
-                                alt="Preview"
-                                style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #2563eb' }}
-                            />
-                        </div>
-
-                        <form onSubmit={handleSaveSpeakerEdit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            <div className="form-group">
-                                <label style={{ fontWeight: '600', color: '#374151', fontSize: '0.9rem' }}>Nombre Completo</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={editingSpeaker.nombre || editingSpeaker.name || ''}
-                                    onChange={(e) => setEditingSpeaker({ ...editingSpeaker, nombre: e.target.value, name: e.target.value })}
-                                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem' }}
+                            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+                                <img
+                                    src={editingSpeaker.avatar_url || editingSpeaker.avatar || '/default-avatar.png'}
+                                    alt="Preview"
+                                    style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #2563eb' }}
                                 />
                             </div>
 
-                            <div className="form-group">
-                                <label style={{ fontWeight: '600', color: '#374151', fontSize: '0.9rem' }}>Organización / Universidad</label>
-                                <input
-                                    type="text"
-                                    value={editingSpeaker.organizacion || editingSpeaker.organization || ''}
-                                    onChange={(e) => setEditingSpeaker({ ...editingSpeaker, organizacion: e.target.value, organization: e.target.value })}
-                                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem' }}
-                                />
-                            </div>
+                            <form onSubmit={handleSaveSpeakerEdit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <div className="form-group">
+                                    <label style={{ fontWeight: '600', color: '#374151', fontSize: '0.9rem' }}>Nombre Completo</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={editingSpeaker.nombre || editingSpeaker.name || ''}
+                                        onChange={(e) => setEditingSpeaker({ ...editingSpeaker, nombre: e.target.value, name: e.target.value })}
+                                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem' }}
+                                    />
+                                </div>
 
-                            <div className="form-group">
-                                <label style={{ fontWeight: '600', color: '#374151', fontSize: '0.9rem' }}>Bio / Perfil Profesional</label>
-                                <textarea
-                                    rows={3}
-                                    value={editingSpeaker.bio || ''}
-                                    onChange={(e) => setEditingSpeaker({ ...editingSpeaker, bio: e.target.value })}
-                                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem', resize: 'vertical' }}
-                                />
-                            </div>
+                                <div className="form-group">
+                                    <label style={{ fontWeight: '600', color: '#374151', fontSize: '0.9rem' }}>Organización / Universidad</label>
+                                    <input
+                                        type="text"
+                                        value={editingSpeaker.organizacion || editingSpeaker.organization || ''}
+                                        onChange={(e) => setEditingSpeaker({ ...editingSpeaker, organizacion: e.target.value, organization: e.target.value })}
+                                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem' }}
+                                    />
+                                </div>
 
-                            <div className="form-group">
-                                <label style={{ fontWeight: '600', color: '#374151', fontSize: '0.9rem' }}>Foto del Invitado (cambiar)</label>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={async (e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) {
-                                            setIsLoading(true);
-                                            try {
-                                                const { compressImage } = await import("../utils/imageCompressor");
-                                                const compressed = await compressImage(file, 800, 800, 0.7);
-                                                setEditingSpeaker({ ...editingSpeaker, avatar_url: compressed, avatar: compressed });
-                                            } catch (err) {
-                                                console.error(err);
-                                                toast.error("Error al procesar la imagen");
-                                            } finally {
-                                                setIsLoading(false);
+                                <div className="form-group">
+                                    <label style={{ fontWeight: '600', color: '#374151', fontSize: '0.9rem' }}>Bio / Perfil Profesional</label>
+                                    <textarea
+                                        rows={3}
+                                        value={editingSpeaker.bio || ''}
+                                        onChange={(e) => setEditingSpeaker({ ...editingSpeaker, bio: e.target.value })}
+                                        style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem', resize: 'vertical' }}
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label style={{ fontWeight: '600', color: '#374151', fontSize: '0.9rem' }}>Foto del Invitado (cambiar)</label>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                setIsLoading(true);
+                                                try {
+                                                    const { compressImage } = await import("../utils/imageCompressor");
+                                                    const compressed = await compressImage(file, 800, 800, 0.7);
+                                                    setEditingSpeaker({ ...editingSpeaker, avatar_url: compressed, avatar: compressed });
+                                                } catch (err) {
+                                                    console.error(err);
+                                                    toast.error("Error al procesar la imagen");
+                                                } finally {
+                                                    setIsLoading(false);
+                                                }
                                             }
-                                        }
-                                    }}
-                                    style={{ width: '100%' }}
-                                />
-                            </div>
+                                        }}
+                                        style={{ width: '100%' }}
+                                    />
+                                </div>
 
-                            <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                                <button
-                                    type="button"
-                                    onClick={() => setEditingSpeaker(null)}
-                                    style={{
-                                        flex: 1, padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px',
-                                        background: 'white', cursor: 'pointer', fontWeight: '600', color: '#6b7280'
-                                    }}
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="submit"
-                                    style={{
-                                        flex: 2, padding: '10px', border: 'none', borderRadius: '8px',
-                                        background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', color: 'white',
-                                        cursor: 'pointer', fontWeight: '700', fontSize: '1rem'
-                                    }}
-                                >
-                                    💾 Guardar Cambios
-                                </button>
-                            </div>
-                        </form>
+                                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditingSpeaker(null)}
+                                        style={{
+                                            flex: 1, padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px',
+                                            background: 'white', cursor: 'pointer', fontWeight: '600', color: '#6b7280'
+                                        }}
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        style={{
+                                            flex: 2, padding: '10px', border: 'none', borderRadius: '8px',
+                                            background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', color: 'white',
+                                            cursor: 'pointer', fontWeight: '700', fontSize: '1rem'
+                                        }}
+                                    >
+                                        💾 Guardar Cambios
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
-    )
+                )
+            }
+            <style>{`
+                @keyframes pulse {
+                    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+                    70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+                    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+                }
+                .admin-sidebar button {
+                    transition: all 0.2s ease;
+                }
+                .admin-sidebar button:hover {
+                    background: #f1f5f9;
+                }
+                .admin-sidebar button.active {
+                    background: var(--primary-color);
+                    color: white;
+                }
+            `}</style>
+        </div >
+    );
 }

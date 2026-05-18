@@ -1,0 +1,35 @@
+################################################################
+# Traefik Static Configuration
+# Proyecto CONIITI 2026
+################################################################
+
+# ─── ENTRY POINTS ────────────────────────────────────────────
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+
+# ─── PROVIDERS ───────────────────────────────────────────────
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    # Solo expone servicios con la etiqueta traefik.enable=true
+    exposedByDefault: false
+    network: coniiti-net
+  file:
+    filename: "/etc/traefik/dynamic.yml"
+    watch: true   # recarga automática si el archivo cambia
+
+# ─── API & DASHBOARD ─────────────────────────────────────────
+api:
+  dashboard: true
+  insecure: true   # solo para desarrollo local
+
+# ─── LOGS ────────────────────────────────────────────────────
+log:
+  level: INFO
+
+accessLog:
+  filePath: "/logs/access.log"
+  bufferingSize: 100

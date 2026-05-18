@@ -1,0 +1,606 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: "2026-05-12T18:25:19Z"
+    generateName: auth-service-deployment-5475bbb7b7-
+    generation: 1
+    labels:
+      app: auth-service
+      pod-template-hash: 5475bbb7b7
+    name: auth-service-deployment-5475bbb7b7-tzz55
+    namespace: default
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ReplicaSet
+      name: auth-service-deployment-5475bbb7b7
+      uid: f717488f-fea4-4236-a944-a6ad4c31a683
+    resourceVersion: "4162"
+    uid: 9a3a4ddc-2bba-4a08-97fb-a1c680140d5b
+  spec:
+    containers:
+    - envFrom:
+      - configMapRef:
+          name: auth-service-config
+      - secretRef:
+          name: auth-service-secrets
+      image: coniiti/auth-service:latest
+      imagePullPolicy: Always
+      name: auth-service
+      ports:
+      - containerPort: 3000
+        protocol: TCP
+      resources:
+        limits:
+          cpu: 250m
+          memory: 256Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-smpvn
+        readOnly: true
+    dnsPolicy: ClusterFirst
+    enableServiceLinks: true
+    nodeName: desktop-control-plane
+    preemptionPolicy: PreemptLowerPriority
+    priority: 0
+    restartPolicy: Always
+    schedulerName: default-scheduler
+    securityContext: {}
+    serviceAccount: default
+    serviceAccountName: default
+    terminationGracePeriodSeconds: 30
+    tolerations:
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+      tolerationSeconds: 300
+    volumes:
+    - name: kube-api-access-smpvn
+      projected:
+        defaultMode: 420
+        sources:
+        - serviceAccountToken:
+            expirationSeconds: 3607
+            path: token
+        - configMap:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            name: kube-root-ca.crt
+        - downwardAPI:
+            items:
+            - fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+              path: namespace
+  status:
+    conditions:
+    - lastProbeTime: null
+      lastTransitionTime: "2026-05-14T18:46:53Z"
+      observedGeneration: 1
+      status: "True"
+      type: PodReadyToStartContainers
+    - lastProbeTime: null
+      lastTransitionTime: "2026-05-12T18:25:19Z"
+      observedGeneration: 1
+      status: "True"
+      type: Initialized
+    - lastProbeTime: null
+      lastTransitionTime: "2026-05-12T18:25:19Z"
+      message: 'containers with unready status: [auth-service]'
+      observedGeneration: 1
+      reason: ContainersNotReady
+      status: "False"
+      type: Ready
+    - lastProbeTime: null
+      lastTransitionTime: "2026-05-12T18:25:19Z"
+      message: 'containers with unready status: [auth-service]'
+      observedGeneration: 1
+      reason: ContainersNotReady
+      status: "False"
+      type: ContainersReady
+    - lastProbeTime: null
+      lastTransitionTime: "2026-05-12T18:25:19Z"
+      observedGeneration: 1
+      status: "True"
+      type: PodScheduled
+    containerStatuses:
+    - image: coniiti/auth-service:latest
+      imageID: ""
+      lastState: {}
+      name: auth-service
+      ready: false
+      restartCount: 0
+      started: false
+      state:
+        waiting:
+          message: 'Back-off pulling image "coniiti/auth-service:latest": ErrImagePull:
+            failed to pull and unpack image "docker.io/coniiti/auth-service:latest":
+            failed to resolve reference "docker.io/coniiti/auth-service:latest": pull
+            access denied, repository does not exist or may require authorization:
+            server message: insufficient_scope: authorization failed'
+          reason: ImagePullBackOff
+      volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-smpvn
+        readOnly: true
+        recursiveReadOnly: Disabled
+    hostIP: 172.18.0.2
+    hostIPs:
+    - ip: 172.18.0.2
+    observedGeneration: 1
+    phase: Pending
+    podIP: 10.244.0.6
+    podIPs:
+    - ip: 10.244.0.6
+    qosClass: Burstable
+    startTime: "2026-05-12T18:25:19Z"
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: "2026-05-14T18:47:44Z"
+    generateName: auth-service-deployment-7cfb776cf6-
+    generation: 1
+    labels:
+      app: auth-service
+      pod-template-hash: 7cfb776cf6
+    name: auth-service-deployment-7cfb776cf6-6rz7v
+    namespace: default
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ReplicaSet
+      name: auth-service-deployment-7cfb776cf6
+      uid: fc8d2ca1-df6e-48c8-8347-39a1096b69e3
+    resourceVersion: "4123"
+    uid: 53ea6079-417e-44e3-b9ff-173c91394e7e
+  spec:
+    containers:
+    - envFrom:
+      - configMapRef:
+          name: auth-service-config
+      - secretRef:
+          name: auth-service-secrets
+      image: auth-service:v1
+      imagePullPolicy: Never
+      name: auth-service
+      ports:
+      - containerPort: 3000
+        protocol: TCP
+      resources:
+        limits:
+          cpu: 250m
+          memory: 256Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-8k5wd
+        readOnly: true
+    dnsPolicy: ClusterFirst
+    enableServiceLinks: true
+    nodeName: desktop-control-plane
+    preemptionPolicy: PreemptLowerPriority
+    priority: 0
+    restartPolicy: Always
+    schedulerName: default-scheduler
+    securityContext: {}
+    serviceAccount: default
+    serviceAccountName: default
+    terminationGracePeriodSeconds: 30
+    tolerations:
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+      tolerationSeconds: 300
+    volumes:
+    - name: kube-api-access-8k5wd
+      projected:
+        defaultMode: 420
+        sources:
+        - serviceAccountToken:
+            expirationSeconds: 3607
+            path: token
+        - configMap:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            name: kube-root-ca.crt
+        - downwardAPI:
+            items:
+            - fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+              path: namespace
+  status:
+    conditions:
+    - lastProbeTime: null
+      lastTransitionTime: "2026-05-14T18:47:45Z"
+      observedGeneration: 1
+      status: "True"
+      type: PodReadyToStartContainers
+    - lastProbeTime: null
+      lastTransitionTime: "2026-05-14T18:47:44Z"
+      observedGeneration: 1
+      status: "True"
+      type: Initialized
+    - lastProbeTime: null
+      lastTransitionTime: "2026-05-14T18:47:44Z"
+      message: 'containers with unready status: [auth-service]'
+      observedGeneration: 1
+      reason: ContainersNotReady
+      status: "False"
+      type: Ready
+    - lastProbeTime: null
+      lastTransitionTime: "2026-05-14T18:47:44Z"
+      message: 'containers with unready status: [auth-service]'
+      observedGeneration: 1
+      reason: ContainersNotReady
+      status: "False"
+      type: ContainersReady
+    - lastProbeTime: null
+      lastTransitionTime: "2026-05-14T18:47:44Z"
+      observedGeneration: 1
+      status: "True"
+      type: PodScheduled
+    containerStatuses:
+    - image: auth-service:v1
+      imageID: ""
+      lastState: {}
+      name: auth-service
+      ready: false
+      restartCount: 0
+      started: false
+      state:
+        waiting:
+          message: Container image "auth-service:v1" is not present with pull policy
+            of Never
+          reason: ErrImageNeverPull
+      volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-8k5wd
+        readOnly: true
+        recursiveReadOnly: Disabled
+    hostIP: 172.18.0.2
+    hostIPs:
+    - ip: 172.18.0.2
+    observedGeneration: 1
+    phase: Pending
+    podIP: 10.244.0.9
+    podIPs:
+    - ip: 10.244.0.9
+    qosClass: Burstable
+    startTime: "2026-05-14T18:47:44Z"
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: "2026-05-12T18:31:43Z"
+    generateName: auth-service-deployment-849bc975c-
+    generation: 1
+    labels:
+      app: auth-service
+      pod-template-hash: 849bc975c
+    name: auth-service-deployment-849bc975c-xvbzb
+    namespace: default
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ReplicaSet
+      name: auth-service-deployment-849bc975c
+      uid: e116b559-3fea-4f94-8f28-8154d2fde42b
+    resourceVersion: "4155"
+    uid: 9c658221-082e-4bb4-809d-33ec3cffbb63
+  spec:
+    containers:
+    - envFrom:
+      - configMapRef:
+          name: auth-service-config
+      - secretRef:
+          name: auth-service-secrets
+      image: coniiti/auth-service:latest
+      imagePullPolicy: IfNotPresent
+      name: auth-service
+      ports:
+      - containerPort: 3000
+        protocol: TCP
+      resources:
+        limits:
+          cpu: 250m
+          memory: 256Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-vp448
+        readOnly: true
+    dnsPolicy: ClusterFirst
+    enableServiceLinks: true
+    nodeName: desktop-control-plane
+    preemptionPolicy: PreemptLowerPriority
+    priority: 0
+    restartPolicy: Always
+    schedulerName: default-scheduler
+    securityContext: {}
+    serviceAccount: default
+    serviceAccountName: default
+    terminationGracePeriodSeconds: 30
+    tolerations:
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+      tolerationSeconds: 300
+    volumes:
+    - name: kube-api-access-vp448
+      projected:
+        defaultMode: 420
+        sources:
+        - serviceAccountToken:
+            expirationSeconds: 3607
+            path: token
+        - configMap:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            name: kube-root-ca.crt
+        - downwardAPI:
+            items:
+            - fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+              path: namespace
+  status:
+    conditions:
+    - lastProbeTime: null
+      lastTransitionTime: "2026-05-14T18:46:51Z"
+      observedGeneration: 1
+      status: "True"
+      type: PodReadyToStartContainers
+    - lastProbeTime: null
+      lastTransitionTime: "2026-05-12T18:31:43Z"
+      observedGeneration: 1
+      status: "True"
+      type: Initialized
+    - lastProbeTime: null
+      lastTransitionTime: "2026-05-12T18:31:43Z"
+      message: 'containers with unready status: [auth-service]'
+      observedGeneration: 1
+      reason: ContainersNotReady
+      status: "False"
+      type: Ready
+    - lastProbeTime: null
+      lastTransitionTime: "2026-05-12T18:31:43Z"
+      message: 'containers with unready status: [auth-service]'
+      observedGeneration: 1
+      reason: ContainersNotReady
+      status: "False"
+      type: ContainersReady
+    - lastProbeTime: null
+      lastTransitionTime: "2026-05-12T18:31:43Z"
+      observedGeneration: 1
+      status: "True"
+      type: PodScheduled
+    containerStatuses:
+    - image: coniiti/auth-service:latest
+      imageID: ""
+      lastState: {}
+      name: auth-service
+      ready: false
+      restartCount: 0
+      started: false
+      state:
+        waiting:
+          message: 'Back-off pulling image "coniiti/auth-service:latest": ErrImagePull:
+            failed to pull and unpack image "docker.io/coniiti/auth-service:latest":
+            failed to resolve reference "docker.io/coniiti/auth-service:latest": pull
+            access denied, repository does not exist or may require authorization:
+            server message: insufficient_scope: authorization failed'
+          reason: ImagePullBackOff
+      volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-vp448
+        readOnly: true
+        recursiveReadOnly: Disabled
+    hostIP: 172.18.0.2
+    hostIPs:
+    - ip: 172.18.0.2
+    observedGeneration: 1
+    phase: Pending
+    podIP: 10.244.0.3
+    podIPs:
+    - ip: 10.244.0.3
+    qosClass: Burstable
+    startTime: "2026-05-12T18:31:43Z"
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: "2026-05-12T18:25:18Z"
+    generateName: postgres-deployment-5476ffcfd5-
+    generation: 1
+    labels:
+      app: postgres
+      pod-template-hash: 5476ffcfd5
+    name: postgres-deployment-5476ffcfd5-6prz5
+    namespace: default
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ReplicaSet
+      name: postgres-deployment-5476ffcfd5
+      uid: ae28bdf6-22dc-4da8-94b9-d449d27f1c73
+    resourceVersion: "4149"
+    uid: 7db5d655-fc94-4b8e-b4f7-c888d3fdcd25
+  spec:
+    containers:
+    - env:
+      - name: POSTGRES_USER
+        value: postgres
+      - name: POSTGRES_PASSWORD
+        value: postgres
+      - name: POSTGRES_DB
+        value: coniiti_main
+      image: postgres:15
+      imagePullPolicy: IfNotPresent
+      name: postgres
+      ports:
+      - containerPort: 5432
+        protocol: TCP
+      resources:
+        limits:
+          cpu: 500m
+          memory: 256Mi
+        requests:
+          cpu: 500m
+          memory: 256Mi
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-x5cmh
+        readOnly: true
+    dnsPolicy: ClusterFirst
+    enableServiceLinks: true
+    nodeName: desktop-control-plane
+    preemptionPolicy: PreemptLowerPriority
+    priority: 0
+    restartPolicy: Always
+    schedulerName: default-scheduler
+    securityContext: {}
+    serviceAccount: default
+    serviceAccountName: default
+    terminationGracePeriodSeconds: 30
+    tolerations:
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+      tolerationSeconds: 300
+    volumes:
+    - name: kube-api-access-x5cmh
+      projected:
+        defaultMode: 420
+        sources:
+        - serviceAccountToken:
+            expirationSeconds: 3607
+            path: token
+        - configMap:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            name: kube-root-ca.crt
+        - downwardAPI:
+            items:
+            - fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+              path: namespace
+  status:
+    conditions:
+    - lastProbeTime: null
+      lastTransitionTime: "2026-05-14T18:46:50Z"
+      observedGeneration: 1
+      status: "True"
+      type: PodReadyToStartContainers
+    - lastProbeTime: null
+      lastTransitionTime: "2026-05-12T18:25:18Z"
+      observedGeneration: 1
+      status: "True"
+      type: Initialized
+    - lastProbeTime: null
+      lastTransitionTime: "2026-05-14T18:46:50Z"
+      observedGeneration: 1
+      status: "True"
+      type: Ready
+    - lastProbeTime: null
+      lastTransitionTime: "2026-05-14T18:46:50Z"
+      observedGeneration: 1
+      status: "True"
+      type: ContainersReady
+    - lastProbeTime: null
+      lastTransitionTime: "2026-05-12T18:25:18Z"
+      observedGeneration: 1
+      status: "True"
+      type: PodScheduled
+    containerStatuses:
+    - allocatedResources:
+        cpu: 500m
+        memory: 256Mi
+      containerID: containerd://3bfbcf6fad9f7ada2e1a293427c5e1f4b579fc936af683e950a694cec5de43bb
+      image: docker.io/library/postgres:15
+      imageID: docker.io/library/postgres@sha256:32016c79bea24c14917660106bc23a03341d94b9983aeb41f4130b4f3fbd6dd0
+      lastState:
+        terminated:
+          containerID: containerd://68ef9ca39253cae1454d11caffa77c892608f288c13930fc6ef0cc26ba0933ca
+          exitCode: 255
+          finishedAt: "2026-05-14T18:46:35Z"
+          reason: Unknown
+          startedAt: "2026-05-12T18:28:40Z"
+      name: postgres
+      ready: true
+      resources:
+        limits:
+          cpu: 500m
+          memory: 256Mi
+        requests:
+          cpu: 500m
+          memory: 256Mi
+      restartCount: 1
+      started: true
+      state:
+        running:
+          startedAt: "2026-05-14T18:46:50Z"
+      user:
+        linux:
+          gid: 0
+          supplementalGroups:
+          - 0
+          uid: 0
+      volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-x5cmh
+        readOnly: true
+        recursiveReadOnly: Disabled
+    hostIP: 172.18.0.2
+    hostIPs:
+    - ip: 172.18.0.2
+    observedGeneration: 1
+    phase: Running
+    podIP: 10.244.0.5
+    podIPs:
+    - ip: 10.244.0.5
+    qosClass: Guaranteed
+    startTime: "2026-05-12T18:25:18Z"
+kind: List
+metadata:
+  resourceVersion: ""

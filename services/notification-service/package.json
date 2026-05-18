@@ -1,0 +1,32 @@
+{
+  "name": "notification-service",
+  "version": "1.0.0",
+  "description": "Microservicio de notificaciones",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "nodemon src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "amqplib": "^0.10.9",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "pg": "^8.20.0",
+    "sequelize": "^6.37.8"
+  },
+  "devDependencies": {
+    "@types/amqplib": "^0.10.8",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.1",
+    "@types/node": "^22.13.10",
+    "@types/pg": "^8.20.0",
+    "nodemon": "^3.1.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

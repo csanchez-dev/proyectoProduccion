@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react";
 import DayTabs, { type DayOption } from "../components/DayTabs";
-import ConferenceCard from "../components/ConferenceCard"
-import { conferences as initialConferences } from "../data/conference_mocks"
-import type { Language } from "../utils/i18n"
+import ConferenceCard from "../components/ConferenceCard";
+import { conferences as initialConferences } from "../data/conference_mocks";
+import { getTranslation, translations } from "../utils/i18n";
+import type { Language } from "../utils/i18n";
 import { getPonencias } from "../services/api";
 
 export default function Agenda() {
@@ -17,10 +18,18 @@ export default function Agenda() {
 
   const [activeDayId, setActiveDayId] = useState<string>(days[0]?.id || "day1");
 
-  const [lang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
+  const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es');
 
-  const [conferencesList, setConferencesList] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  useEffect(() => {
+    const updateLang = () => setLang((localStorage.getItem("app_lang") as Language) || 'es');
+    window.addEventListener('app-lang-updated', updateLang);
+    return () => window.removeEventListener('app-lang-updated', updateLang);
+  }, []);
+
+  const t = (key: keyof typeof translations.es) => getTranslation(key, lang);
+
+  const [conferencesList, setConferencesList] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchConferences = async () => {
@@ -31,15 +40,15 @@ export default function Agenda() {
           setConferencesList(data);
         } else {
           // API vacía: usar localStorage o mocks
-          const saved = localStorage.getItem("site_conferences")
+          const saved = localStorage.getItem("site_conferences");
           const parsed = saved ? JSON.parse(saved) : null;
           const source = (parsed && parsed.length > 0) ? parsed : initialConferences;
           console.info('[Agenda] Usando datos locales/mocks:', source.length, 'conferencias');
           setConferencesList(source);
         }
-      } catch (err) {
+      } catch (_err) {
         // Error de red o API: siempre usar localStorage o mocks
-        const saved = localStorage.getItem("site_conferences")
+        const saved = localStorage.getItem("site_conferences");
         const parsed = saved ? JSON.parse(saved) : null;
         const source = (parsed && parsed.length > 0) ? parsed : initialConferences;
         console.info('[Agenda] Fallback a datos locales/mocks:', source.length, 'conferencias');
@@ -51,8 +60,8 @@ export default function Agenda() {
     fetchConferences();
   }, []);
 
-  const [searchTerm, setSearchTerm] = useState("")
-  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({})
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
 
   const [filterConfig, setFilterConfig] = useState<any[]>(() => {
     const saved = localStorage.getItem("agenda_filters_config");
@@ -95,16 +104,16 @@ export default function Agenda() {
   });
 
   const [config, setConfig] = useState({
-    title: localStorage.getItem("agenda_title") || (lang === 'es' ? '📅 Agenda CONIITI 2026' : '📅 CONIITI 2026 Agenda'),
-    subtitle: localStorage.getItem("agenda_subtitle") || (lang === 'es' ? 'Explora todas las charlas y conferencias del evento' : 'Explore all the talks and conferences of the event'),
+    title: localStorage.getItem("agenda_title") || "",
+    subtitle: localStorage.getItem("agenda_subtitle") || "",
     showFilters: localStorage.getItem("agenda_show_filters") !== "false",
     columns: localStorage.getItem("agenda_cols") || "auto"
   });
 
   const refreshConfig = () => {
     setConfig({
-      title: localStorage.getItem("agenda_title") || (lang === 'es' ? '📅 Agenda CONIITI 2026' : '📅 CONIITI 2026 Agenda'),
-      subtitle: localStorage.getItem("agenda_subtitle") || (lang === 'es' ? 'Explora todas las charlas y conferencias del evento' : 'Explore all the talks and conferences of the event'),
+      title: localStorage.getItem("agenda_title") || "",
+      subtitle: localStorage.getItem("agenda_subtitle") || "",
       showFilters: localStorage.getItem("agenda_show_filters") !== "false",
       columns: localStorage.getItem("agenda_cols") || "auto"
     });
@@ -123,7 +132,7 @@ export default function Agenda() {
   const filteredConferences = conferencesList.filter((conf: any) => {
     const matchesSearch =
       conf.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      conf.speaker.name.toLowerCase().includes(searchTerm.toLowerCase())
+      conf.speaker.name.toLowerCase().includes(searchTerm.toLowerCase());
 
     // Lógica de filtrado dinámica
     const matchesDynamicFilters = filterConfig.every(filter => {
@@ -132,18 +141,18 @@ export default function Agenda() {
       return conf[filter.property] === selectedValue;
     });
 
-    const confDayId = conf.dayId ?? conf.day ?? conf.day_id ?? conf.dayNumber ?? conf.date
-    const matchesDay = !confDayId || confDayId === activeDayId
+    const confDayId = conf.dayId ?? conf.day ?? conf.day_id ?? conf.dayNumber ?? conf.date;
+    const matchesDay = !confDayId || confDayId === activeDayId;
 
-    return matchesSearch && matchesDynamicFilters && matchesDay
-  })
+    return matchesSearch && matchesDynamicFilters && matchesDay;
+  });
 
   const clearFilters = () => {
-    setSearchTerm("")
-    setActiveFilters({})
-  }
+    setSearchTerm("");
+    setActiveFilters({});
+  };
 
-  const hasActiveFilters = searchTerm || Object.values(activeFilters).some(v => v !== "all" && v !== "")
+  const hasActiveFilters = searchTerm || Object.values(activeFilters).some(v => v !== "all" && v !== "");
 
   const selectStyle: React.CSSProperties = {
     padding: '0.72rem 1rem',
@@ -156,14 +165,14 @@ export default function Agenda() {
     background: 'white',
     color: '#374151',
     transition: 'border-color 0.2s',
-  }
+  };
 
   return (
     <section className="agenda-page">
       {/* ── Header ── */}
-      <div className="agenda-header-section">
-        <h1 className="agenda-title">{config.title}</h1>
-        <p className="agenda-subtitle">{config.subtitle}</p>
+      <div className="agenda-header-section" data-reveal="down">
+        <h1 className="agenda-title">{config.title || t('agenda_title')}</h1>
+        <p className="agenda-subtitle">{config.subtitle || t('agenda_subtitle')}</p>
         <DayTabs days={days} activeDayId={activeDayId} onChange={setActiveDayId} />
 
         {/* ── Controles de búsqueda y filtros ── */}
@@ -174,7 +183,7 @@ export default function Agenda() {
               <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '1.1rem' }}>🔍</span>
               <input
                 type="text"
-                placeholder={lang === 'es' ? "Buscar por charla o ponente..." : "Search by talk or speaker..."}
+              placeholder={t('agenda_search')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 style={{
@@ -227,7 +236,7 @@ export default function Agenda() {
                 onMouseEnter={(e) => { e.currentTarget.style.background = '#e74c3c'; e.currentTarget.style.color = 'white'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = '#fff0f0'; e.currentTarget.style.color = '#e74c3c'; }}
               >
-                ✕ {lang === 'es' ? 'Limpiar' : 'Clear'}
+                ✕ {t('agenda_clear')}
               </button>
             )}
           </div>
@@ -235,9 +244,7 @@ export default function Agenda() {
 
         {/* Contador de resultados */}
         <p className="results-count">
-          {filteredConferences.length} {lang === 'es'
-            ? `conferencia${filteredConferences.length !== 1 ? 's' : ''} encontrada${filteredConferences.length !== 1 ? 's' : ''}`
-            : `conference${filteredConferences.length !== 1 ? 's' : ''} found`}
+          {filteredConferences.length} {filteredConferences.length === 1 ? t('agenda_found_one') : t('agenda_found_many')}
         </p>
       </div>
 
@@ -246,7 +253,7 @@ export default function Agenda() {
         {isLoading ? (
           <div className="loading-container" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem' }}>
             <div className="shimmer-card" style={{ height: '200px', borderRadius: '20px', background: '#f0f0f0' }}></div>
-            <p style={{ marginTop: '1rem', color: '#666' }}>{lang === 'es' ? 'Cargando conferencias reales desde la API...' : 'Loading real conferences from the API...'}</p>
+            <p style={{ marginTop: '1rem', color: '#666' }}>{t('agenda_loading')}</p>
           </div>
         ) : filteredConferences.length > 0 ? (
           filteredConferences.map((conf: any) => (
@@ -256,19 +263,17 @@ export default function Agenda() {
           <div className="agenda-empty">
             <span style={{ fontSize: '4rem', display: 'block', marginBottom: '1rem' }}>🔎</span>
             <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: '#374151' }}>
-              {lang === 'es' ? 'No se encontraron conferencias' : 'No conferences found'}
+              {t('agenda_no_results')}
             </h3>
             <p style={{ color: '#9ca3af' }}>
-              {lang === 'es'
-                ? 'Prueba con otros términos de búsqueda o ajusta los filtros.'
-                : 'Try other search terms or adjust the filters.'}
+              {t('agenda_no_results_sub')}
             </p>
             <button onClick={clearFilters} className="btn" style={{ marginTop: '1.5rem', padding: '10px 28px' }}>
-              {lang === 'es' ? 'Limpiar filtros' : 'Clear filters'}
+              {t('agenda_clear_filters')}
             </button>
           </div>
         )}
       </div>
     </section>
-  )
+  );
 }

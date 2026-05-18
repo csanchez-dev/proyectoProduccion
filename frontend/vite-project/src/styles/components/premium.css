@@ -38,11 +38,14 @@
   background: #fdfdfd;
 }
 
-.premium-form .form-group input:focus {
+.premium-form .form-group input:focus,
+.premium-form .form-group select:focus,
+.premium-form .form-group textarea:focus {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 0 0 4px rgba(0, 71, 171, 0.15);
   outline: none;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
 }
 
 .premium-btn {
@@ -50,18 +53,33 @@
   padding: 14px;
   font-weight: 700;
   font-size: 1.1rem;
-  border-radius: 12px;
-  background: var(--primary-color);
+  border-radius: var(--radius-md);
+  background: var(--btn-gradient);
   color: white;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 6px 16px rgba(0, 71, 171, 0.25);
   border: none;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.premium-btn::after {
+  content: "";
+  position: absolute;
+  top: 0; left: -100%;
+  width: 50%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: var(--transition-slow);
 }
 
 .premium-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(37, 99, 235, 0.4);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 10px 25px rgba(0, 71, 171, 0.35);
+}
+
+.premium-btn:hover::after {
+  left: 100%;
 }
 
 .auth-footer {
@@ -214,6 +232,7 @@
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    UI/UX Pro Max — Design System Extensions for CONIITI 2026
-   Glassmorphism · Inter/Crimson Pro · #2563EB
+   Glassmorphism · Inter/Crimson Pro · #0047AB Cobalt
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */

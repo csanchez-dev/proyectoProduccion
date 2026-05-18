@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: inscription-service
+  namespace: default
+spec:
+  ports:
+    - port: 3002
+      targetPort: 3002
+  selector:
+    app: inscription-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inscription-service-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inscription-service
+  template:
+    metadata:
+      labels:
+        app: inscription-service
+    spec:
+      containers:
+        - name: inscription-service
+          image: inscription-service:v2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3002
+          envFrom:
+            - secretRef:
+                name: auth-service-secrets
+          env:
+            - name: DB_HOST
+              value: "postgres-service"
+            - name: DATABASE_URL
+              value: "postgresql://postgres:123456@postgres-service:5432/coniiti_main?schema=public"
+            - name: RABBITMQ_URL
+              value: "amqp://user:password@rabbitmq-service:5672"
+            - name: NODE_OPTIONS
+              value: "--max-old-space-size=128"
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"

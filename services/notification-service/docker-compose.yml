@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  notification-postgres:
+    image: postgres:16
+    container_name: notification-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: notifications_user
+      POSTGRES_PASSWORD: notifications_pass
+      POSTGRES_DB: notifications_db
+    ports:
+      - "5438:5432"
+    volumes:
+      - notification_postgres_data:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  notification-service:
+    build: .
+    container_name: notification-service
+    restart: always
+    depends_on:
+      - notification-postgres
+      - rabbitmq
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: 4000
+      DB_HOST: notification-postgres
+      DB_PORT: 5432
+      DB_USER: notifications_user
+      DB_PASSWORD: notifications_pass
+      DB_NAME: notifications_db
+      RABBITMQ_URL: amqp://rabbitmq:5672
+
+volumes:
+  notification_postgres_data:
