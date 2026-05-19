@@ -3,13 +3,13 @@ import app from './app';
 import { connectDatabase } from './config/database';
 import { startRabbitConsumer } from './consumers/rabbitConsumer';
 
-const PORT = process.env.PORT || 4000;
+const PORT = Number(process.env.PORT) || 4000;
 
 async function bootstrap(): Promise<void> {
   await connectDatabase();
   await startRabbitConsumer();
 
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`Notification service running on port ${PORT}`);
   });
 }

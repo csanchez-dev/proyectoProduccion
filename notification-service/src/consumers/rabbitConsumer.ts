@@ -31,15 +31,19 @@ export async function startRabbitConsumer(): Promise<void> {
     console.log('RabbitMQ connected and queue bound');
     console.log('Notification service: consumer activo');
 
-    channel.consume(
-      q.queue,
-      async (msg) => {
-        if (!msg) return;
+     channel.consume(
+       q.queue,
+       async (msg) => {
+         if (!msg) {
+           console.log('⚠️ Mensaje nulo recibido');
+           return;
+         }
 
-        try {
-          console.log('Antes de parsear mensaje');
-          console.log('Contenido crudo:', msg.content.toString());
-          console.log('Routing key:', msg.fields.routingKey);
+         try {
+           console.log('✅ [Notification Service] MENSAJE RECIBIDO DE RABBITMQ');
+           console.log('Antes de parsear mensaje');
+           console.log('Contenido crudo:', msg.content.toString());
+           console.log('Routing key:', msg.fields.routingKey);
 
           const content = JSON.parse(msg.content.toString());
           const routingKey = msg.fields.routingKey;
