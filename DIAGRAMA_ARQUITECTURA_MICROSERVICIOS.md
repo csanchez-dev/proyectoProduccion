@@ -423,7 +423,5 @@ location /api/inscripciones {
 
 ---
 
-**Generado por:** GitHub Copilot  
-**Fecha:** 2026-05-19  
-**Versión:** 1.0
+
 

@@ -383,6 +383,5 @@ docker-compose -f docker_compose.yml down -v
 
 ---
 
-**Generado por:** GitHub Copilot  
-**Última actualización:** 2026-05-19
+
 
