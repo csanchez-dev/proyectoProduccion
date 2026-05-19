@@ -39,53 +39,66 @@ export async function startRabbitConsumer(): Promise<void> {
            return;
          }
 
-         try {
-           console.log('✅ [Notification Service] MENSAJE RECIBIDO DE RABBITMQ');
-           console.log('Antes de parsear mensaje');
-           console.log('Contenido crudo:', msg.content.toString());
-           console.log('Routing key:', msg.fields.routingKey);
+          try {
+            console.log('✅ [Notification Service] MENSAJE RECIBIDO DE RABBITMQ');
+            console.log('Antes de parsear mensaje');
+            console.log('Contenido crudo:', msg.content.toString());
+            console.log('Routing key:', msg.fields.routingKey);
 
-          const content = JSON.parse(msg.content.toString());
-          const routingKey = msg.fields.routingKey;
+            const content = JSON.parse(msg.content.toString());
+            const routingKey = msg.fields.routingKey;
 
-          console.log('Notification service: mensaje recibido', {
-            routingKey,
-            content,
-          });
+            console.log('Notification service: mensaje recibido', {
+              routingKey,
+              content,
+            });
 
-          let title = 'Nuevo evento';
-          let message = 'Se recibió un evento';
+            let title = 'Nuevo evento';
+            let message = 'Se recibió un evento';
 
-          if (routingKey === 'user.registered') {
-            title = 'Nuevo usuario registrado';
-            message = `Se registró un nuevo usuario: ${content.fullName || content.name || 'Sin nombre'}`;
+            // Enriquecer el mensaje con información de usuario cuando esté disponible
+            const userParts: string[] = [];
+            const userId = content.userId || content.user?.id || content.id || content.user_id;
+            const userEmail = content.email || content.user?.email || content.userEmail || content.user_email;
+            const userFullName = content.fullName || content.name || content.user?.fullName || content.user?.name || content.user_full_name;
+
+            if (userId) userParts.push(`id:${userId}`);
+            if (userFullName) userParts.push(`nombre:${userFullName}`);
+            if (userEmail) userParts.push(`email:${userEmail}`);
+
+            const userInfoStr = userParts.length > 0 ? ` [usuario: ${userParts.join(' | ')}]` : '';
+
+            if (routingKey === 'user.registered') {
+              title = 'Nuevo usuario registrado';
+              message = `Se registró un nuevo usuario: ${userFullName || content.fullName || content.name || 'Sin nombre'}` + userInfoStr;
+            }
+
+            if (routingKey === 'user.logged_in') {
+              title = 'Usuario inició sesión';
+              message = `El usuario ${userEmail || 'desconocido'} inició sesión` + userInfoStr;
+            }
+
+            if (routingKey === 'meeting.user_enrolled') {
+              title = 'Usuario inscrito a reunión';
+              message = `Un usuario se inscribió a la reunión ${content.meetingId || 'sin id'}` + userInfoStr;
+            }
+
+            console.log('Antes de guardar notificación');
+
+            // Guardamos la notificación en DB incluyendo en el message la info del usuario
+            await notificationService.create({
+              type: routingKey,
+              title,
+              message,
+            });
+
+            console.log('Notification service: notificación creada');
+
+            channel.ack(msg);
+          } catch (error) {
+            console.error('Error processing RabbitMQ message:', error);
+            channel.nack(msg, false, false);
           }
-
-          if (routingKey === 'user.logged_in') {
-            title = 'Usuario inició sesión';
-            message = `El usuario ${content.email || 'desconocido'} inició sesión`;
-          }
-
-          if (routingKey === 'meeting.user_enrolled') {
-            title = 'Usuario inscrito a reunión';
-            message = `Un usuario se inscribió a la reunión ${content.meetingId || 'sin id'}`;
-          }
-
-          console.log('Antes de guardar notificación');
-
-          await notificationService.create({
-            type: routingKey,
-            title,
-            message,
-          });
-
-          console.log('Notification service: notificación creada');
-
-          channel.ack(msg);
-        } catch (error) {
-          console.error('Error processing RabbitMQ message:', error);
-          channel.nack(msg, false, false);
-        }
       },
       { noAck: false }
     );
