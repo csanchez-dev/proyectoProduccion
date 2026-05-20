@@ -3,7 +3,9 @@ import { Router } from 'express';
 import * as controller from '../controllers/usuario.controller.js';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 import { authorize } from '../middlewares/roles.middleware.js';
-import { TipoUsuario } from '@prisma/client';
+import pkg from '@prisma/client';
+const { TipoUsuario } = pkg;
+
 
 const router = Router();
 

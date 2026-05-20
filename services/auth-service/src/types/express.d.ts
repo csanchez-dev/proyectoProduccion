@@ -1,6 +1,6 @@
 // src/types/express.d.ts
 import { Request } from 'express';
-import { TipoUsuario } from '@prisma/client';
+import type { TipoUsuario } from '@prisma/client';
 
 declare global {
   namespace Express {

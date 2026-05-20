@@ -8,18 +8,19 @@ services:
     image: postgres:15
     container_name: coniiti-postgres
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
       POSTGRES_DB: coniiti_main
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"   # opcional, solo para debug
+      # Si ya tienes Postgres local en el host usando 5432, usa 5433 para el contenedor.
+      - "5433:5432"   # opcional, solo para debug
     networks:
       - coniiti-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -85,12 +86,12 @@ services:
   auth-service:
     build: ./services/auth-service
     container_name: coniiti-auth
-    env_file:
-      - .env.auth
     environment:
-      DB_HOST: postgres
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DATABASE_URL: "postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/coniiti_main?schema=public"
+      JWT_SECRET: ${JWT_SECRET:-supersecret}
       REDIS_URL: redis://redis:6379
       RABBITMQ_URL: amqp://user:password@rabbitmq:5672
     depends_on:
@@ -108,9 +109,11 @@ services:
     build: ./services/agenda-service
     container_name: coniiti-agenda
     environment:
-      DB_HOST: postgres
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DATABASE_URL: "postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/coniiti_main?schema=public"
+      JWT_SECRET: ${JWT_SECRET:-supersecret}
     depends_on:
       postgres:
         condition: service_healthy
@@ -122,9 +125,11 @@ services:
     build: ./services/inscription-service
     container_name: coniiti-inscription
     environment:
-      DB_HOST: postgres
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DATABASE_URL: "postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/coniiti_main?schema=public"
+      JWT_SECRET: ${JWT_SECRET:-supersecret}
       RABBITMQ_URL: amqp://user:password@rabbitmq:5672
     depends_on:
       postgres:

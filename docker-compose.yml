@@ -38,7 +38,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      # Si ya tienes Postgres local en el host usando 5432, usa 5433 para el contenedor.
+      - "5433:5432"
     networks:
       - coniiti-net
     restart: unless-stopped
@@ -131,12 +132,12 @@ services:
   auth-service:
     build: ./services/auth-service
     container_name: coniiti-auth
-    env_file:
-      - .env.auth
     environment:
       DB_HOST: postgres
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DATABASE_URL: "postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/coniiti_main?schema=public"
+      JWT_SECRET: ${JWT_SECRET:-supersecret}
       REDIS_URL: redis://redis:6379
       RABBITMQ_URL: amqp://user:password@rabbitmq:5672
       NODE_OPTIONS: "--max-old-space-size=128"
@@ -162,6 +163,8 @@ services:
       DB_HOST: postgres
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DATABASE_URL: "postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/coniiti_main?schema=public"
+      JWT_SECRET: ${JWT_SECRET:-supersecret}
       NODE_OPTIONS: "--max-old-space-size=128"
     depends_on:
       postgres:
@@ -181,6 +184,8 @@ services:
       DB_HOST: postgres
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DATABASE_URL: "postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/coniiti_main?schema=public"
+      JWT_SECRET: ${JWT_SECRET:-supersecret}
       RABBITMQ_URL: amqp://user:password@rabbitmq:5672
       NODE_OPTIONS: "--max-old-space-size=128"
     depends_on:
@@ -228,6 +233,7 @@ services:
     build: ./services/backend
     container_name: coniiti-backend-gateway
     environment:
+      PORT: 5000
       AUTH_SERVICE_URL: http://auth-service:3000
       AGENDA_SERVICE_URL: http://agenda-service:3001
       INSCRIPTION_SERVICE_URL: http://inscription-service:3002

@@ -3,7 +3,8 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import { prisma } from '../config/prisma.js';
 import { generateToken } from '../utils/jwt.js';
-import { TipoUsuario } from '@prisma/client';
+import pkg from '@prisma/client';
+const { TipoUsuario } = pkg;
 
 // 🔵 LOGIN
 export const login = async (req: Request, res: Response) => {

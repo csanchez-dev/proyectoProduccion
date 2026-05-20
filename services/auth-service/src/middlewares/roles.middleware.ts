@@ -1,6 +1,6 @@
 // src/middlewares/roles.middleware.ts
 import { Request, Response, NextFunction } from 'express';
-import { TipoUsuario } from '@prisma/client';
+import type { TipoUsuario } from '@prisma/client';
 
 export const authorize = (...roles: TipoUsuario[]) => {
   return (req: Request, res: Response, next: NextFunction) => {

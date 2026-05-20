@@ -2,7 +2,9 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import { prisma } from '../config/prisma.js';
-import { TipoUsuario } from '@prisma/client';
+import pkg from '@prisma/client';
+const { TipoUsuario } = pkg;
+
 
 // 🟢 Registro (usuario + perfil)
 export const registerUser = async (req: Request, res: Response) => {
