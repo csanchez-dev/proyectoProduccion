@@ -14,7 +14,7 @@ Asegúrate de tener instalado **Docker** y **Docker Compose** en tu sistema.
 Abre tu terminal en la raíz del proyecto y ejecuta:
 
 ```bash
-# Iniciar todos los servicios, bases de datos y Traefik (fondo)
+# Iniciar todos los servicios, bases de datos y Nginx (fondo)
 docker-compose up -d --build
 ```
 
@@ -44,4 +44,3 @@ Una vez iniciados los contenedores, la aplicación y los servicios estarán expu
 
 ---
 Diseño y desarrollo orientado a la excelencia para la **Universidad Católica de Colombia**.
-
