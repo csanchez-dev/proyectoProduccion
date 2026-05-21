@@ -108,8 +108,8 @@ services:
     image: rabbitmq:4.0-management
     container_name: coniiti-rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: user
-      RABBITMQ_DEFAULT_PASS: password
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-changeme_user}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-changeme_pass}
     ports:
       - "5673:5672"
       - "15673:15672"
@@ -137,9 +137,9 @@ services:
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       DATABASE_URL: "postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/coniiti_main?schema=public"
-      JWT_SECRET: ${JWT_SECRET:-supersecret}
+      JWT_SECRET: ${JWT_SECRET:-changeme_jwt_secret}
       REDIS_URL: redis://redis:6379
-      RABBITMQ_URL: amqp://user:password@rabbitmq:5672
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-changeme_user}:${RABBITMQ_PASS:-changeme_pass}@rabbitmq:5672
       NODE_OPTIONS: "--max-old-space-size=128"
     depends_on:
       postgres:
@@ -164,7 +164,7 @@ services:
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       DATABASE_URL: "postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/coniiti_main?schema=public"
-      JWT_SECRET: ${JWT_SECRET:-supersecret}
+      JWT_SECRET: ${JWT_SECRET:-changeme_jwt_secret}
       NODE_OPTIONS: "--max-old-space-size=128"
     depends_on:
       postgres:
@@ -185,8 +185,8 @@ services:
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       DATABASE_URL: "postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/coniiti_main?schema=public"
-      JWT_SECRET: ${JWT_SECRET:-supersecret}
-      RABBITMQ_URL: amqp://user:password@rabbitmq:5672
+      JWT_SECRET: ${JWT_SECRET:-changeme_jwt_secret}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-changeme_user}:${RABBITMQ_PASS:-changeme_pass}@rabbitmq:5672
       NODE_OPTIONS: "--max-old-space-size=128"
     depends_on:
       postgres:
@@ -211,7 +211,7 @@ services:
       DB_USER: notifications_user
       DB_PASSWORD: notifications_pass
       DB_NAME: notifications_db
-      RABBITMQ_URL: amqp://user:password@rabbitmq:5672
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-changeme_user}:${RABBITMQ_PASS:-changeme_pass}@rabbitmq:5672
       NODE_OPTIONS: "--max-old-space-size=128"
     depends_on:
       notification-postgres:
