@@ -6,7 +6,7 @@ import { registerUserSchema, loginUserSchema, crearPerfilSchema, actualizarPerfi
 import { ZodSchema } from 'zod'
 
 // Middleware de validación con Zod
-const validate = (schema: ZodSchema) => (req: Request, res: Response, next: NextFunction) => {
+export const validate = (schema: ZodSchema) => (req: Request, res: Response, next: NextFunction) => {
   try {
     schema.parse(req.body)
     next()
