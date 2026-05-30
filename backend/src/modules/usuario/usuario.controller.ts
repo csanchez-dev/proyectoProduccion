@@ -1,11 +1,21 @@
-import { Request, Response } from 'express'
+import { Request, Response, NextFunction } from 'express'
 import * as service from './usuario.service'
 import { admin_supabase } from '../../config/supabase'
 import { publishEvent } from '../../config/rabbitmq'
+import { registerUserSchema, loginUserSchema, crearPerfilSchema, actualizarPerfilSchema } from './usuario.dto'
+import { ZodSchema } from 'zod'
 
+// Middleware de validación con Zod
+const validate = (schema: ZodSchema) => (req: Request, res: Response, next: NextFunction) => {
+  try {
+    schema.parse(req.body)
+    next()
+  } catch (error: any) {
+    return res.status(400).json({ error: error.errors })
+  }
+}
 
 // Registrar un usuario(CREATE)
-
 export const registerUser = async (req: Request, res: Response) => {
   const { fullName, email, password, rol, career, gender, documentNumber, institutionalCode } = req.body
 
@@ -126,7 +136,7 @@ export const loginUser = async (req: Request, res: Response) => {
 
     res.json(data)
   } catch (err: any) {
-    res.status(500).json({ error: 'Error interno de Julián' })
+    res.status(500).json({ error: 'Error interno del servidor' })
   }
 }
 
