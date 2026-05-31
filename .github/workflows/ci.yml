@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [ "main" ]
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   validate_frontend:
     name: Validar Frontend
@@ -22,12 +19,12 @@ jobs:
     - name: Configurar Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '18' # Cambiado de '20' a '18'
     - name: Instalar dependencias
       run: |
         rm -f package-lock.json # Eliminar package-lock.json
         rm -rf node_modules     # Eliminar node_modules
-        npm install --include=optional
+        npm install
     - name: Linting
       run: npm run lint
     - name: Pruebas Unitarias
