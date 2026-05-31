@@ -43,5 +43,10 @@
     "react-router-dom": "^7.13.0",
     "recharts": "^3.7.0",
     "sonner": "^2.0.7"
+  },
+  "overrides": {
+    "@tailwindcss/vite": {
+      "vite": "5.3.3"
+    }
   }
 }
