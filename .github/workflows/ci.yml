@@ -20,6 +20,9 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
+    - name: Mostrar package.json del frontend
+      run: cat package.json # Añadimos este paso
+      working-directory: ./frontend/vite-project
     - name: Instalar dependencias
       run: |
         rm -f package-lock.json # Eliminar package-lock.json
