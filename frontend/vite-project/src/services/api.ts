@@ -5,14 +5,10 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? 'test';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-const NOTIFICATIONS_API_URL = import.meta.env.VITE_NOTIFICATIONS_URL || 'http://localhost:8080/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
-export const apiFetch = async (
-    endpoint: string,
-    options: RequestInit = {},
-    baseUrl: string = API_URL
-) => {
+export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
+    // Intentar obtener la sesión para el token
     const { data: { session } } = await supabase.auth.getSession();
 
     const headers: Record<string, string> = {
@@ -24,7 +20,8 @@ export const apiFetch = async (
         headers['Authorization'] = `Bearer ${session.access_token}`;
     }
 
-    const response = await fetch(`${baseUrl}${endpoint}`, {
+
+    const response = await fetch(`${API_URL}${endpoint}`, {
         ...options,
         headers,
     });
@@ -49,6 +46,7 @@ const mapPonencia = (p: any) => ({
     level: p.level || 'Básico',
     type: p.type || 'presencial',
     virtualLink: p.virtualLink,
+    // Derivar dayId desde la fecha del dia_evento para que el filtro de días funcione
     dayId: p.dia_evento?.id ? `day${p.dia_evento.id}` : (p.dia_id ? `day${p.dia_id}` : 'day1'),
     speaker: p.ponencia_ponente?.[0]?.ponente ? {
         name: p.ponencia_ponente[0].ponente.nombre,
@@ -63,15 +61,7 @@ const mapPonencia = (p: any) => ({
     }
 });
 
-// Notifications
-export const getNotifications = () => apiFetch('/notifications', {}, NOTIFICATIONS_API_URL);
-export const getUnreadNotifications = () => apiFetch('/notifications/unread', {}, NOTIFICATIONS_API_URL);
-export const markNotificationAsRead = (id: string) =>
-    apiFetch(`/notifications/${id}/read`, {
-        method: 'PATCH',
-    }, NOTIFICATIONS_API_URL);
-
-// Data APIs
+// GETters
 export const getPonencias = async () => {
     const data = await apiFetch('/ponencias');
     if (!data || !Array.isArray(data) || data.length === 0) {
@@ -84,59 +74,53 @@ export const getEventos = () => apiFetch('/eventos');
 export const getPonentes = () => apiFetch('/ponentes');
 export const getUsuarios = () => apiFetch('/usuarios');
 
-// POST / PUT / DELETE
+// POSTers (Guardado)
 export const createPonencia = (data: any) => apiFetch('/ponencias', {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: JSON.stringify(data)
 });
 
 export const createPonente = (data: any) => apiFetch('/ponentes', {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: JSON.stringify(data)
 });
 
 export const deletePonencia = (id: string) => apiFetch(`/ponencias/${id}`, {
-    method: 'DELETE',
+    method: 'DELETE'
 });
 
 export const updatePonencia = (id: string, data: any) => apiFetch(`/ponencias/${id}`, {
     method: 'PUT',
-    body: JSON.stringify(data),
+    body: JSON.stringify(data)
 });
 
 export const createEvento = (data: any) => apiFetch('/eventos', {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: JSON.stringify(data)
 });
+
 
 export const createPerfil = (data: any) => apiFetch('/usuarios/perfil', {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: JSON.stringify(data)
 });
 
 export const updatePerfil = (data: any) => apiFetch('/usuarios/perfil', {
     method: 'PUT',
-    body: JSON.stringify(data),
+    body: JSON.stringify(data)
 });
 
 export const register = (data: any) => apiFetch('/usuarios/register', {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: JSON.stringify(data)
 });
 
-// Auth helpers
-export const signUp = (email: string, pass: string) =>
-    supabase.auth.signUp({ email, password: pass });
 
-export const signIn = (email: string, pass: string) =>
-    supabase.auth.signInWithPassword({ email, password: pass });
-
+// AUTH Helpers
+export const signUp = (email: string, pass: string) => supabase.auth.signUp({ email, password: pass });
+export const signIn = (email: string, pass: string) => supabase.auth.signInWithPassword({ email, password: pass });
 export const signOut = () => supabase.auth.signOut();
-
-export const resetPassword = (email: string) =>
-    supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/actualizar-password`,
-    });
-
-export const updatePassword = (newPassword: string) =>
-    supabase.auth.updateUser({ password: newPassword });
+export const resetPassword = (email: string) => supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/actualizar-password`,
+});
+export const updatePassword = (newPassword: string) => supabase.auth.updateUser({ password: newPassword });

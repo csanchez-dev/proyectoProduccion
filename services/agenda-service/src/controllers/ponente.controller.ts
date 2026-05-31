@@ -3,12 +3,12 @@ import * as service from '../services/ponente.service'
 
 export const getPonentes = async (_: Request, res: Response) => {
   const { data, error } = await service.obtenerPonentes()
-  if (error) return res.status(400).json({ error: error.message })
+  if (error) return res.status(400).json({ error: (error as Error).message })
   res.json(data)
 }
 
 export const postPonente = async (req: Request, res: Response) => {
   const { data, error } = await service.crearPonente(req.body)
-  if (error) return res.status(403).json({ error: error.message })
+  if (error) return res.status(403).json({ error: (error as Error).message })
   res.status(201).json(data)
 }

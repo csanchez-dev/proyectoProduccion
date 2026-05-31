@@ -48,7 +48,7 @@ export default function Gallery() {
                 icon: "🚀",
                 style: { borderRadius: '12px' }
             });
-        } catch (err) {
+        } catch (_err) {
             toast.error("Error al procesar imágenes");
         } finally {
             setIsUploading(false);
