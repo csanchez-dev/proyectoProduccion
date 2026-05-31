@@ -24,7 +24,10 @@ jobs:
       with:
         node-version: '20'
     - name: Instalar dependencias
-      run: npm install --include=optional
+      run: |
+        rm -f package-lock.json # Eliminar package-lock.json
+        rm -rf node_modules     # Eliminar node_modules
+        npm install --include=optional
     - name: Linting
       run: npm run lint
     - name: Pruebas Unitarias
