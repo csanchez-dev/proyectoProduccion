@@ -1,0 +1,103 @@
+Name:               desktop-control-plane
+Roles:              control-plane
+Labels:             beta.kubernetes.io/arch=amd64
+                    beta.kubernetes.io/os=linux
+                    kubernetes.io/arch=amd64
+                    kubernetes.io/hostname=desktop-control-plane
+                    kubernetes.io/os=linux
+                    node-role.kubernetes.io/control-plane=
+Annotations:        node.alpha.kubernetes.io/ttl: 0
+                    volumes.kubernetes.io/controller-managed-attach-detach: true
+CreationTimestamp:  Tue, 12 May 2026 13:23:43 -0500
+Taints:             <none>
+Unschedulable:      false
+Lease:
+  HolderIdentity:  desktop-control-plane
+  AcquireTime:     <unset>
+  RenewTime:       Thu, 14 May 2026 13:48:03 -0500
+Conditions:
+  Type             Status  LastHeartbeatTime                 LastTransitionTime                Reason                       Message
+  ----             ------  -----------------                 ------------------                ------                       -------
+  MemoryPressure   False   Thu, 14 May 2026 13:47:53 -0500   Tue, 12 May 2026 13:23:42 -0500   KubeletHasSufficientMemory   kubelet has sufficient memory available
+  DiskPressure     False   Thu, 14 May 2026 13:47:53 -0500   Tue, 12 May 2026 13:23:42 -0500   KubeletHasNoDiskPressure     kubelet has no disk pressure
+  PIDPressure      False   Thu, 14 May 2026 13:47:53 -0500   Tue, 12 May 2026 13:23:42 -0500   KubeletHasSufficientPID      kubelet has sufficient PID available
+  Ready            True    Thu, 14 May 2026 13:47:53 -0500   Tue, 12 May 2026 13:24:07 -0500   KubeletReady                 kubelet is posting ready status
+Addresses:
+  InternalIP:  172.18.0.2
+  Hostname:    desktop-control-plane
+Capacity:
+  cpu:                8
+  ephemeral-storage:  1055762868Ki
+  hugepages-1Gi:      0
+  hugepages-2Mi:      0
+  memory:             16275680Ki
+  pods:               110
+Allocatable:
+  cpu:                8
+  ephemeral-storage:  1055762868Ki
+  hugepages-1Gi:      0
+  hugepages-2Mi:      0
+  memory:             16275680Ki
+  pods:               110
+System Info:
+  Machine ID:                 2e9e0ce9a7fa4e9f8e8849f810a3316c
+  System UUID:                2e9e0ce9a7fa4e9f8e8849f810a3316c
+  Boot ID:                    dad761f4-f742-4e54-ac1a-6f181f4e5550
+  Kernel Version:             6.6.87.2-microsoft-standard-WSL2
+  OS Image:                   Debian GNU/Linux 12 (bookworm)
+  Operating System:           linux
+  Architecture:               amd64
+  Container Runtime Version:  containerd://2.2.0
+  Kubelet Version:            v1.34.3
+  Kube-Proxy Version:         
+PodCIDR:                      10.244.0.0/24
+PodCIDRs:                     10.244.0.0/24
+ProviderID:                   kind://docker/desktop/desktop-control-plane
+Non-terminated Pods:          (13 in total)
+  Namespace                   Name                                             CPU Requests  CPU Limits  Memory Requests  Memory Limits  Age
+  ---------                   ----                                             ------------  ----------  ---------------  -------------  ---
+  default                     auth-service-deployment-5475bbb7b7-tzz55         100m (1%)     250m (3%)   128Mi (0%)       256Mi (1%)     2d
+  default                     auth-service-deployment-7cfb776cf6-6rz7v         100m (1%)     250m (3%)   128Mi (0%)       256Mi (1%)     21s
+  default                     auth-service-deployment-849bc975c-xvbzb          100m (1%)     250m (3%)   128Mi (0%)       256Mi (1%)     2d
+  default                     postgres-deployment-5476ffcfd5-6prz5             500m (6%)     500m (6%)   256Mi (1%)       256Mi (1%)     2d
+  kube-system                 coredns-66bc5c9577-69h8r                         100m (1%)     0 (0%)      70Mi (0%)        170Mi (1%)     2d
+  kube-system                 coredns-66bc5c9577-wj5f6                         100m (1%)     0 (0%)      70Mi (0%)        170Mi (1%)     2d
+  kube-system                 etcd-desktop-control-plane                       100m (1%)     0 (0%)      100Mi (0%)       0 (0%)         2d
+  kube-system                 kindnet-89n7l                                    100m (1%)     100m (1%)   50Mi (0%)        50Mi (0%)      2d
+  kube-system                 kube-apiserver-desktop-control-plane             250m (3%)     0 (0%)      0 (0%)           0 (0%)         2d
+  kube-system                 kube-controller-manager-desktop-control-plane    200m (2%)     0 (0%)      0 (0%)           0 (0%)         2d
+  kube-system                 kube-proxy-m79xf                                 0 (0%)        0 (0%)      0 (0%)           0 (0%)         2d
+  kube-system                 kube-scheduler-desktop-control-plane             100m (1%)     0 (0%)      0 (0%)           0 (0%)         2d
+  local-path-storage          local-path-provisioner-5c4cdb564f-bbj7q          0 (0%)        0 (0%)      0 (0%)           0 (0%)         2d
+Allocated resources:
+  (Total limits may be over 100 percent, i.e., overcommitted.)
+  Resource           Requests     Limits
+  --------           --------     ------
+  cpu                1750m (21%)  1350m (16%)
+  memory             930Mi (5%)   1414Mi (8%)
+  ephemeral-storage  0 (0%)       0 (0%)
+  hugepages-1Gi      0 (0%)       0 (0%)
+  hugepages-2Mi      0 (0%)       0 (0%)
+Events:
+  Type     Reason                   Age                From             Message
+  ----     ------                   ----               ----             -------
+  Normal   Starting                 2d                 kube-proxy       
+  Normal   Starting                 73s                kube-proxy       
+  Normal   NodeHasSufficientMemory  2d (x8 over 2d)    kubelet          Node desktop-control-plane status is now: NodeHasSufficientMemory
+  Normal   NodeHasNoDiskPressure    2d (x8 over 2d)    kubelet          Node desktop-control-plane status is now: NodeHasNoDiskPressure
+  Normal   NodeHasSufficientPID     2d (x7 over 2d)    kubelet          Node desktop-control-plane status is now: NodeHasSufficientPID
+  Normal   NodeAllocatableEnforced  2d                 kubelet          Updated Node Allocatable limit across pods
+  Normal   NodeHasSufficientPID     2d                 kubelet          Node desktop-control-plane status is now: NodeHasSufficientPID
+  Normal   NodeAllocatableEnforced  2d                 kubelet          Updated Node Allocatable limit across pods
+  Normal   NodeHasSufficientMemory  2d                 kubelet          Node desktop-control-plane status is now: NodeHasSufficientMemory
+  Normal   NodeHasNoDiskPressure    2d                 kubelet          Node desktop-control-plane status is now: NodeHasNoDiskPressure
+  Normal   Starting                 2d                 kubelet          Starting kubelet.
+  Normal   RegisteredNode           2d                 node-controller  Node desktop-control-plane event: Registered Node desktop-control-plane in Controller
+  Normal   NodeReady                2d                 kubelet          Node desktop-control-plane status is now: NodeReady
+  Normal   Starting                 89s                kubelet          Starting kubelet.
+  Normal   NodeHasSufficientMemory  89s (x8 over 89s)  kubelet          Node desktop-control-plane status is now: NodeHasSufficientMemory
+  Normal   NodeHasNoDiskPressure    89s (x8 over 89s)  kubelet          Node desktop-control-plane status is now: NodeHasNoDiskPressure
+  Normal   NodeHasSufficientPID     89s (x7 over 89s)  kubelet          Node desktop-control-plane status is now: NodeHasSufficientPID
+  Normal   NodeAllocatableEnforced  89s                kubelet          Updated Node Allocatable limit across pods
+  Warning  Rebooted                 84s                kubelet          Node desktop-control-plane has been rebooted, boot id: dad761f4-f742-4e54-ac1a-6f181f4e5550
+  Normal   RegisteredNode           67s                node-controller  Node desktop-control-plane event: Registered Node desktop-control-plane in Controller

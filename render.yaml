@@ -6,7 +6,7 @@ services:
     name: coniiti-2026-backend
     runtime: node
     plan: free
-    rootDir: backend
+    rootDir: services/backend
     buildCommand: npm install && npm run build
     startCommand: node dist/server.js
     healthCheckPath: /api/health
@@ -19,6 +19,103 @@ services:
         sync: false
       - key: SUPABASE_ANON_KEY
         sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: RABBITMQ_URL
+        fromService:
+          type: web
+          name: coniiti-rabbitmq
+          property: host
+      - key: AUTH_SERVICE_URL
+        fromService:
+          type: web
+          name: coniiti-auth-service
+          property: host
+      - key: AGENDA_SERVICE_URL
+        fromService:
+          type: web
+          name: coniiti-agenda-service
+          property: host
+      - key: INSCRIPTION_SERVICE_URL
+        fromService:
+          type: web
+          name: coniiti-inscription-service
+          property: host
+
+  # ─────────────────────────────────────────
+  # AUTH SERVICE
+  # ─────────────────────────────────────────
+  - type: web
+    name: coniiti-auth-service
+    runtime: node
+    plan: free
+    rootDir: services/auth-service
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+
+  # ─────────────────────────────────────────
+  # AGENDA SERVICE
+  # ─────────────────────────────────────────
+  - type: web
+    name: coniiti-agenda-service
+    runtime: node
+    plan: free
+    rootDir: services/agenda-service
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+
+  # ─────────────────────────────────────────
+  # INSCRIPTION SERVICE
+  # ─────────────────────────────────────────
+  - type: web
+    name: coniiti-inscription-service
+    runtime: node
+    plan: free
+    rootDir: services/inscription-service
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+
+  # ─────────────────────────────────────────
+  # NOTIFICATION SERVICE — Consumer
+  # ─────────────────────────────────────────
+  - type: web
+    name: coniiti-notification-service
+    runtime: node
+    plan: free
+    rootDir: services/notification-service
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: RABBITMQ_URL
+        fromService:
+          type: web
+          name: coniiti-rabbitmq
+          property: host
+
+  # ─────────────────────────────────────────
+  # RABBITMQ — Message Broker
+  # ─────────────────────────────────────────
+  - type: web
+    name: coniiti-rabbitmq
+    runtime: docker
+    plan: free
+    # Usamos la imagen oficial de RabbitMQ
+    dockerContext: .
+    dockerfilePath: services/backend/rabbitmq.Dockerfile # Ruta actualizada
+    envVars:
+      - key: RABBITMQ_DEFAULT_USER
+        value: user
+      - key: RABBITMQ_DEFAULT_PASS
+        value: password
 
   # ─────────────────────────────────────────
   # FRONTEND — React + Vite (Static Site)

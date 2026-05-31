@@ -1,15 +1,15 @@
-import { useState, useEffect } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import { translations, getTranslation } from "../utils/i18n"
-import type { Language } from "../utils/i18n"
-import { signIn, apiFetch, resetPassword } from "../services/api"
-import { toast } from "sonner"
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { translations, getTranslation } from "../utils/i18n";
+import type { Language } from "../utils/i18n";
+import { signIn, apiFetch, resetPassword } from "../services/api";
+import { toast } from "sonner";
 
 export default function Login() {
-    const navigate = useNavigate()
+    const navigate = useNavigate();
 
-    const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es')
-    const [isLoading, setIsLoading] = useState(false)
+    const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es');
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         const updateLang = () => setLang((localStorage.getItem("app_lang") as Language) || 'es');
@@ -17,29 +17,29 @@ export default function Login() {
         return () => window.removeEventListener('app-lang-updated', updateLang);
     }, []);
 
-    const t = (key: keyof typeof translations.es) => getTranslation(key, lang)
+    const t = (key: keyof typeof translations.es) => getTranslation(key, lang);
 
     const [formData, setFormData] = useState({
         email: "",
         password: ""
-    })
+    });
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData({
             ...formData,
             [name]: value
-        })
-    }
+        });
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setIsLoading(true)
+        e.preventDefault();
+        setIsLoading(true);
 
         try {
             // 1. Auth con Supabase
-            const { data: _data, error } = await signIn(formData.email, formData.password)
-            if (error) throw error
+            const { error } = await signIn(formData.email, formData.password);
+            if (error) throw error;
 
             // 2. Obtener perfil desde nuestra API para saber el rol
             const perfil = await apiFetch('/usuarios/perfil');
@@ -48,35 +48,35 @@ export default function Login() {
                 email: formData.email,
                 role: perfil.rol || 'USER',
                 fullName: perfil.nombre_completo || 'Usuario'
-            }
+            };
 
-            localStorage.setItem("user_session", JSON.stringify(userData))
-            sessionStorage.setItem("session_active", "1")
-            window.dispatchEvent(new Event('user-session-updated'))
-            navigate(userData.role !== "USER" ? "/admin" : "/")
+            localStorage.setItem("user_session", JSON.stringify(userData));
+            sessionStorage.setItem("session_active", "1");
+            window.dispatchEvent(new Event('user-session-updated'));
+            navigate(userData.role !== "USER" ? "/admin" : "/");
         } catch (err: any) {
             console.warn("Fallo el login con Supabase, intentando fallback local...", err.message);
 
             // Fallback para Usuarios según requerimiento
             if (formData.email === "superadmin@coniiti.com" && formData.password === "super123") {
-                localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'SUPER_ADMIN', fullName: 'Super Usuario' }))
-                sessionStorage.setItem("session_active", "1")
-                window.dispatchEvent(new Event('user-session-updated'))
-                navigate("/admin")
+                localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'SUPER_ADMIN', fullName: 'Super Usuario' }));
+                sessionStorage.setItem("session_active", "1");
+                window.dispatchEvent(new Event('user-session-updated'));
+                navigate("/admin");
                 return;
             }
             if (formData.email === "admin@coniiti.com" && formData.password === "admin123") {
-                localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'ADMIN', fullName: 'Administrador de Eventos' }))
-                sessionStorage.setItem("session_active", "1")
-                window.dispatchEvent(new Event('user-session-updated'))
-                navigate("/admin")
+                localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'ADMIN', fullName: 'Administrador de Eventos' }));
+                sessionStorage.setItem("session_active", "1");
+                window.dispatchEvent(new Event('user-session-updated'));
+                navigate("/admin");
                 return;
             }
             if (formData.email === "viewer@coniiti.com" && formData.password === "viewer123") {
-                localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'VIEWER', fullName: 'Visualizador de Datos' }))
-                sessionStorage.setItem("session_active", "1")
-                window.dispatchEvent(new Event('user-session-updated'))
-                navigate("/admin")
+                localStorage.setItem("user_session", JSON.stringify({ email: formData.email, role: 'VIEWER', fullName: 'Visualizador de Datos' }));
+                sessionStorage.setItem("session_active", "1");
+                window.dispatchEvent(new Event('user-session-updated'));
+                navigate("/admin");
                 return;
             }
 
@@ -91,16 +91,16 @@ export default function Login() {
                     fullName: usuarioLocal.fullName || 'Usuario Local'
                 };
                 localStorage.setItem("user_session", JSON.stringify(localUserData));
-                sessionStorage.setItem("session_active", "1")
-                window.dispatchEvent(new Event('user-session-updated'))
-                navigate(localUserData.role !== "USER" ? "/admin" : "/perfil")
+                sessionStorage.setItem("session_active", "1");
+                window.dispatchEvent(new Event('user-session-updated'));
+                navigate(localUserData.role !== "USER" ? "/admin" : "/perfil");
                 return;
             }
             toast.error(err.message || 'Credenciales inválidas');
         } finally {
-            setIsLoading(false)
+            setIsLoading(false);
         }
-    }
+    };
 
     const handleForgotPassword = async () => {
         const email = prompt("Ingresa el correo electrónico asociado a tu cuenta:");
@@ -114,20 +114,20 @@ export default function Login() {
             console.error("Error reseteando contraseña", err);
             toast.error("Error al solicitar el enlace.");
         }
-    }
+    };
 
     return (
         <div className="register-container">
             <div className="register-card fade-in">
                 <div className="login-header-premium">
                     <div className="icon-badge">🔒</div>
-                    <h2>{lang === 'es' ? "Iniciar Sesión" : "Login"}</h2>
-                    <p>{lang === 'es' ? "Ingresa tus credenciales para acceder al panel" : "Enter your credentials to access the panel"}</p>
+                    <h2>{t('login_title')}</h2>
+                    <p>{lang === 'es' ? "Ingresa tus credenciales para acceder al panel" : (lang === 'en' ? "Enter your credentials to access the panel" : "Entre com suas credenciais")}</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="premium-form">
                     <div className="form-group">
-                        <label htmlFor="email">{lang === 'es' ? "Correo Electrónico" : "Email Address"}</label>
+                        <label htmlFor="email">{t('login_email')}</label>
                         <input
                             type="email"
                             id="email"
@@ -139,7 +139,7 @@ export default function Login() {
                     </div>
 
                     <div className="form-group">
-                        <label htmlFor="password">{lang === 'es' ? "Contraseña" : "Password"}</label>
+                        <label htmlFor="password">{t('login_pass')}</label>
                         <input
                             type="password"
                             id="password"
@@ -151,26 +151,26 @@ export default function Login() {
                     </div>
 
                     <button type="submit" className="btn-submit premium-btn" disabled={isLoading}>
-                        {isLoading ? (lang === 'es' ? "Iniciando..." : "Logging in...") : t('login_submit')}
+                        {isLoading ? (lang === 'es' ? "Iniciando..." : "Wait...") : t('login_submit')}
                     </button>
 
                 </form>
 
                 <div style={{ marginTop: '1rem', textAlign: 'center' }}>
                     <a href="#" className="accent-link" onClick={(e) => { e.preventDefault(); handleForgotPassword(); }} style={{ fontSize: '0.9rem' }}>
-                        {lang === 'es' ? "¿Olvidaste tu contraseña?" : "Forgot your password?"}
+                        {t('login_forgot')}
                     </a>
                 </div>
 
                 <div className="auth-footer">
                     <p>
-                        {lang === 'es' ? "¿No tienes una cuenta?" : "Don't have an account?"}{" "}
+                        {t('login_no_account')}{" "}
                         <Link to="/registro" className="accent-link">
-                            {lang === 'es' ? "Regístrate aquí" : "Register here"}
+                            {t('login_reg_here')}
                         </Link>
                     </p>
                 </div>
             </div>
         </div>
-    )
+    );
 }
