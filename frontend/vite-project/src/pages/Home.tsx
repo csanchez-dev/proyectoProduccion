@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import CountdownTimer from "../components/CountdownTimer";
+import PhotoCarousel from "../components/PhotoCarousel";
 import { translations, getTranslation } from "../utils/i18n";
 import type { Language } from "../utils/i18n";
 
@@ -92,6 +93,17 @@ export default function Home() {
                 </div>
             </section>
 
+            {/* Gallery Highlights Carousel */}
+            <section style={{ maxWidth: '1200px', margin: '4rem auto 2rem auto', padding: '0 2rem' }}>
+                <h2 style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--primary-color)', textAlign: 'center', marginBottom: '0.5rem' }}>
+                    {lang === 'es' ? 'Momentos Destacados' : 'Gallery Highlights'}
+                </h2>
+                <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '2.5rem', fontSize: '1.1rem' }}>
+                    {lang === 'es' ? 'Revive las experiencias más inspiradoras de nuestras ediciones anteriores.' : 'Relive the most inspiring experiences from our past editions.'}
+                </p>
+                <PhotoCarousel />
+            </section>
+
             {/* About Section */}
             <section id="acerca-de" className="about-section-grid">
                 <div className="about-text" data-reveal="left">
@@ -110,29 +122,29 @@ export default function Home() {
                         <h4 style={{ fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '1.5px', color: 'var(--text-muted)', marginBottom: '1.5rem', fontWeight: 700 }}>
                             {lang === 'es' ? 'Impacto del Congreso Anterior' : 'Previous Congress Impact'}
                         </h4>
-                        <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
-                            <div className="stat-item">
-                                <span className="stat-num" style={{ fontSize: '2.6rem', fontWeight: 800, color: 'var(--primary-color)', display: 'block' }}>95</span>
-                                <span className="stat-desc" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>
+                        <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '1.5rem', marginTop: '1.5rem' }}>
+                            <div className="stat-item premium-glass-card hover-glow" style={{ padding: '1.5rem 1rem', border: '1px solid rgba(255,255,255,0.45)', borderRadius: '20px', transition: 'all 0.3s ease', textAlign: 'center' }}>
+                                <span className="stat-num text-gradient-primary" style={{ fontSize: '2.4rem', fontWeight: 900, display: 'block' }}>95</span>
+                                <span className="stat-desc" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', marginTop: '0.5rem', display: 'block' }}>
                                     {lang === 'es' ? 'Conferencistas' : 'Speakers'}
                                 </span>
                             </div>
-                            <div className="stat-item">
-                                <span className="stat-num" style={{ fontSize: '2.6rem', fontWeight: 800, color: 'var(--primary-color)', display: 'block' }}>30</span>
-                                <span className="stat-desc" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>
+                            <div className="stat-item premium-glass-card hover-glow" style={{ padding: '1.5rem 1rem', border: '1px solid rgba(255,255,255,0.45)', borderRadius: '20px', transition: 'all 0.3s ease', textAlign: 'center' }}>
+                                <span className="stat-num text-gradient-primary" style={{ fontSize: '2.4rem', fontWeight: 900, display: 'block' }}>30+</span>
+                                <span className="stat-desc" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', marginTop: '0.5rem', display: 'block' }}>
                                     Workshops
                                 </span>
                             </div>
-                            <div className="stat-item">
-                                <span className="stat-num" style={{ fontSize: '2.6rem', fontWeight: 800, color: 'var(--primary-color)', display: 'block' }}>999+</span>
-                                <span className="stat-desc" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>
+                            <div className="stat-item premium-glass-card hover-glow" style={{ padding: '1.5rem 1rem', border: '1px solid rgba(255,255,255,0.45)', borderRadius: '20px', transition: 'all 0.3s ease', textAlign: 'center' }}>
+                                <span className="stat-num text-gradient-primary" style={{ fontSize: '2.4rem', fontWeight: 900, display: 'block' }}>999+</span>
+                                <span className="stat-desc" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', marginTop: '0.5rem', display: 'block' }}>
                                     {lang === 'es' ? 'Asistentes' : 'Attendees'}
                                 </span>
                             </div>
-                            <div className="stat-item">
-                                <span className="stat-num" style={{ fontSize: '2.6rem', fontWeight: 800, color: 'var(--primary-color)', display: 'block' }}>1</span>
-                                <span className="stat-desc" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>
-                                    {lang === 'es' ? 'Patrocinador' : 'Sponsor'}
+                            <div className="stat-item premium-glass-card hover-glow" style={{ padding: '1.5rem 1rem', border: '1px solid rgba(255,255,255,0.45)', borderRadius: '20px', transition: 'all 0.3s ease', textAlign: 'center' }}>
+                                <span className="stat-num text-gradient-primary" style={{ fontSize: '2.4rem', fontWeight: 900, display: 'block' }}>15+</span>
+                                <span className="stat-desc" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', marginTop: '0.5rem', display: 'block' }}>
+                                    {lang === 'es' ? 'Sponsors' : 'Sponsors'}
                                 </span>
                             </div>
                         </div>

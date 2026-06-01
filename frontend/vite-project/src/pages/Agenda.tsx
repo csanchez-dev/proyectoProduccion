@@ -65,10 +65,27 @@ export default function Agenda() {
 
   const [filterConfig, setFilterConfig] = useState<any[]>(() => {
     const saved = localStorage.getItem("agenda_filters_config");
-    if (saved) return JSON.parse(saved);
+    // Si ya existe pero queremos forzar la actualización, podríamos chequear si tiene "year".
+    // Por simplicidad, si no tiene la propiedad year, usamos el nuevo default.
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.some((f: any) => f.id === 'year')) return parsed;
+    }
 
     // Configuración inicial por defecto basada en el pedido del usuario
     return [
+      {
+        id: "year",
+        label: "Año",
+        property: "year",
+        icon: "📅",
+        options: [
+          { value: "all", label: "Todos los Años" },
+          { value: "2026", label: "2026 (Actual)" },
+          { value: "2025", label: "2025" },
+          { value: "2024", label: "2024" }
+        ]
+      },
       {
         id: "modality",
         label: "Modalidad",
