@@ -1,11 +1,81 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
+// Fotos de muestra para la galería — se muestran mientras no haya fotos reales
+const SAMPLE_GALLERY: Array<{ id: string; url: string; name: string; date: string; tag: string }> = [
+    {
+        id: "sample-1",
+        url: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=900&auto=format&fit=crop",
+        name: "Conferencia Inaugural",
+        date: "CONIITI 2025",
+        tag: "Apertura"
+    },
+    {
+        id: "sample-2",
+        url: "https://images.unsplash.com/photo-1591115765373-5207764f72e7?w=900&auto=format&fit=crop",
+        name: "Sesión de Ponencias",
+        date: "CONIITI 2025",
+        tag: "Ponencias"
+    },
+    {
+        id: "sample-3",
+        url: "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=900&auto=format&fit=crop",
+        name: "Panel de Innovación",
+        date: "CONIITI 2025",
+        tag: "Panel"
+    },
+    {
+        id: "sample-4",
+        url: "https://images.unsplash.com/photo-1559223607-a43c990c692c?w=900&auto=format&fit=crop",
+        name: "Networking Tech",
+        date: "CONIITI 2025",
+        tag: "Networking"
+    },
+    {
+        id: "sample-5",
+        url: "https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?w=900&auto=format&fit=crop",
+        name: "Taller de IA y Robótica",
+        date: "CONIITI 2025",
+        tag: "Workshop"
+    },
+    {
+        id: "sample-6",
+        url: "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=900&auto=format&fit=crop",
+        name: "Exposición de Proyectos",
+        date: "CONIITI 2025",
+        tag: "Exposición"
+    },
+    {
+        id: "sample-7",
+        url: "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=900&auto=format&fit=crop",
+        name: "Clausura y Reconocimientos",
+        date: "CONIITI 2025",
+        tag: "Clausura"
+    },
+    {
+        id: "sample-8",
+        url: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=900&auto=format&fit=crop",
+        name: "Equipo Organizador",
+        date: "CONIITI 2025",
+        tag: "Equipo"
+    },
+    {
+        id: "sample-9",
+        url: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=900&auto=format&fit=crop",
+        name: "Auditorio Principal",
+        date: "CONIITI 2025",
+        tag: "Sede"
+    },
+];
+
 export default function Gallery() {
     const [publicGallery, setPublicGallery] = useState<any[]>(() => {
         const saved = localStorage.getItem("site_public_gallery");
-        return saved ? JSON.parse(saved) : [];
+        const parsed = saved ? JSON.parse(saved) : [];
+        // Si no hay fotos reales, mostrar las de muestra
+        return parsed.length > 0 ? parsed : SAMPLE_GALLERY;
     });
+
 
     const [pendingPhotos, setPendingPhotos] = useState<any[]>(() => {
         const saved = localStorage.getItem("site_pending_gallery");
@@ -18,7 +88,8 @@ export default function Gallery() {
     useEffect(() => {
         const refresh = () => {
             const saved = localStorage.getItem("site_public_gallery");
-            if (saved) setPublicGallery(JSON.parse(saved));
+            const parsed = saved ? JSON.parse(saved) : [];
+            setPublicGallery(parsed.length > 0 ? parsed : SAMPLE_GALLERY);
         };
         window.addEventListener('site-config-updated', refresh);
         return () => window.removeEventListener('site-config-updated', refresh);
@@ -130,33 +201,61 @@ export default function Gallery() {
                             boxShadow: '0 10px 25px rgba(0,0,0,0.08)',
                             transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                             cursor: 'zoom-in',
-                            background: 'white',
+                            background: '#0f172a',
                             position: 'relative',
-                            border: '1px solid rgba(0,0,0,0.05)'
+                            border: '1px solid rgba(255,255,255,0.06)'
                         }}>
                             <img
                                 src={img.url}
                                 alt={img.name}
+                                loading="lazy"
                                 style={{
                                     width: '100%',
                                     display: 'block',
-                                    transition: 'transform 0.5s'
+                                    transition: 'transform 0.5s, opacity 0.5s',
+                                    opacity: 0.92
                                 }}
-                                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'scale(1.06)';
+                                    e.currentTarget.style.opacity = '0.7';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'scale(1)';
+                                    e.currentTarget.style.opacity = '0.92';
+                                }}
                             />
-                            {/* Overlay info subtle */}
+                            {/* Tag badge */}
+                            {img.tag && (
+                                <span style={{
+                                    position: 'absolute',
+                                    top: '14px',
+                                    left: '14px',
+                                    background: 'var(--primary-color)',
+                                    color: 'white',
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700,
+                                    padding: '4px 10px',
+                                    borderRadius: '20px',
+                                    letterSpacing: '0.05em',
+                                    textTransform: 'uppercase',
+                                    boxShadow: '0 4px 12px rgba(37,99,235,0.4)'
+                                }}>
+                                    {img.tag}
+                                </span>
+                            )}
+                            {/* Overlay info */}
                             <div className="img-overlay" style={{
                                 position: 'absolute',
                                 bottom: 0,
                                 left: 0,
                                 right: 0,
-                                padding: '1.5rem',
-                                background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)',
+                                padding: '2rem 1.5rem 1.5rem',
+                                background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%)',
                                 opacity: 0,
                                 transition: 'opacity 0.3s'
                             }}>
-                                <span style={{ color: 'white', fontSize: '0.8rem', fontWeight: 500 }}>{img.date}</span>
+                                <p style={{ color: 'white', fontSize: '0.95rem', fontWeight: 700, margin: 0 }}>{img.name}</p>
+                                <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.78rem' }}>{img.date}</span>
                             </div>
                         </div>
                     ))}

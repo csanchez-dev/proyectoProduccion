@@ -390,7 +390,7 @@ export default function Admin() {
             const { createPonencia } = await import("../services/api");
 
             // Buscar ID del ponente
-            let finalSpeaker = speakers.find(s => s.name === newConf.speakerName);
+            let finalSpeaker = speakers.find(s => (s.name || s.nombre) === newConf.speakerName);
 
             // Si es nuevo ponente (simplificado: crear uno básico si no existe)
             if (newConf.speakerName === "OTRO") {
@@ -406,6 +406,11 @@ export default function Admin() {
 
             if (!finalSpeaker) throw new Error("Debes seleccionar un ponente válido");
 
+            const speakerName = finalSpeaker.name || finalSpeaker.nombre || "Invitado Especial";
+            const speakerOrg = finalSpeaker.organization || finalSpeaker.organizacion || "Independiente";
+            const speakerAvatar = finalSpeaker.avatar || finalSpeaker.avatar_url || "/default-avatar.png";
+            const speakerBio = finalSpeaker.bio || "";
+
             const ponenciaData = {
                 titulo: newConf.title,
                 descripcion: newConf.description,
@@ -416,7 +421,7 @@ export default function Admin() {
                 dayId: newConf.dayId, // Para compatibilidad con el frontend
                 documentUrl: newConf.documentUrl,
                 documentFile: newConf.documentFile,
-                speaker: { name: finalSpeaker.name, organization: finalSpeaker.organization, avatar: "/default-avatar.png", bio: "" }
+                speaker: { name: speakerName, organization: speakerOrg, avatar: speakerAvatar, bio: speakerBio }
             };
 
             try {
@@ -735,9 +740,13 @@ export default function Admin() {
                                                     }}
                                                 >
                                                     <option value="">-- Selecciona un invitado --</option>
-                                                    {availableSpeakers.map((s, idx) => (
-                                                        <option key={idx} value={s.name}>{s.name} ({s.organization})</option>
-                                                    ))}
+                                                    {availableSpeakers.map((s, idx) => {
+                                                         const sName = s.name || s.nombre || "";
+                                                         const sOrg = s.organization || s.organizacion || "";
+                                                         return (
+                                                             <option key={idx} value={sName}>{sName} ({sOrg})</option>
+                                                         );
+                                                     })}
                                                     <option value="OTRO">+ Otro (Escribir nombre)</option>
                                                 </select>
                                             </div>

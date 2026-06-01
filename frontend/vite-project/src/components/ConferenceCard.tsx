@@ -1,5 +1,36 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import type { Conference } from "../types/conference";
+
+/* ── Mapa de sede → enlace de YouTube ── */
+const VENUE_YOUTUBE_MAP: Record<string, string> = {
+  "Auditorio Paraninfo": "https://youtu.be/HWVBg2q2XOQ",
+  "Auditorio Torres":    "https://youtu.be/WK8aeqznDPY",
+  "Sede 4":              "https://youtu.be/Xlls8wk7pKo",   // todas las salas
+};
+
+/** Dado un nombre de ubicación, devuelve la URL de YouTube correspondiente (o null). */
+function getYouTubeLink(location: string | undefined): string | null {
+  if (!location) return null;
+  const loc = location.toLowerCase();
+  for (const [key, url] of Object.entries(VENUE_YOUTUBE_MAP)) {
+    if (loc.includes(key.toLowerCase())) return url;
+  }
+  return null;
+}
+
+/** Convierte una URL corta de youtu.be en una URL de embed. */
+function toEmbedUrl(url: string): string {
+  // youtu.be/VIDEO_ID  →  youtube.com/embed/VIDEO_ID
+  const match = url.match(/youtu\.be\/([A-Za-z0-9_-]+)/);
+  if (match) return `https://www.youtube.com/embed/${match[1]}?autoplay=1`;
+  // ya es embed
+  if (url.includes("/embed/")) return url;
+  // youtube.com/watch?v=VIDEO_ID
+  const match2 = url.match(/[?&]v=([A-Za-z0-9_-]+)/);
+  if (match2) return `https://www.youtube.com/embed/${match2[1]}?autoplay=1`;
+  return url;
+}
 
 type Props = {
   conference: Conference
@@ -7,32 +38,49 @@ type Props = {
 
 export default function ConferenceCard({ conference }: Props) {
   const [maxCapacity, setMaxCapacity] = useState(() => {
-    if (conference.type === "virtual") return 500;
-    const capacities = JSON.parse(
-      localStorage.getItem("site_location_capacities") || "{}"
-    );
-    return capacities[conference.location] || 150;
+    try {
+      if (conference?.type === "virtual") return 500;
+      const capacities = JSON.parse(
+        localStorage.getItem("site_location_capacities") || "{}"
+      );
+      return capacities[conference?.location || ""] || 150;
+    } catch {
+      return 150;
+    }
   });
 
   const [isRegistered, setIsRegistered] = useState(() => {
-    const sessionData = localStorage.getItem("user_session");
-    if (!sessionData) return false;
-    const currentUser = JSON.parse(sessionData);
-    const userRegs = JSON.parse(
-      localStorage.getItem(`registrations_${currentUser.email}`) || "[]"
-    );
-    return userRegs.some((r: any) => r.id === conference.id);
+    try {
+      const sessionData = localStorage.getItem("user_session");
+      if (!sessionData) return false;
+      const currentUser = JSON.parse(sessionData);
+      if (!currentUser || !currentUser.email) return false;
+      const userRegs = JSON.parse(
+        localStorage.getItem(`registrations_${currentUser.email}`) || "[]"
+      );
+      return Array.isArray(userRegs) && userRegs.some((r: any) => String(r?.id) === String(conference?.id));
+    } catch {
+      return false;
+    }
   });
 
   const [isLoading, setIsLoading] = useState(false);
 
   const [availableSeats, setAvailableSeats] = useState(() => {
-    const savedStats = JSON.parse(localStorage.getItem("conf_stats") || "[]");
-    const confStat = savedStats.find((s: any) => s.name === conference.title);
-    return confStat ? maxCapacity - confStat.value : maxCapacity;
+    try {
+      const savedStats = JSON.parse(localStorage.getItem("conf_stats") || "[]");
+      if (Array.isArray(savedStats)) {
+        const confStat = savedStats.find((s: any) => s?.name === conference?.title);
+        return confStat ? maxCapacity - confStat.value : maxCapacity;
+      }
+    } catch {}
+    return maxCapacity;
   });
 
   const isFull = availableSeats <= 0;
+
+  const [showSpeakerModal, setShowSpeakerModal] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
 
   const getStockColor = () => {
     if (availableSeats <= 0) return "#ff4d4d";
@@ -43,19 +91,28 @@ export default function ConferenceCard({ conference }: Props) {
 
   useEffect(() => {
     const refreshCapacity = () => {
-      const capacities = JSON.parse(
-        localStorage.getItem("site_location_capacities") || "{}"
-      );
-      const newMax =
-        conference.type === "virtual"
-          ? 500
-          : capacities[conference.location] || 150;
+      try {
+        const capacities = JSON.parse(
+          localStorage.getItem("site_location_capacities") || "{}"
+        );
+        const newMax =
+          conference?.type === "virtual"
+            ? 500
+            : capacities[conference?.location || ""] || 150;
 
-      setMaxCapacity(newMax);
+        setMaxCapacity(newMax);
 
-      const savedStats = JSON.parse(localStorage.getItem("conf_stats") || "[]");
-      const confStat = savedStats.find((s: any) => s.name === conference.title);
-      setAvailableSeats(confStat ? newMax - confStat.value : newMax);
+        const savedStats = JSON.parse(localStorage.getItem("conf_stats") || "[]");
+        if (Array.isArray(savedStats)) {
+          const confStat = savedStats.find((s: any) => s?.name === conference?.title);
+          setAvailableSeats(confStat ? newMax - confStat.value : newMax);
+        } else {
+          setAvailableSeats(newMax);
+        }
+      } catch {
+        setMaxCapacity(150);
+        setAvailableSeats(150);
+      }
     };
 
     window.addEventListener("site-config-updated", refreshCapacity);
@@ -65,7 +122,22 @@ export default function ConferenceCard({ conference }: Props) {
       window.removeEventListener("site-config-updated", refreshCapacity);
       window.removeEventListener("storage", refreshCapacity);
     };
-  }, [conference.location, conference.title, conference.type]);
+  }, [conference?.location, conference?.title, conference?.type]);
+
+  /* ── Cerrar modal de video con ESC ── */
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowVideoModal(false);
+    };
+    if (showVideoModal) {
+      document.addEventListener("keydown", handleEsc);
+      document.body.style.overflow = "hidden"; // bloquear scroll del fondo
+    }
+    return () => {
+      document.removeEventListener("keydown", handleEsc);
+      document.body.style.overflow = "";
+    };
+  }, [showVideoModal]);
 
   const handleRegister = () => {
     if (isRegistered || isFull) return;
@@ -135,11 +207,12 @@ export default function ConferenceCard({ conference }: Props) {
     }, 1500);
   };
 
-  const formatTime = (value: string) => {
+  const formatTime = (value: any) => {
     if (!value) return "";
+    const strVal = String(value);
 
-    if (value.includes("T")) {
-      const date = new Date(value);
+    if (strVal.includes("T")) {
+      const date = new Date(strVal);
       if (!isNaN(date.getTime())) {
         return date.toLocaleTimeString([], {
           hour: "2-digit",
@@ -148,15 +221,19 @@ export default function ConferenceCard({ conference }: Props) {
       }
     }
 
-    if (value.includes(":") && value.length <= 5) return value;
+    if (strVal.includes(":") && strVal.length <= 5) return strVal;
 
     try {
-      return new Date(value).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+      const date = new Date(strVal);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+      return strVal;
     } catch {
-      return value;
+      return strVal;
     }
   };
 
@@ -179,9 +256,9 @@ export default function ConferenceCard({ conference }: Props) {
     }
   };
 
-  const [showSpeakerModal, setShowSpeakerModal] = useState(false);
   const categoryLabel = conference.category || "General";
   const speakerName = conference.speaker?.name || "Ponente por confirmar";
+  const youtubeLink = getYouTubeLink(conference.location);
 
   return (
     <div
@@ -337,7 +414,169 @@ export default function ConferenceCard({ conference }: Props) {
               📍 {conference.type === "virtual" ? "Plataforma Virtual" : conference.location}
             </span>
           </div>
+
+          {/* ── Enlace de transmisión en vivo por YouTube ── */}
+          {youtubeLink && (
+            <div className="info-row" style={{ marginTop: '4px' }}>
+              <button
+                type="button"
+                onClick={() => setShowVideoModal(true)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: 'linear-gradient(135deg, #ff0000, #cc0000)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '999px',
+                  padding: '7px 16px',
+                  fontSize: '0.85rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(255,0,0,0.25)',
+                  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'translateY(-2px) scale(1.03)';
+                  e.currentTarget.style.boxShadow = '0 8px 20px rgba(255,0,0,0.35)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(255,0,0,0.25)';
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.546 12 3.546 12 3.546s-7.505 0-9.377.504A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.504 9.376.504 9.376.504s7.505 0 9.377-.504a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                </svg>
+                ¿Dónde se encuentra?
+              </button>
+
+              <a
+                href={youtubeLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  marginLeft: '8px',
+                  color: '#64748b',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  transition: 'color 0.2s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#ff0000'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = '#64748b'; }}
+                title="Abrir en YouTube"
+              >
+                🔗 Abrir en YouTube
+              </a>
+            </div>
+          )}
         </div>
+
+        {/* ── Modal popup del video de YouTube ── */}
+        {showVideoModal && youtubeLink && createPortal(
+          <div
+            style={{
+              position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+              background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(12px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              zIndex: 5000, padding: '20px',
+            }}
+            onClick={() => setShowVideoModal(false)}
+          >
+            <div
+              style={{
+                position: 'relative',
+                width: '100%',
+                maxWidth: '800px',
+                background: '#111',
+                borderRadius: '20px',
+                overflow: 'hidden',
+                boxShadow: '0 40px 80px rgba(0,0,0,0.6)',
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header del modal */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '16px 20px',
+                background: 'linear-gradient(135deg, #1a1a2e, #16213e)',
+                borderBottom: '1px solid rgba(255,255,255,0.1)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="#ff0000">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.546 12 3.546 12 3.546s-7.505 0-9.377.504A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.504 9.376.504 9.376.504s7.505 0 9.377-.504a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                  </svg>
+                  <div>
+                    <div style={{ color: 'white', fontWeight: 800, fontSize: '1rem' }}>
+                      {conference.title}
+                    </div>
+                    <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>
+                      📍 {conference.location} — Transmisión en vivo
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowVideoModal(false)}
+                  style={{
+                    background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white',
+                    width: '36px', height: '36px', borderRadius: '50%',
+                    fontSize: '1.2rem', cursor: 'pointer', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center',
+                    transition: 'background 0.2s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,0,0,0.4)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Iframe del video */}
+              <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
+                <iframe
+                  src={toEmbedUrl(youtubeLink)}
+                  title={`Transmisión: ${conference.title}`}
+                  style={{
+                    position: 'absolute', top: 0, left: 0,
+                    width: '100%', height: '100%', border: 'none',
+                  }}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+
+              {/* Footer del modal */}
+              <div style={{
+                padding: '12px 20px',
+                background: 'linear-gradient(135deg, #1a1a2e, #16213e)',
+                borderTop: '1px solid rgba(255,255,255,0.1)',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              }}>
+                <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>
+                  Presiona ESC o haz clic fuera para cerrar
+                </span>
+                <a
+                  href={youtubeLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                    color: '#ff4444', fontWeight: 700, fontSize: '0.85rem',
+                    textDecoration: 'none', transition: 'color 0.2s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.color = '#ff6666'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = '#ff4444'; }}
+                >
+                  Abrir en YouTube ↗
+                </a>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
 
         <div
           style={{

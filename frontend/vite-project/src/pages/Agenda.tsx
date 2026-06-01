@@ -130,18 +130,22 @@ export default function Agenda() {
   }, [lang]);
 
   const filteredConferences = conferencesList.filter((conf: any) => {
+    const title = conf?.title || conf?.titulo || "";
+    const speakerName = conf?.speaker?.name || conf?.speaker?.nombre || "Ponente por definir";
+
     const matchesSearch =
-      conf.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      conf.speaker.name.toLowerCase().includes(searchTerm.toLowerCase());
+      title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      speakerName.toLowerCase().includes(searchTerm.toLowerCase());
 
     // Lógica de filtrado dinámica
     const matchesDynamicFilters = filterConfig.every(filter => {
       const selectedValue = activeFilters[filter.id] || "all";
       if (selectedValue === "all") return true;
-      return conf[filter.property] === selectedValue;
+      const confValue = conf?.[filter.property];
+      return confValue === selectedValue;
     });
 
-    const confDayId = conf.dayId ?? conf.day ?? conf.day_id ?? conf.dayNumber ?? conf.date;
+    const confDayId = conf?.dayId ?? conf?.day ?? conf?.day_id ?? conf?.dayNumber ?? conf?.date;
     const matchesDay = !confDayId || confDayId === activeDayId;
 
     return matchesSearch && matchesDynamicFilters && matchesDay;
