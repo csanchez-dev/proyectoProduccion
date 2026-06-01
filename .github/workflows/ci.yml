@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [ "main" ]
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   validate_frontend:
     name: Validar Frontend
@@ -22,9 +19,26 @@ jobs:
     - name: Configurar Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '18'
+    - name: Mostrar package.json del frontend
+      run: cat package.json # Añadimos este paso
+      working-directory: ./frontend/vite-project
     - name: Instalar dependencias
-      run: npm install --include=optional
+      run: |
+        rm -f package-lock.json # Eliminar package-lock.json
+        rm -rf node_modules     # Eliminar node_modules
+        npm install
+    - name: Diagnosticar Rollup
+      run: |
+        echo "Checking for @rollup/rollup-linux-x64-gnu directory:"
+        ls -ld node_modules/@rollup/rollup-linux-x64-gnu || echo "Directory not found."
+        echo "Checking for @rollup/rollup-linux-x64-gnu files:"
+        ls -l node_modules/@rollup/rollup-linux-x64-gnu/* || echo "Files not found."
+        echo "npm ls rollup:"
+        npm ls rollup
+        echo "npm ls @rollup/rollup-linux-x64-gnu:"
+        npm ls @rollup/rollup-linux-x64-gnu
+      working-directory: ./frontend/vite-project
     - name: Linting
       run: npm run lint
     - name: Pruebas Unitarias

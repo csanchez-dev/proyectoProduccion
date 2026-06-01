@@ -184,9 +184,9 @@ export default function Admin() {
             const { getPonencias, getPonentes, getUsuarios } = await import("../services/api");
 
             // Intentos individuales para no fallar si un endpoint está caído
-            try { ponenciasData = await getPonencias(); } catch (_e) { console.warn("API Ponencias falló"); }
-            try { ponentesData = await getPonentes(); } catch (_e) { console.warn("API Ponentes falló"); }
-            try { usuariosData = await getUsuarios(); } catch (_e) { console.warn("API Usuarios falló"); }
+            try { ponenciasData = await getPonencias(); } catch (e) { console.warn("API Ponencias falló"); }
+            try { ponentesData = await getPonentes(); } catch (e) { console.warn("API Ponentes falló"); }
+            try { usuariosData = await getUsuarios(); } catch (e) { console.warn("API Usuarios falló"); }
 
             // 1. Unificar Conferencias (Agenda)
             const savedConfs = JSON.parse(localStorage.getItem("site_conferences") || '[]');
@@ -458,7 +458,7 @@ export default function Admin() {
             try {
                 const { updatePonencia } = await import("../services/api");
                 if (updatePonencia) await updatePonencia(editingConf.id, editingConf);
-            } catch (_apiErr) {
+            } catch (apiErr) {
                 console.warn("No se pudo actualizar en API (posible endpoint inexistente), cambios guardados localmente");
             }
 
@@ -1889,7 +1889,7 @@ export default function Admin() {
                                                         localStorage.setItem("site_public_gallery", JSON.stringify(newImages));
                                                         window.dispatchEvent(new Event('site-config-updated'));
                                                         toast.success("Subidas directamente a la galería pública.");
-                                                    } catch (_err) { toast.error("Error al procesar."); } finally { setIsLoading(false); }
+                                                    } catch (err) { toast.error("Error al procesar."); } finally { setIsLoading(false); }
                                                 }} />
                                                 <input type="file" id="admin-priv-upload" multiple accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
                                                     const files = e.target.files; if (!files) return;
@@ -1904,7 +1904,7 @@ export default function Admin() {
                                                         setAdminGallery(newImages);
                                                         localStorage.setItem("admin_private_gallery", JSON.stringify(newImages));
                                                         toast.success("Guardadas en tu espacio privado.");
-                                                    } catch (_err) { toast.error("Error al procesar."); } finally { setIsLoading(false); }
+                                                    } catch (err) { toast.error("Error al procesar."); } finally { setIsLoading(false); }
                                                 }} />
                                             </div>
                                         </div>
