@@ -10,6 +10,7 @@ import {
 } from 'recharts';
 import QRCode from 'react-qr-code';
 import { toast } from "sonner";
+import UptimePanel from "../components/UptimePanel";
 
 export default function Admin() {
     const [userRole, setUserRole] = useState<string | null>(null);
@@ -691,6 +692,12 @@ export default function Admin() {
                                 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
                             >
                                 ⏱️ Rendimiento
+                            <button
+                                className={activeTab === "uptime" ? "active" : ""}
+                                onClick={() => setActiveTab("uptime")}
+                                style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+                            >
+                                🟢 Uptime & Salud
                             </button>
                         </>
                     )}
@@ -2817,6 +2824,12 @@ export default function Admin() {
                                     </div>
                                 );
                             })()}
+                        </div>
+                    )}
+
+                    {activeTab === "uptime" && (
+                        <div className="admin-view">
+                            <UptimePanel />
                         </div>
                     )}
 

@@ -30,8 +30,24 @@ app.use(cors({
 // 3. Limitación de tamaño del JSON body a 1MB
 app.use(express.json({ limit: '1mb' }));
 
+import { logger } from './utils/logger';
+
+// HTTP Request Logging Middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    logger.info(`${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms`);
+  });
+  next();
+});
+
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok' });
+  res.json({ 
+    status: 'ok', 
+    service: 'notification-service',
+    uptime: process.uptime()
+  });
 });
 
 app.use('/notifications', notificationRoutes);

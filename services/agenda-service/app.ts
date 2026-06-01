@@ -33,8 +33,24 @@ app.use(cors({
 // 3. Limitación de tamaño del JSON body parser a 2MB
 app.use(express.json({ limit: '2mb' }))
 
+import { logger } from './src/utils/logger'
+
+// HTTP Request Logging Middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    logger.info(`${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms`);
+  });
+  next();
+});
+
 // Health check
-app.get('/health', (_, res) => res.json({ status: 'ok', service: 'agenda-service' }))
+app.get('/health', (_, res) => res.json({ 
+  status: 'ok', 
+  service: 'agenda-service',
+  uptime: process.uptime()
+}))
 
 // Routes
 app.use('/api/eventos', eventoRoutes)
