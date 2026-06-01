@@ -4,6 +4,7 @@
 /* Importación de Componentes */
 @import './components/utilities.css';
 @import './components/premium.css';
+@import './components/scroll-animations.css';
 
 /* Importación de Páginas */
 @import './pages/home.css';

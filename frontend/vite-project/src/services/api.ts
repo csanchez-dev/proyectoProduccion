@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? 'http://localhost:8000';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? 'test';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
     // Intentar obtener la sesión para el token
@@ -35,31 +35,36 @@ export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
     return response.json();
 };
 
-const mapPonencia = (p: any) => ({
-    id: String(p.id),
-    title: p.titulo,
-    description: p.descripcion,
-    startTime: p.hora_inicio || '09:00',
-    endTime: p.hora_fin || '10:00',
-    location: p.sala?.nombre || 'Pendiente',
-    category: p.category || 'General',
-    level: p.level || 'Básico',
-    type: p.type || 'presencial',
-    virtualLink: p.virtualLink,
-    // Derivar dayId desde la fecha del dia_evento para que el filtro de días funcione
-    dayId: p.dia_evento?.id ? `day${p.dia_evento.id}` : (p.dia_id ? `day${p.dia_id}` : 'day1'),
-    speaker: p.ponencia_ponente?.[0]?.ponente ? {
-        name: p.ponencia_ponente[0].ponente.nombre,
-        bio: p.ponencia_ponente[0].ponente.bio,
-        avatar: p.ponencia_ponente[0].ponente.avatar_url || '/default-avatar.png',
-        organization: p.ponencia_ponente[0].ponente.organizacion
-    } : {
-        name: 'Ponente por definir',
-        bio: '',
-        avatar: '/default-avatar.png',
-        organization: ''
-    }
-});
+const mapPonencia = (p: any) => {
+    // La API devuelve: ponentes (array de PonenciaPonente con ponente incluido),
+    // diaEventoId (string directo, ej: "day1"), diaEvento (objeto con id y fecha)
+    const primerPonente = p.ponentes?.[0]?.ponente ?? null;
+    return {
+        id: String(p.id),
+        title: p.titulo,
+        description: p.descripcion,
+        startTime: p.hora_inicio || '09:00',
+        endTime: p.hora_fin || '10:00',
+        location: p.sala?.nombre || 'Pendiente',
+        category: p.category || 'General',
+        level: p.level || 'Básico',
+        type: p.type || 'presencial',
+        virtualLink: p.virtualLink,
+        // diaEventoId viene directamente como "day1", "day2", etc.
+        dayId: p.diaEventoId || p.diaEvento?.id || 'day1',
+        speaker: primerPonente ? {
+            name: `${primerPonente.nombres ?? ''} ${primerPonente.apellidos ?? ''}`.trim() || 'Ponente por definir',
+            bio: primerPonente.biografia ?? '',
+            avatar: primerPonente.avatar_url || '/default-avatar.png',
+            organization: primerPonente.organizacion ?? ''
+        } : {
+            name: 'Ponente por definir',
+            bio: '',
+            avatar: '/default-avatar.png',
+            organization: ''
+        }
+    };
+};
 
 // GETters
 export const getPonencias = async () => {

@@ -6,6 +6,10 @@
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap');
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   font-family: 'Inter', sans-serif;
 }
@@ -18,28 +22,27 @@ h3 {
 }
 
 :root {
-  /* ── Colores principales (Design System: Congress Academic) ── */
-  --primary-color: #2563EB;
-  --primary-hover: #1D4ED8;
-  --primary-light: #EFF6FF;
-  --secondary-color: #1E293B;
-  --accent-color: #F97316;
-  /* CTA color from design system */
-  --accent-hover: #EA6C0A;
+  /* ── Colores principales (Cobalto & Clean Glass) ── */
+  --primary-color: #0047AB; /* Azul Cobalto */
+  --primary-hover: #003580;
+  --primary-light: #E6EFFF;
+  --secondary-color: #0F172A; /* Azul Oscuro Elegante */
+  --accent-color: #00D2FF; /* Cyan sutil para notas interactivas */
+  --accent-hover: #00A3CC;
 
   /* ── Gradientes ── */
-  --btn-gradient: linear-gradient(135deg, #2563EB, #1E40AF);
-  --btn-hover-gradient: linear-gradient(135deg, #1D4ED8, #1E3A8A);
-  --hero-gradient: linear-gradient(135deg, #1E293B 0%, #1E40AF 50%, #0F172A 100%);
+  --btn-gradient: linear-gradient(135deg, #0047AB, #003580);
+  --btn-hover-gradient: linear-gradient(135deg, #003580, #002255);
+  --hero-gradient: linear-gradient(135deg, #F8FAFC 0%, #E6EFFF 100%);
 
   /* ── Superficie & Glassmorphism ── */
-  --bg-page: #F8FAFC;
-  --bg-card: rgba(255, 255, 255, 0.85);
-  --glass-bg: rgba(255, 255, 255, 0.75);
-  --glass-border: 1px solid rgba(255, 255, 255, 0.5);
-  --glass-shadow: 0 8px 32px rgba(37, 99, 235, 0.12);
-  --card-shadow: 0 4px 24px rgba(30, 41, 59, 0.08);
-  --card-shadow-hover: 0 16px 48px rgba(30, 41, 59, 0.15);
+  --bg-page: #F4F7FB; /* Fondo general ultra claro para que el cristal destaque */
+  --bg-card: rgba(255, 255, 255, 0.7);
+  --glass-bg: rgba(255, 255, 255, 0.65);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.8);
+  --glass-shadow: 0 8px 32px rgba(0, 71, 171, 0.08); /* Sombra cobalto muy suave */
+  --card-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+  --card-shadow-hover: 0 20px 40px rgba(0, 71, 171, 0.12);
 
   /* ── Texto ── */
   --text-primary: #1E293B;
@@ -47,21 +50,21 @@ h3 {
   --text-muted: #94A3B8;
   --text-on-primary: #ffffff;
 
-  /* ── Bordes & Radios ── */
-  --border-color: #E2E8F0;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
+  /* ── Bordes & Radios (Más redondeados y amigables) ── */
+  --border-color: rgba(0, 71, 171, 0.1);
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
 
-  /* ── Espaciado ── */
-  --container-max: 1280px;
-  --section-pad: 5rem 1.5rem;
+  /* ── Espaciado (Más respiración visual) ── */
+  --container-max: 1300px;
+  --section-pad: 6rem 2rem;
 
-  /* ── Transiciones ── */
-  --transition-fast: all 0.15s ease;
-  --transition-base: all 0.25s ease;
-  --transition-slow: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  /* ── Transiciones (Micro-interacciones fluidas) ── */
+  --transition-fast: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --transition-base: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --transition-slow: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 
   font-family: 'Inter', sans-serif;
   line-height: 1.6;
@@ -117,14 +120,20 @@ body.theme-mexico {
 
 
 header {
-  display: flex;
-  margin: 0;
-  background-color: var(--secondary-color);
-  border-bottom: 3px solid var(--primary-color);
   position: sticky;
   top: 0;
-  z-index: 100;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 5%;
+  background-color: var(--header-bg-custom, rgba(15, 23, 42, 0.85)); /* Soporte de Personalización en JS */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: white;
+  z-index: 1000;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+  transition: all 0.4s ease;
   height: 5.7rem;
 }
 
@@ -263,27 +272,31 @@ a {
   text-decoration: none;
   position: relative;
   color: #ffffff;
-  font-weight: 700;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  transition: var(--transition-fast);
+}
+
+.navbar-links a:hover {
+  background-color: rgba(255, 255, 255, 0.08);
 }
 
 .navbar-links a::after {
   content: "";
   position: absolute;
-  left: 0;
-  bottom: -4px;
-
-  width: 100%;
+  left: 50%;
+  bottom: 0px;
+  width: 0%;
   height: 2px;
-  background-color: var(--secondary-color);
-
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.3s ease;
+  background-color: var(--accent-color);
+  transition: var(--transition-base);
+  transform: translateX(-50%);
+  border-radius: 2px;
 }
 
 .navbar-links a:hover::after {
-  transform: scaleX(1);
+  width: 70%;
 }
 
 

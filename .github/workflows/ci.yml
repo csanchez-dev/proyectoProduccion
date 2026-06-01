@@ -1,0 +1,65 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main", "desarrollo-rediseño-david", "desarrollo-diseño" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  validate_frontend:
+    name: Validar Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend/vite-project
+    steps:
+    - name: Checkout del código
+      uses: actions/checkout@v4
+    - name: Configurar Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    - name: Mostrar package.json del frontend
+      run: cat package.json # Añadimos este paso
+      working-directory: ./frontend/vite-project
+    - name: Instalar dependencias
+      run: |
+        rm -f package-lock.json # Eliminar package-lock.json
+        rm -rf node_modules     # Eliminar node_modules
+        npm install
+    - name: Diagnosticar Rollup
+      run: |
+        echo "Checking for @rollup/rollup-linux-x64-gnu directory:"
+        ls -ld node_modules/@rollup/rollup-linux-x64-gnu || echo "Directory not found."
+        echo "Checking for @rollup/rollup-linux-x64-gnu files:"
+        ls -l node_modules/@rollup/rollup-linux-x64-gnu/* || echo "Files not found."
+        echo "npm ls rollup:"
+        npm ls rollup
+        echo "npm ls @rollup/rollup-linux-x64-gnu:"
+        npm ls @rollup/rollup-linux-x64-gnu
+      working-directory: ./frontend/vite-project
+    - name: Linting
+      run: npm run lint
+    - name: Pruebas Unitarias
+      run: npm run test
+    - name: Build Estricto
+      run: CI=true npm run build
+
+  validate_backend:
+    name: Validar Backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./services/backend
+    steps:
+    - name: Checkout del código
+      uses: actions/checkout@v4
+    - name: Configurar Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    - name: Instalar dependencias
+      run: npm install
+    - name: Build Estricto
+      run: npm run build
