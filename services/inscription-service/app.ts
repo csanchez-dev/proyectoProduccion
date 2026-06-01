@@ -30,8 +30,24 @@ app.use(cors({
 // 3. Limitación de tamaño del JSON body a 2MB
 app.use(express.json({ limit: '2mb' }));
 
+import { logger } from './src/utils/logger';
+
+// HTTP Request Logging Middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    logger.info(`${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms`);
+  });
+  next();
+});
+
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'inscription-service' });
+  res.json({ 
+    status: 'ok', 
+    service: 'inscription-service',
+    uptime: process.uptime()
+  });
 });
 
 app.use('/api/inscripciones', inscripcionRoutes);

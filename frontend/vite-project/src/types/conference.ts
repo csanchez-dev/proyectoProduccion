@@ -17,6 +17,7 @@ export type Conference = {
   level?: string
   career?: string
   type?: 'presencial' | 'virtual'
+  year?: number
   virtualLink?: string
   dayId?: string
   documentUrl?: string

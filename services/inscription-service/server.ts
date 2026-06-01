@@ -1,7 +1,9 @@
 import app from './app';
 
+import { logger } from './src/utils/logger';
+
 const PORT = process.env.PORT || 3002;
 
 app.listen(PORT, () => {
-  console.log(`🚀 Inscription-service corriendo en puerto ${PORT}`);
+  logger.info(`🚀 Inscription-service corriendo en puerto ${PORT}`);
 });

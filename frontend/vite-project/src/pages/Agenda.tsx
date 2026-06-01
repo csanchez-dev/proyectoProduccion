@@ -65,10 +65,27 @@ export default function Agenda() {
 
   const [filterConfig, setFilterConfig] = useState<any[]>(() => {
     const saved = localStorage.getItem("agenda_filters_config");
-    if (saved) return JSON.parse(saved);
+    // Si ya existe pero queremos forzar la actualización, podríamos chequear si tiene "year".
+    // Por simplicidad, si no tiene la propiedad year, usamos el nuevo default.
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.some((f: any) => f.id === 'year')) return parsed;
+    }
 
     // Configuración inicial por defecto basada en el pedido del usuario
     return [
+      {
+        id: "year",
+        label: "Año",
+        property: "year",
+        icon: "📅",
+        options: [
+          { value: "all", label: "Todos los Años" },
+          { value: "2026", label: "2026 (Actual)" },
+          { value: "2025", label: "2025" },
+          { value: "2024", label: "2024" }
+        ]
+      },
       {
         id: "modality",
         label: "Modalidad",
@@ -130,18 +147,22 @@ export default function Agenda() {
   }, [lang]);
 
   const filteredConferences = conferencesList.filter((conf: any) => {
+    const title = conf?.title || conf?.titulo || "";
+    const speakerName = conf?.speaker?.name || conf?.speaker?.nombre || "Ponente por definir";
+
     const matchesSearch =
-      conf.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      conf.speaker.name.toLowerCase().includes(searchTerm.toLowerCase());
+      title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      speakerName.toLowerCase().includes(searchTerm.toLowerCase());
 
     // Lógica de filtrado dinámica
     const matchesDynamicFilters = filterConfig.every(filter => {
       const selectedValue = activeFilters[filter.id] || "all";
       if (selectedValue === "all") return true;
-      return conf[filter.property] === selectedValue;
+      const confValue = conf?.[filter.property];
+      return confValue === selectedValue;
     });
 
-    const confDayId = conf.dayId ?? conf.day ?? conf.day_id ?? conf.dayNumber ?? conf.date;
+    const confDayId = conf?.dayId ?? conf?.day ?? conf?.day_id ?? conf?.dayNumber ?? conf?.date;
     const matchesDay = !confDayId || confDayId === activeDayId;
 
     return matchesSearch && matchesDynamicFilters && matchesDay;

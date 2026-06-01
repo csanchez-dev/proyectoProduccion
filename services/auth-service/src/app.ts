@@ -43,9 +43,25 @@ const authLimiter = rateLimit({
 // 4. Parser de JSON con tamaño máximo restrictivo de 1MB para seguridad
 app.use(express.json({ limit: '1mb' }));
 
-// Health check (clave en microservicios)
+import { logger } from './utils/logger.js';
+
+// HTTP Request Logging Middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    logger.info(`${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms`);
+  });
+  next();
+});
+
+// Health check (clave en microservicios) con Uptime
 app.get('/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok', service: 'auth-service' });
+  res.json({ 
+    status: 'ok', 
+    service: 'auth-service',
+    uptime: process.uptime()
+  });
 });
 
 // Rutas
