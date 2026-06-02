@@ -28,6 +28,9 @@ export default function App() {
       setBgVideo(localStorage.getItem("custom_global_video"));
       setParallax(localStorage.getItem("custom_parallax") !== "false");
 
+      const theme = localStorage.getItem("site_theme") || "default";
+      document.body.className = theme === "default" ? "" : `theme-${theme}`;
+
       const p = localStorage.getItem("custom_primary_color");
       const s = localStorage.getItem("custom_secondary_color");
       const bg = localStorage.getItem("custom_bg_color");

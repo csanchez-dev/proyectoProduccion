@@ -16,9 +16,27 @@ body {
 
 h1,
 h2,
-h3 {
+h3,
+h4,
+h5,
+h6 {
   font-family: 'Crimson Pro', serif;
   letter-spacing: -0.02em;
+  line-height: 1.15;
+  font-weight: 700;
+  margin-bottom: 0.8rem;
+}
+
+body,
+p,
+label,
+button,
+input,
+select,
+textarea,
+span,
+small {
+  font-family: 'Inter', sans-serif;
 }
 
 :root {
@@ -52,6 +70,10 @@ h3 {
 
   /* ── Bordes & Radios (Más redondeados y amigables) ── */
   --border-color: rgba(0, 71, 171, 0.1);
+  --surface-bg: rgba(255, 255, 255, 0.88);
+  --surface-muted: rgba(255, 255, 255, 0.65);
+  --section-bg: rgba(255, 255, 255, 0.18);
+  --surface-border: 1px solid rgba(255, 255, 255, 0.72);
   --radius-sm: 10px;
   --radius-md: 16px;
   --radius-lg: 24px;
@@ -86,7 +108,14 @@ body.theme-colombia {
   --secondary-color: #f1c40f;
   --accent-color: #ce1126;
   --btn-gradient: linear-gradient(90deg, #f1c40f, #003893);
+  --header-bg: rgba(0, 56, 147, 0.92);
+  --bg-page: #F8F9FF;
+  --bg-card: rgba(255, 255, 255, 0.88);
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --text-primary: #0F1F3E;
+  --text-secondary: #475569;
   --text-on-primary: #ffffff;
+  --border-color: rgba(0, 56, 147, 0.12);
 }
 
 body.theme-italy {
@@ -97,18 +126,30 @@ body.theme-italy {
   /* Rojo Bandera */
   --accent-color: #008C45;
   --btn-gradient: linear-gradient(90deg, #008C45, #CD212A);
+  --header-bg: rgba(0, 140, 69, 0.92);
+  --bg-page: #F4F7F2;
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --glass-bg: rgba(255, 255, 255, 0.76);
+  --text-primary: #10221A;
+  --text-secondary: #395048;
   --text-on-primary: #ffffff;
-  --header-bg: #1a1a1a;
-  /* Fondo oscuro para que resalten los colores */
+  --border-color: rgba(0, 140, 69, 0.14);
 }
 
 body.theme-mexico {
   --primary-color: #006847;
-  --primary-hover: #005036;
+  --primary-hover: #004E36;
   --secondary-color: #ce1126;
   --accent-color: #ce1126;
   --btn-gradient: linear-gradient(90deg, #006847, #ce1126);
+  --header-bg: rgba(0, 104, 71, 0.92);
+  --bg-page: #F6F8F4;
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --glass-bg: rgba(255, 255, 255, 0.78);
+  --text-primary: #0F2B1F;
+  --text-secondary: #445954;
   --text-on-primary: #ffffff;
+  --border-color: rgba(0, 104, 71, 0.14);
 }
 
 * {
@@ -126,7 +167,7 @@ header {
   justify-content: space-between;
   align-items: center;
   padding: 0.8rem 5%;
-  background-color: var(--header-bg-custom, rgba(15, 23, 42, 0.85)); /* Soporte de Personalización en JS */
+  background-color: var(--header-bg-custom, var(--header-bg, rgba(15, 23, 42, 0.85))); /* Soporte de Personalización en JS */
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   color: white;
@@ -135,6 +176,40 @@ header {
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
   transition: all 0.4s ease;
   height: 5.7rem;
+}
+
+body.theme-colombia .admin-sidebar,
+body.theme-italy .admin-sidebar,
+body.theme-mexico .admin-sidebar,
+body.theme-colombia .admin-content,
+body.theme-italy .admin-content,
+body.theme-mexico .admin-content,
+body.theme-colombia .view-header,
+body.theme-italy .view-header,
+body.theme-mexico .view-header,
+body.theme-colombia .guest-card,
+body.theme-italy .guest-card,
+body.theme-mexico .guest-card,
+body.theme-colombia .profile-card,
+body.theme-italy .profile-card,
+body.theme-mexico .profile-card,
+body.theme-colombia .conference-mini-card,
+body.theme-italy .conference-mini-card,
+body.theme-mexico .conference-mini-card,
+body.theme-colombia .page-settings-panel,
+body.theme-italy .page-settings-panel,
+body.theme-mexico .page-settings-panel,
+body.theme-colombia .section-header,
+body.theme-italy .section-header,
+body.theme-mexico .section-header {
+  background: var(--surface-bg);
+  border-color: var(--border-color);
+}
+
+body.theme-colombia .section-header,
+body.theme-italy .section-header,
+body.theme-mexico .section-header {
+  background: var(--section-bg);
 }
 
 a {
@@ -156,7 +231,8 @@ a {
   align-items: center;
   gap: 1rem;
   padding: 0.8rem 1.5rem;
-  background: white;
+  background: var(--surface-bg);
+  color: var(--text-primary);
   border-radius: 0 0 15px 0;
   width: fit-content;
   flex-shrink: 0;
@@ -292,6 +368,27 @@ a {
 }
 
 .btn-logout:hover {
+  transform: translateY(-1px);
+  opacity: 0.98;
+}
+
+/* Botón de configuraciones para administradores: usa la variable --primary-color */
+.btn-config {
+  background: linear-gradient(135deg, var(--primary-color, #2563eb) 0%, #1d4ed8 100%);
+  color: white;
+  padding: 10px 18px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border: none;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.18);
+  cursor: pointer;
+  transition: var(--transition-base);
+  margin: 0 6px;
+}
+
+.btn-config:hover {
   transform: translateY(-1px);
   opacity: 0.98;
 }

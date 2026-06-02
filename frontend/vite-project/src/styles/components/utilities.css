@@ -66,7 +66,7 @@ textarea {
 
 /* ── Panel de Settings por Página ── */
 .page-settings-panel {
-  background: white;
+  background: var(--surface-bg);
   border-radius: var(--radius-lg);
   padding: 2rem;
   border: 1px solid var(--border-color);
@@ -87,7 +87,7 @@ textarea {
   gap: 0.5rem;
   flex-wrap: wrap;
   padding: 0.5rem;
-  background: #F1F5F9;
+  background: var(--section-bg);
   border-radius: var(--radius-md);
   margin-bottom: 1.5rem;
 }

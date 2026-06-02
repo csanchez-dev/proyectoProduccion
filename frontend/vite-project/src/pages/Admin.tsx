@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react"; // v2-ui-refresh
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { conferences as initialConferences } from "../data/conference_mocks";
 import { getEvents, getGenderStats, getConferenceStats, getPageViewsStats, getLoadTimeStats, getImageLoadStats, getResourceSizeStats, getAdvancedStatsByPage, getAvailableYears } from "../utils/tracker";
 import { translations, getTranslation } from "../utils/i18n";
@@ -134,6 +134,16 @@ export default function Admin() {
             navigate("/login"); // No hay sesión
         }
     }, [navigate]);
+
+    // Si viene un query param ?tab=..., abrir esa pestaña al cargar
+    const location = useLocation();
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const tab = params.get('tab');
+        if (tab) {
+            setActiveTab(tab);
+        }
+    }, [location.search]);
 
     const [speakers, setSpeakers] = useState<any[]>(() => {
         // Inicializar con los datos de los mocks + locales para que nunca esté vacía la lista

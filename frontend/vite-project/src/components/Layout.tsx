@@ -91,6 +91,11 @@ export default function Layout({ children }: Props) {
     window.location.href = "/";
   };
 
+  // Derivar role desde la sesión para mostrar controles de administración
+  const sessionData = localStorage.getItem("user_session");
+  const sessionUser = sessionData ? JSON.parse(sessionData) : null;
+  const isAdminUser = sessionUser && (sessionUser.role === 'SUPER_ADMIN' || sessionUser.role === 'ADMIN' || sessionUser.role === 'CONTENT_MANAGER');
+
   return (
     <>
       {/* HEADER FIJO */}
@@ -257,6 +262,10 @@ export default function Layout({ children }: Props) {
 
               <>
                 <Link to="/perfil" className="btn-profile">{t("nav_profile")}</Link>
+
+                {isAdminUser && (
+                  <Link to="/admin?tab=settings" className="btn-config">Configuraciones</Link>
+                )}
 
                 <button onClick={handleLogout} className="btn-logout">
                   {t("nav_logout")}

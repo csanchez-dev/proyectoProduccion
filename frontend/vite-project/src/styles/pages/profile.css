@@ -12,13 +12,13 @@
 }
 
 .profile-card {
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--surface-bg);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-radius: 24px;
   padding: 2rem;
   box-shadow: 0 12px 40px rgba(0, 71, 171, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.65);
+  border: 1px solid var(--border-color);
   transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
@@ -61,11 +61,11 @@
 .info-item input {
   width: 100%;
   padding: 10px 14px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-color);
   border-radius: 10px;
   font-size: 1rem;
   transition: var(--transition-base);
-  background: white;
+  background: var(--glass-bg);
 }
 
 .info-item input:focus {
@@ -104,16 +104,16 @@
   align-items: center;
   gap: 1rem;
   padding: 1.25rem;
-  background: rgba(255, 255, 255, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: var(--glass-bg);
+  border: 1px solid var(--border-color);
   border-radius: 16px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.01);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .conference-mini-card:hover {
   transform: translateX(6px) translateY(-1px);
-  background: white;
+  background: var(--surface-bg);
   border-color: var(--primary-color);
   box-shadow: 0 10px 25px rgba(0, 71, 171, 0.08);
 }
