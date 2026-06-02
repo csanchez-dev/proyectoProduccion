@@ -119,7 +119,7 @@ services:
     name: coniiti-2026-frontend
     runtime: static
     rootDir: frontend/vite-project
-    buildCommand: npm install && npm run build
+    buildCommand: npm install && npm install --os=linux --cpu=x64 @rollup/rollup-linux-x64-gnu && npm run build
     staticPublishPath: dist
     routes:
       - type: rewrite
