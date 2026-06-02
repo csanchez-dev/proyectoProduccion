@@ -29,7 +29,6 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.0.0",
     "vite": "^7.3.3",
-    "@rollup/rollup-linux-x64-gnu": "4.57.1",
     "vitest": "^1.5.0"
   },
   "dependencies": {
@@ -44,5 +43,8 @@
     "react-router-dom": "^7.13.0",
     "recharts": "^3.7.0",
     "sonner": "^2.0.7"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.57.1"
   }
 }
