@@ -123,7 +123,6 @@ services:
   - type: web
     name: coniiti-2026-frontend
     runtime: static
-    plan: free
     rootDir: frontend/vite-project
     buildCommand: npm install && npm run build
     staticPublishPath: dist
