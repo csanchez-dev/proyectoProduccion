@@ -22,7 +22,7 @@ services:
         sync: false
       - key: RABBITMQ_URL
         fromService:
-          type: web
+          type: pserv
           name: coniiti-rabbitmq
           property: host
       - key: AUTH_SERVICE_URL
@@ -92,14 +92,14 @@ services:
     envVars:
       - key: RABBITMQ_URL
         fromService:
-          type: web
+          type: pserv
           name: coniiti-rabbitmq
           property: host
 
   # ─────────────────────────────────────────
   # RABBITMQ — Message Broker
   # ─────────────────────────────────────────
-  - type: web
+  - type: pserv
     name: coniiti-rabbitmq
     runtime: docker
     # Usamos la imagen oficial de RabbitMQ
