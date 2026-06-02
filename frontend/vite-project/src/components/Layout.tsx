@@ -256,9 +256,9 @@ export default function Layout({ children }: Props) {
             {user ? (
 
               <>
-                <Link to="/perfil">{t("nav_profile")}</Link>
+                <Link to="/perfil" className="btn-profile">{t("nav_profile")}</Link>
 
-                <button onClick={handleLogout}>
+                <button onClick={handleLogout} className="btn-logout">
                   {t("nav_logout")}
                 </button>
               </>

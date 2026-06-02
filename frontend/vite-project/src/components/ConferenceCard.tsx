@@ -20,11 +20,16 @@ function getYouTubeLink(location: string | undefined): string | null {
 }
 
 function toEmbedUrl(url: string): string {
+  const origin = typeof window !== "undefined" ? encodeURIComponent(window.location.origin) : "";
+  const embedParams = `autoplay=1&rel=0&modestbranding=1&origin=${origin}`;
   const match = url.match(/youtu\.be\/([A-Za-z0-9_-]+)/);
-  if (match) return `https://www.youtube.com/embed/${match[1]}?autoplay=1&rel=0&modestbranding=1`;
-  if (url.includes("/embed/")) return url.includes("?") ? `${url}&autoplay=1&rel=0&modestbranding=1` : `${url}?autoplay=1&rel=0&modestbranding=1`;
+  if (match) return `https://www.youtube-nocookie.com/embed/${match[1]}?${embedParams}`;
+  if (url.includes("/embed/")) {
+    const baseUrl = url.split("?")[0];
+    return `${baseUrl}?${embedParams}`;
+  }
   const match2 = url.match(/[?&]v=([A-Za-z0-9_-]+)/);
-  if (match2) return `https://www.youtube.com/embed/${match2[1]}?autoplay=1&rel=0&modestbranding=1`;
+  if (match2) return `https://www.youtube-nocookie.com/embed/${match2[1]}?${embedParams}`;
   return url;
 }
 
@@ -518,6 +523,7 @@ export default function ConferenceCard({ conference }: Props) {
                     border: 'none',
                   }}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="origin"
                   allowFullScreen
                   onError={() => setHasVideoError(true)}
                 />

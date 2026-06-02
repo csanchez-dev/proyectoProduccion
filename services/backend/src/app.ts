@@ -3,6 +3,7 @@ import cors from 'cors';
 import proxy from 'express-http-proxy';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
+import { deleteStorage, listStorageKeys, readStorage, writeStorage } from './storage/localFileStorage.js';
 
 const app = express();
 
@@ -50,6 +51,30 @@ const INSCRIPTION_SERVICE_URL = process.env.INSCRIPTION_SERVICE_URL || 'http://i
 // verifiacion gateway
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', component: 'api-gateway' });
+});
+
+// Servicio de almacenamiento local dentro de la carpeta repo/storage
+app.get('/api/local-storage', (_req, res) => {
+  const keys = listStorageKeys();
+  res.json({ keys });
+});
+
+app.get('/api/local-storage/:key', (req, res) => {
+  const data = readStorage(req.params.key);
+  if (data === null) {
+    return res.status(404).json({ error: 'No existe la clave local' });
+  }
+  return res.json({ key: req.params.key, value: data });
+});
+
+app.post('/api/local-storage/:key', (req, res) => {
+  writeStorage(req.params.key, req.body);
+  return res.status(201).json({ message: 'Guardado local exitoso', key: req.params.key });
+});
+
+app.delete('/api/local-storage/:key', (req, res) => {
+  deleteStorage(req.params.key);
+  return res.json({ message: 'Eliminado local exitoso', key: req.params.key });
 });
 
 // Proxy routes, redireccion de trafico
