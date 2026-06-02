@@ -102,6 +102,7 @@ services:
   - type: pserv
     name: coniiti-rabbitmq
     runtime: docker
+    port: 5672
     # Usamos la imagen oficial de RabbitMQ
     dockerContext: .
     dockerfilePath: services/backend/rabbitmq.Dockerfile # Ruta actualizada
