@@ -692,6 +692,7 @@ export default function Admin() {
                                 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
                             >
                                 ⏱️ Rendimiento
+                            </button>
                             <button
                                 className={activeTab === "uptime" ? "active" : ""}
                                 onClick={() => setActiveTab("uptime")}

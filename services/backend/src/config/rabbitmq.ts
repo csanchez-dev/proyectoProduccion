@@ -1,6 +1,10 @@
 import * as amqp from 'amqplib';
 
-const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://rabbitmq:5672';
+let rabbitUrl = process.env.RABBITMQ_URL || 'amqp://rabbitmq:5672';
+if (!rabbitUrl.startsWith('amqp://') && !rabbitUrl.startsWith('amqps://')) {
+  rabbitUrl = `amqp://user:password@${rabbitUrl}:5672`;
+}
+
 const EXCHANGE_NAME = 'events';
 const EXCHANGE_TYPE = 'topic';
 
@@ -11,8 +15,8 @@ async function getChannel() {
   if (channel) return channel;
 
   try {
-    console.log('[RabbitMQ] Intentando conectar a:', RABBITMQ_URL);
-    connection = await amqp.connect(RABBITMQ_URL);
+    console.log('[RabbitMQ] Intentando conectar a:', rabbitUrl);
+    connection = await amqp.connect(rabbitUrl);
     
     // Si la conexión se cierra, limpiar las variables para reintento
     connection.on('error', (err: any) => {
