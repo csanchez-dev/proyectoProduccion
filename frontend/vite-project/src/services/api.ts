@@ -79,6 +79,23 @@ export const getEventos = () => apiFetch('/eventos');
 export const getPonentes = () => apiFetch('/ponentes');
 export const getUsuarios = () => apiFetch('/usuarios');
 
+// Local storage on server (repo-local storage helper)
+export const getLocalStorageKey = async (key: string) => {
+    try {
+        const res = await apiFetch(`/local-storage/${key}`);
+        return res?.value ?? null;
+    } catch (err) {
+        return null;
+    }
+};
+
+export const postLocalStorageKey = async (key: string, data: any) => {
+    return apiFetch(`/local-storage/${key}`, {
+        method: 'POST',
+        body: JSON.stringify(data)
+    });
+};
+
 // POSTers (Guardado)
 export const createPonencia = (data: any) => apiFetch('/ponencias', {
     method: 'POST',

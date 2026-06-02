@@ -74,6 +74,14 @@ export default function Register() {
 
         usuariosGuardados.push({ ...formData, role: mappedRole });
         localStorage.setItem('usuarios_locales', JSON.stringify(usuariosGuardados));
+        try {
+          const { postLocalStorageKey } = await import("../services/api");
+          // Intentar sincronizar fallback local al backend repo-local
+          await postLocalStorageKey('usuarios_locales', usuariosGuardados);
+        } catch (syncErr) {
+          // No bloquear el flujo si la sincronización falla
+          console.warn('No se pudo sincronizar usuarios_locales con backend:', syncErr);
+        }
       }
 
       const userData = {

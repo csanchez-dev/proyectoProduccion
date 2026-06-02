@@ -224,18 +224,31 @@ export default function Admin() {
 
             setSpeakers(finalSpeakers);
 
-            // 3. Unificar Usuarios
+            // 3. Unificar Usuarios (API + localStorage del navegador + repo-local compartido)
             const localUsers = JSON.parse(localStorage.getItem('usuarios_locales') || '[]');
-            const transformedLocal = localUsers.map((u: any) => ({
+            let remoteLocalUsers: any[] = [];
+            try {
+                const { getLocalStorageKey } = await import("../services/api");
+                const remote = await getLocalStorageKey('usuarios_locales');
+                if (Array.isArray(remote)) remoteLocalUsers = remote;
+            } catch (err) {
+                // Ignorar errores de la lectura remota
+                remoteLocalUsers = [];
+            }
+
+            // Merge local sources and transform
+            const combinedLocal = [...localUsers, ...remoteLocalUsers];
+            const transformedLocal = combinedLocal.map((u: any) => ({
                 id: u.documentNumber || `local-${u.email}`,
-                nombre_completo: u.fullName,
+                nombre_completo: u.fullName || u.fullName || u.nombre || '',
                 email: u.email,
-                rol: u.role,
-                carrera: u.career,
+                rol: u.role || u.rol || 'INVITADO',
+                carrera: u.career || u.carrera || '',
                 created_at: new Date().toISOString()
             }));
 
             const dbEmails = new Set(usuariosData.map((u: any) => u.email));
+            // Filtrar duplicados entre DB y locales (por email)
             const uniqueLocals = transformedLocal.filter((u: any) => !dbEmails.has(u.email));
             setRegisteredUsers([...usuariosData, ...uniqueLocals]);
 
