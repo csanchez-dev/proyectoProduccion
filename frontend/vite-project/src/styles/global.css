@@ -216,7 +216,7 @@ a {
 }
 
 .btn-login-header {
-  background: var(--primary-color);
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
   color: white;
   padding: 10px 24px;
   border-radius: 12px;
@@ -224,13 +224,33 @@ a {
   font-weight: 700;
   font-size: 0.95rem;
   transition: var(--transition-base);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 8px 20px rgba(220, 38, 38, 0.25);
   border: none;
 }
 
 .btn-login-header:hover {
-  background: white;
-  color: #1f2a44;
+  background: #ffffff;
+  color: #b91c1c;
+}
+
+.btn-register-header,
+.btn-home-header {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: white;
+  padding: 10px 22px;
+  border-radius: 16px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: var(--transition-base);
+  border: none;
+  box-shadow: 0 10px 25px rgba(37, 99, 235, 0.25);
+}
+
+.btn-register-header:hover,
+.btn-home-header:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
 }
 
 .user-profile-menu {

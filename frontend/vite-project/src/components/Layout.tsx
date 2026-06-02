@@ -173,7 +173,7 @@ export default function Layout({ children }: Props) {
             </li>
           </ul>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+          <div className="user-auth-zone">
 
             {/* Selector de Idioma Customizado */}
             <div style={{ position: 'relative' }}>
@@ -266,8 +266,8 @@ export default function Layout({ children }: Props) {
             ) : (
 
               <>
-                <Link to="/login">{t("nav_login")}</Link>
-                <Link to="/registro">{t("nav_register")}</Link>
+                <Link to="/login" className="btn-login-header">{t("nav_login")}</Link>
+                <Link to="/registro" className="btn-register-header">{t("nav_register")}</Link>
               </>
 
             )}
