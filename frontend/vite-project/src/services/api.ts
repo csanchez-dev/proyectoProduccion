@@ -137,6 +137,23 @@ export const register = (data: any) => apiFetch('/usuarios/register', {
     body: JSON.stringify(data)
 });
 
+export const sendEmailNotification = async (to: string, subject: string, body: string) => {
+    try {
+        const savedEmails = JSON.parse(localStorage.getItem('sent_emails') || '[]');
+        const emails = Array.isArray(savedEmails) ? savedEmails : [];
+        emails.push({
+            id: Date.now().toString(),
+            to,
+            subject,
+            body,
+            sentAt: new Date().toISOString()
+        });
+        localStorage.setItem('sent_emails', JSON.stringify(emails));
+        console.log(`[Email simulado] Enviado a ${to}: ${subject}`, body);
+    } catch (err) {
+        console.warn('No se pudo guardar el email simulado:', err);
+    }
+};
 
 // AUTH Helpers
 export const signUp = (email: string, pass: string) => supabase.auth.signUp({ email, password: pass });

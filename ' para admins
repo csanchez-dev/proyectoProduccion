@@ -43,3 +43,5 @@
   ?_p_a_t_t_e_r_n          *  Search backward for (_N-th) matching line.
   n                 *  Repeat previous search (for _N-th occurrence).
   N                 *  Repeat previous search in reverse direction.
+  ESC-n             *  Repeat previous search, spanning files.
+  ESC-N             *  Repeat previous search, reverse dir. & spanning files.

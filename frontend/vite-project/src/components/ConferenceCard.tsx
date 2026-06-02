@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
+import { sendEmailNotification } from "../services/api";
 import type { Conference } from "../types/conference";
 
 /* ── Mapa de sede → enlace de YouTube ── */
@@ -193,10 +195,18 @@ export default function ConferenceCard({ conference }: Props) {
       ) {
         userRegs.push(normalized);
         localStorage.setItem(userRegKey, JSON.stringify(userRegs));
-        window.dispatchEvent(new Event("storage"));
-      }
+        // Emitir evento propio en vez de 'storage' para evitar comportamientos inesperados
+        window.dispatchEvent(new Event("site-config-updated"));
 
-      alert("🎉 ¡Inscripción exitosa! Puedes verla en tu perfil.");
+        sendEmailNotification(
+          currentUser.email,
+          `Confirmación de inscripción: ${normalized.title}`,
+          `Te has inscrito correctamente a "${normalized.title}". Puedes ver tu inscripción en tu perfil y conservar el QR para asistencia.`
+        ).catch(() => {});
+        toast.success(
+          "¡Inscripción exitosa! Se ha enviado una confirmación a tu correo electrónico."
+        );
+      }
     }, 1500);
   };
 

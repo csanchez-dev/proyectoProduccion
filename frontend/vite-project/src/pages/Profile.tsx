@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { updatePerfil } from "../services/api";
+import { updatePerfil, sendEmailNotification } from "../services/api";
 import { Scanner } from '@yudiel/react-qr-scanner';
+import QRCode from 'react-qr-code';
+import { toast } from 'sonner';
 
 export default function Profile() {
     const navigate = useNavigate();
@@ -156,29 +158,42 @@ export default function Profile() {
         }
     };
 
-    const handleCancel = (id: number) => {
-        if (confirm("¿Estás seguro de que deseas cancelar tu inscripción a esta conferencia?")) {
-            const updatedConfs = conferences.filter(conf => conf.id !== id);
-            setConferences(updatedConfs);
+    const handleCancel = async (id: number) => {
+        if (!confirm("¿Estás seguro de que deseas cancelar tu inscripción a esta conferencia?")) {
+            return;
+        }
 
-            // Actualizar localStorage
-            const sessionData = localStorage.getItem("user_session");
-            if (sessionData) {
-                const currentUser = JSON.parse(sessionData);
-                localStorage.setItem(`registrations_${currentUser.email}`, JSON.stringify(updatedConfs));
+        const updatedConfs = conferences.filter(conf => conf.id !== id);
+        setConferences(updatedConfs);
 
-                // Opcional: devolver cupo a las estadísticas globales
-                const stats = JSON.parse(localStorage.getItem('conf_stats') || '[]');
-                const confToCancel = conferences.find(c => c.id === id);
-                if (confToCancel) {
-                    const confIndex = stats.findIndex((s: any) => s.name === confToCancel.title);
-                    if (confIndex >= 0 && stats[confIndex].value > 0) {
-                        stats[confIndex].value -= 1;
-                        localStorage.setItem('conf_stats', JSON.stringify(stats));
-                    }
+        // Actualizar localStorage
+        const sessionData = localStorage.getItem("user_session");
+        if (sessionData) {
+            const currentUser = JSON.parse(sessionData);
+            localStorage.setItem(`registrations_${currentUser.email}`, JSON.stringify(updatedConfs));
+
+            // Opcional: devolver cupo a las estadísticas globales
+            const stats = JSON.parse(localStorage.getItem('conf_stats') || '[]');
+            const confToCancel = conferences.find(c => c.id === id);
+            if (confToCancel) {
+                const confIndex = stats.findIndex((s: any) => s.name === confToCancel.title);
+                if (confIndex >= 0 && stats[confIndex].value > 0) {
+                    stats[confIndex].value -= 1;
+                    localStorage.setItem('conf_stats', JSON.stringify(stats));
                 }
+
+                sendEmailNotification(
+                    currentUser.email,
+                    `Cancelación de inscripción: ${confToCancel.title}`,
+                    `Tu inscripción a "${confToCancel.title}" ha sido cancelada. Si deseas volver a inscribirte, puedes hacerlo desde la agenda de conferencias.`
+                ).catch(() => {});
             }
-            alert("❌ Inscripción cancelada.");
+
+            toast.success(
+                "Inscripción cancelada. Se ha enviado un correo de confirmación a tu correo electrónico."
+            );
+        } else {
+            toast.error("No se pudo encontrar la sesión de usuario para cancelar la inscripción.");
         }
     };
 
@@ -354,9 +369,11 @@ export default function Profile() {
                     <div className="conference-mini-list">
                         {conferences.filter(c => !c.attended).length > 0 ? (
                             conferences.filter(c => !c.attended).map(conf => (
-                                <div key={conf.id} className="conference-mini-card">
-                                    <div className="conf-icon">📅</div>
-                                    <div className="conf-details">
+                                <div key={conf.id} className="conference-mini-card" style={{ alignItems: 'flex-start' }}>
+                                    <div className="conf-icon">
+                                        <QRCode value={`CONF_ATTENDANCE_${conf.id}`} size={64} bgColor="white" fgColor="#0f172a" title="QR de asistencia" />
+                                    </div>
+                                    <div className="conf-details" style={{ flex: 1 }}>
                                         <h4>{conf.title}</h4>
                                         <p>{conf.dayId ? conf.dayId.replace('day', 'Día ') : (conf.date || 'Día 1')} | {conf.startTime || conf.time} {conf.endTime ? `- ${conf.endTime}` : ''}</p>
                                         <p className="location">📍 {conf.type === 'virtual' ? 'Plataforma Virtual' : conf.location}</p>
@@ -370,6 +387,10 @@ export default function Profile() {
                                                 🔗 Unirse a la Reunión
                                             </a>
                                         )}
+                                        <div style={{ marginTop: '0.85rem', padding: '0.75rem 1rem', background: '#f8fafc', borderRadius: '14px', border: '1px solid #dbeafe' }}>
+                                            <p style={{ margin: 0, fontSize: '0.82rem', color: '#334155', fontWeight: 700 }}>Presenta este QR para confirmar asistencia</p>
+                                            <p style={{ margin: '0.35rem 0 0', fontSize: '0.8rem', color: '#64748b' }}>Código: <strong>CONF_ATTENDANCE_{conf.id}</strong></p>
+                                        </div>
                                     </div>
                                     <button
                                         className="btn-cancel"
