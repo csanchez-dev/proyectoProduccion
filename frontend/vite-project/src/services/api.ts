@@ -137,22 +137,54 @@ export const register = (data: any) => apiFetch('/usuarios/register', {
     body: JSON.stringify(data)
 });
 
-export const sendEmailNotification = async (to: string, subject: string, body: string) => {
+const getEmailConfig = () => {
+    const recipients = localStorage.getItem('email_recipient_list');
+    return {
+        senderAddress: localStorage.getItem('email_sender_address') || 'no-reply@coniiti.edu.co',
+        senderName: localStorage.getItem('email_sender_name') || 'CONIITI',
+        credentialKey: localStorage.getItem('email_credentials_key') || '',
+        recipients: recipients ? JSON.parse(recipients) : []
+    };
+};
+
+export const formatEmailTemplate = (template: string, values: Record<string, string>) => {
+    return template.replace(/\{(\w+)\}/g, (_, key) => values[key] ?? `{${key}}`);
+};
+
+export const getEmailTemplate = (key: string, defaultValue: string) => {
+    return localStorage.getItem(key) || defaultValue;
+};
+
+export const sendEmailNotification = async (to: string, subject: string, body: string, options?: { cc?: string[]; bcc?: string[] }) => {
+    const emailConfig = getEmailConfig();
     try {
         const savedEmails = JSON.parse(localStorage.getItem('sent_emails') || '[]');
         const emails = Array.isArray(savedEmails) ? savedEmails : [];
         emails.push({
             id: Date.now().toString(),
+            from: `${emailConfig.senderName} <${emailConfig.senderAddress}>`,
             to,
             subject,
             body,
+            cc: options?.cc || [],
+            bcc: options?.bcc || [],
+            config: {
+                credentialKey: emailConfig.credentialKey,
+                recipients: emailConfig.recipients
+            },
             sentAt: new Date().toISOString()
         });
         localStorage.setItem('sent_emails', JSON.stringify(emails));
-        console.log(`[Email simulado] Enviado a ${to}: ${subject}`, body);
+        console.log(`[Email simulado] Enviado a ${to}: ${subject}`, { body, from: emailConfig.senderAddress, cc: options?.cc, bcc: options?.bcc });
     } catch (err) {
         console.warn('No se pudo guardar el email simulado:', err);
     }
+};
+
+export const sendTemplatedEmail = async (to: string, subjectTemplate: string, bodyTemplate: string, values: Record<string, string>) => {
+    const subject = formatEmailTemplate(subjectTemplate, values);
+    const body = formatEmailTemplate(bodyTemplate, values);
+    return sendEmailNotification(to, subject, body);
 };
 
 // AUTH Helpers

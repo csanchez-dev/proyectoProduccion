@@ -56,6 +56,45 @@ export default function Admin() {
         setSecondaryColor(localStorage.getItem("custom_secondary_color") || "#1E293B");
         setAccentColor(localStorage.getItem("custom_accent_color") || "#00D2FF");
     };
+
+    const saveEmailConfig = () => {
+        localStorage.setItem("email_sender_address", emailSender);
+        localStorage.setItem("email_sender_name", emailSenderName);
+        localStorage.setItem("email_credentials_key", emailCredentialKey);
+        localStorage.setItem("email_recipient_list", JSON.stringify(emailRecipients));
+        localStorage.setItem("email_subject_registration", emailSubjectRegistration);
+        localStorage.setItem("email_template_registration", emailTemplateRegistration);
+        localStorage.setItem("email_subject_conference_registration", emailSubjectConferenceRegistration);
+        localStorage.setItem("email_template_conference_registration", emailTemplateConferenceRegistration);
+        localStorage.setItem("email_subject_virtual_conference", emailSubjectVirtualConference);
+        localStorage.setItem("email_template_virtual_conference", emailTemplateVirtualConference);
+        dispatchUpdate();
+        toast.success("Configuración de correo guardada correctamente.");
+    };
+
+    const addEmailRecipient = () => {
+        if (!newRecipientEmail.trim() || !newRecipientFaculty.trim()) {
+            toast.error("Completa el correo y la facultad antes de agregar.");
+            return;
+        }
+        setEmailRecipients(prev => [
+            ...prev,
+            {
+                id: `rec-${Date.now()}`,
+                email: newRecipientEmail.trim(),
+                faculty: newRecipientFaculty.trim(),
+                label: newRecipientLabel.trim() || newRecipientFaculty.trim()
+            }
+        ]);
+        setNewRecipientEmail("");
+        setNewRecipientFaculty("");
+        setNewRecipientLabel("");
+    };
+
+    const removeEmailRecipient = (recipientId: string) => {
+        setEmailRecipients(prev => prev.filter(rec => rec.id !== recipientId));
+    };
+
     const [chartTypes, setChartTypes] = useState<any>({
         views: 'bar',
         gender: 'pie',
@@ -64,6 +103,24 @@ export default function Admin() {
     });
     const [selectedPerfPage, setSelectedPerfPage] = useState("/");
     const [settingsTab, setSettingsTab] = useState("general");
+    const [emailSender, setEmailSender] = useState(localStorage.getItem("email_sender_address") || "no-reply@coniiti.edu.co");
+    const [emailSenderName, setEmailSenderName] = useState(localStorage.getItem("email_sender_name") || "CONIITI");
+    const [emailCredentialKey, setEmailCredentialKey] = useState(localStorage.getItem("email_credentials_key") || "");
+    const [emailRecipients, setEmailRecipients] = useState<any[]>(() => {
+        const saved = localStorage.getItem("email_recipient_list");
+        return saved ? JSON.parse(saved) : [
+            { id: `rec-${Date.now()}`, email: "facultad-ingenieria@coniiti.edu.co", faculty: "Ingeniería", label: "Facultad de Ingeniería" }
+        ];
+    });
+    const [newRecipientEmail, setNewRecipientEmail] = useState("");
+    const [newRecipientFaculty, setNewRecipientFaculty] = useState("");
+    const [newRecipientLabel, setNewRecipientLabel] = useState("");
+    const [emailSubjectRegistration, setEmailSubjectRegistration] = useState(localStorage.getItem("email_subject_registration") || "Confirmación de registro CONIITI");
+    const [emailTemplateRegistration, setEmailTemplateRegistration] = useState(localStorage.getItem("email_template_registration") || "Hola {fullName},\n\nTu cuenta ha sido creada correctamente con el correo {email}. Bienvenido a CONIITI.\n\n¡Nos vemos en el evento!");
+    const [emailSubjectConferenceRegistration, setEmailSubjectConferenceRegistration] = useState(localStorage.getItem("email_subject_conference_registration") || "Confirmación de inscripción a conferencia");
+    const [emailTemplateConferenceRegistration, setEmailTemplateConferenceRegistration] = useState(localStorage.getItem("email_template_conference_registration") || "Hola {fullName},\n\nTe has inscrito exitosamente a la conferencia \"{conferenceTitle}\".\nFecha: {conferenceDate}\nLugar: {conferenceLocation}\n\nGracias por registrarte. Revisa tu perfil para más detalles.");
+    const [emailSubjectVirtualConference, setEmailSubjectVirtualConference] = useState(localStorage.getItem("email_subject_virtual_conference") || "Acceso a conferencia virtual CONIITI");
+    const [emailTemplateVirtualConference, setEmailTemplateVirtualConference] = useState(localStorage.getItem("email_template_virtual_conference") || "Hola {fullName},\n\nTu inscripción a la conferencia virtual \"{conferenceTitle}\" se ha procesado automáticamente.\nAccede con este enlace: {conferenceLink}\n\nTe esperamos en la transmisión en vivo.");
     const [analyticsYear, setAnalyticsYear] = useState<number>(new Date().getFullYear());
 
     // States for Custom Theme creation
@@ -684,7 +741,10 @@ export default function Admin() {
                         <>
                             <button
                                 className={activeTab === "settings" ? "active" : ""}
-                                onClick={() => setActiveTab("settings")}
+                                onClick={() => {
+                                    setActiveTab("settings");
+                                    setSettingsTab("general");
+                                }}
                                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '10px' }}
                             >
                                 <span style={{display:'flex', alignItems:'center', gap:'10px'}}>⚙️ Configuración Page</span>
@@ -701,6 +761,16 @@ export default function Admin() {
                                         {pendingPhotos.length}
                                     </span>
                                 )}
+                            </button>
+                            <button
+                                className={activeTab === "settings" && settingsTab === "pg-emails" ? "active" : ""}
+                                onClick={() => {
+                                    setActiveTab("settings");
+                                    setSettingsTab("pg-emails");
+                                }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+                            >
+                                📧 Emails
                             </button>
                             <button
                                 className={activeTab === "users" ? "active" : ""}
@@ -1126,6 +1196,7 @@ export default function Admin() {
                                     { id: "pg-agenda", icon: "📅", label: "Agenda" },
                                     { id: "pg-acerca", icon: "ℹ️", label: "Acerca De" },
                                     { id: "pg-contacto", icon: "✉️", label: "Contacto" },
+                                    { id: "pg-emails", icon: "📧", label: "Emails" },
                                     { id: "pg-aforos", icon: "🏛️", label: "Aforos y Sedes" },
                                     { id: "pg-galeria", icon: "🖼️", label: "Galería Admin" },
                                 ].map(tab => (
@@ -1867,6 +1938,85 @@ export default function Admin() {
                                         </div>
                                         <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={() => { dispatchUpdate(); toast.success("Cambios de Contacto guardados."); }}>
                                             Guardar Cambios
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── PÁGINA: EMAILS ── */}
+                            {settingsTab === "pg-emails" && (
+                                <div className="page-settings-panel fade-in">
+                                    <h3>📧 Configuración — Envío de Correos</h3>
+                                    <div className="settings-form">
+                                        <div className="form-group">
+                                            <label>Email remitente</label>
+                                            <input type="email" value={emailSender} onChange={e => setEmailSender(e.target.value)} />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Nombre remitente</label>
+                                            <input type="text" value={emailSenderName} onChange={e => setEmailSenderName(e.target.value)} />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Llave / credencial del correo</label>
+                                            <input type="text" value={emailCredentialKey} onChange={e => setEmailCredentialKey(e.target.value)} />
+                                        </div>
+
+                                        <div className="form-group" style={{ marginTop: '1.5rem' }}>
+                                            <label>Destinatarios por facultad</label>
+                                            <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1rem' }}>
+                                                {emailRecipients.map(recipient => (
+                                                    <div key={recipient.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#f8fafc', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                                        <div style={{ flex: 1 }}>
+                                                            <strong style={{ display: 'block', marginBottom: '0.25rem' }}>{recipient.label || recipient.faculty}</strong>
+                                                            <span style={{ display: 'block', fontSize: '0.85rem', color: '#475569' }}>{recipient.email}</span>
+                                                            <span style={{ display: 'block', fontSize: '0.78rem', color: '#94a3b8' }}>{recipient.faculty}</span>
+                                                        </div>
+                                                        <button type="button" className="btn-delete-sm" onClick={() => removeEmailRecipient(recipient.id)} style={{ background: '#fee2e2', color: '#b91c1c' }}>Eliminar</button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '0.75rem' }}>
+                                                <input type="email" placeholder="Correo de facultad" value={newRecipientEmail} onChange={e => setNewRecipientEmail(e.target.value)} />
+                                                <input type="text" placeholder="Facultad" value={newRecipientFaculty} onChange={e => setNewRecipientFaculty(e.target.value)} />
+                                                <input type="text" placeholder="Etiqueta opcional" value={newRecipientLabel} onChange={e => setNewRecipientLabel(e.target.value)} />
+                                                <button type="button" className="btn-submit" onClick={addEmailRecipient} style={{ whiteSpace: 'nowrap' }}>Agregar</button>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                                            <h4 style={{ marginBottom: '1rem', color: 'var(--secondary-color)' }}>Plantillas de correo</h4>
+                                            <p style={{ marginBottom: '1rem', color: '#64748b', fontSize: '0.9rem' }}>Usa los siguientes campos para personalizar los mensajes que se envían automáticamente. Soportado: <code>{'{fullName}'}</code>, <code>{'{email}'}</code>, <code>{'{conferenceTitle}'}</code>, <code>{'{conferenceDate}'}</code>, <code>{'{conferenceLocation}'}</code>, <code>{'{conferenceLink}'}</code>.</p>
+
+                                            <div className="form-group">
+                                                <label>Asunto: Cuenta creada</label>
+                                                <input type="text" value={emailSubjectRegistration} onChange={e => setEmailSubjectRegistration(e.target.value)} />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>Mensaje: Cuenta creada</label>
+                                                <textarea rows={4} value={emailTemplateRegistration} onChange={e => setEmailTemplateRegistration(e.target.value)}></textarea>
+                                            </div>
+
+                                            <div className="form-group">
+                                                <label>Asunto: Inscripción a conferencia</label>
+                                                <input type="text" value={emailSubjectConferenceRegistration} onChange={e => setEmailSubjectConferenceRegistration(e.target.value)} />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>Mensaje: Inscripción a conferencia</label>
+                                                <textarea rows={4} value={emailTemplateConferenceRegistration} onChange={e => setEmailTemplateConferenceRegistration(e.target.value)}></textarea>
+                                            </div>
+
+                                            <div className="form-group">
+                                                <label>Asunto: Conferencia virtual</label>
+                                                <input type="text" value={emailSubjectVirtualConference} onChange={e => setEmailSubjectVirtualConference(e.target.value)} />
+                                            </div>
+                                            <div className="form-group">
+                                                <label>Mensaje: Conferencia virtual</label>
+                                                <textarea rows={4} value={emailTemplateVirtualConference} onChange={e => setEmailTemplateVirtualConference(e.target.value)}></textarea>
+                                            </div>
+                                        </div>
+
+                                        <button className="btn-submit" style={{ marginTop: '1rem' }} onClick={saveEmailConfig}>
+                                            Guardar Configuración de Email
                                         </button>
                                     </div>
                                 </div>

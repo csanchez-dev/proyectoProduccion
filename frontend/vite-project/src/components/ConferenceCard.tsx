@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
-import { sendEmailNotification } from "../services/api";
+import { sendTemplatedEmail, getEmailTemplate } from "../services/api";
 import type { Conference } from "../types/conference";
 
 /* ── Mapa de sede → enlace de YouTube ── */
@@ -198,10 +198,28 @@ export default function ConferenceCard({ conference }: Props) {
         // Emitir evento propio en vez de 'storage' para evitar comportamientos inesperados
         window.dispatchEvent(new Event("site-config-updated"));
 
-        sendEmailNotification(
+        const isVirtual = normalized.type === "virtual" || conference.type === "virtual";
+        const subjectKey = isVirtual ? "email_subject_virtual_conference" : "email_subject_conference_registration";
+        const templateKey = isVirtual ? "email_template_virtual_conference" : "email_template_conference_registration";
+        const defaultSubject = isVirtual
+          ? `Acceso a conferencia virtual: ${normalized.title}`
+          : `Confirmación de inscripción: ${normalized.title}`;
+        const defaultBody = isVirtual
+          ? `Hola ${currentUser.fullName},\n\nTu inscripción a la conferencia virtual "${normalized.title}" se ha procesado automáticamente.\nAccede con este enlace: ${normalized.virtualLink || getYouTubeLink(normalized.location)}\n\nTe esperamos en la transmisión en vivo.`
+          : `Hola ${currentUser.fullName},\n\nTe has inscrito correctamente a "${normalized.title}".\nFecha: ${normalized.startTime || 'Pendiente'}\nLugar: ${normalized.location}\n\nGracias por registrarte. Revisa tu perfil para más detalles.`;
+
+        sendTemplatedEmail(
           currentUser.email,
-          `Confirmación de inscripción: ${normalized.title}`,
-          `Te has inscrito correctamente a "${normalized.title}". Puedes ver tu inscripción en tu perfil y conservar el QR para asistencia.`
+          getEmailTemplate(subjectKey, defaultSubject),
+          getEmailTemplate(templateKey, defaultBody),
+          {
+            fullName: currentUser.fullName,
+            email: currentUser.email,
+            conferenceTitle: normalized.title,
+            conferenceDate: normalized.startTime || "Pendiente",
+            conferenceLocation: normalized.location,
+            conferenceLink: normalized.virtualLink || getYouTubeLink(normalized.location) || window.location.href
+          }
         ).catch(() => {});
         toast.success(
           "¡Inscripción exitosa! Se ha enviado una confirmación a tu correo electrónico."

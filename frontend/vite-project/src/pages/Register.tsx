@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { translations, getTranslation } from "../utils/i18n";
 import type { Language } from "../utils/i18n";
-import { signIn, register, sendEmailNotification } from "../services/api";
+import { signIn, register, sendTemplatedEmail, getEmailTemplate } from "../services/api";
 import { toast } from "sonner";
 
 export default function Register() {
@@ -100,10 +100,15 @@ export default function Register() {
       sessionStorage.setItem("session_active", "1");
       window.dispatchEvent(new Event('user-session-updated'));
 
-      await sendEmailNotification(
+      await sendTemplatedEmail(
         formData.email,
-        "Confirmación de registro CONIITI",
-        `Hola ${formData.fullName}, tu cuenta se ha creado correctamente. Ya puedes acceder con este correo electrónico y disfrutar de las conferencias de CONIITI.`
+        getEmailTemplate("email_subject_registration", "Confirmación de registro CONIITI"),
+        getEmailTemplate("email_template_registration", `Hola {fullName},\n\nTu cuenta ha sido creada correctamente con el correo {email}. Ya puedes acceder y disfrutar de las conferencias de CONIITI.`),
+        {
+          fullName: formData.fullName,
+          email: formData.email,
+          role: mappedRole
+        }
       );
       toast.success(`Se ha enviado un correo de confirmación a ${formData.email}.`);
 

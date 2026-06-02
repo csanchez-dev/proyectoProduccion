@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { updatePerfil, sendEmailNotification } from "../services/api";
+import { updatePerfil, sendTemplatedEmail, getEmailTemplate } from "../services/api";
 import { Scanner } from '@yudiel/react-qr-scanner';
-import QRCode from 'react-qr-code';
 import { toast } from 'sonner';
 
 export default function Profile() {
@@ -182,10 +181,17 @@ export default function Profile() {
                     localStorage.setItem('conf_stats', JSON.stringify(stats));
                 }
 
-                sendEmailNotification(
+                sendTemplatedEmail(
                     currentUser.email,
-                    `Cancelación de inscripción: ${confToCancel.title}`,
-                    `Tu inscripción a "${confToCancel.title}" ha sido cancelada. Si deseas volver a inscribirte, puedes hacerlo desde la agenda de conferencias.`
+                    getEmailTemplate("email_subject_conference_registration", `Cancelación de inscripción: ${confToCancel.title}`),
+                    `Hola ${currentUser.fullName},\n\nTu inscripción a "${confToCancel.title}" ha sido cancelada. Si deseas volver a inscribirte, puedes hacerlo desde la agenda de conferencias.\n\nGracias por tu interés en CONIITI.`,
+                    {
+                        fullName: currentUser.fullName,
+                        email: currentUser.email,
+                        conferenceTitle: confToCancel.title,
+                        conferenceDate: confToCancel.startTime || "Pendiente",
+                        conferenceLocation: confToCancel.location || "Pendiente"
+                    }
                 ).catch(() => {});
             }
 
@@ -348,16 +354,17 @@ export default function Profile() {
                 <div className="profile-card user-conferences">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                         <h3 style={{ margin: 0 }}>Mis Conferencias Inscritas</h3>
-                        <button
-                            className="btn-submit premium-btn"
-                            style={{ padding: '8px 16px', margin: 0, width: 'auto' }}
-                            onClick={() => {
+                        <a
+                            href="#"
+                            onClick={(e) => {
+                                e.preventDefault();
                                 setShowScanner(true);
                                 setScanResult(null);
                             }}
+                            style={{ color: 'var(--primary-color)', fontWeight: 700, textDecoration: 'underline', fontSize: '0.95rem' }}
                         >
                             📷 Escanear QR Asistencia
-                        </button>
+                        </a>
                     </div>
 
                     {scanResult && (
@@ -368,41 +375,34 @@ export default function Profile() {
 
                     <div className="conference-mini-list">
                         {conferences.filter(c => !c.attended).length > 0 ? (
-                            conferences.filter(c => !c.attended).map(conf => (
-                                <div key={conf.id} className="conference-mini-card" style={{ alignItems: 'flex-start' }}>
-                                    <div className="conf-icon">
-                                        <QRCode value={`CONF_ATTENDANCE_${conf.id}`} size={64} bgColor="white" fgColor="#0f172a" title="QR de asistencia" />
-                                    </div>
-                                    <div className="conf-details" style={{ flex: 1 }}>
-                                        <h4>{conf.title}</h4>
-                                        <p>{conf.dayId ? conf.dayId.replace('day', 'Día ') : (conf.date || 'Día 1')} | {conf.startTime || conf.time} {conf.endTime ? `- ${conf.endTime}` : ''}</p>
-                                        <p className="location">📍 {conf.type === 'virtual' ? 'Plataforma Virtual' : conf.location}</p>
-                                        {conf.type === 'virtual' && conf.virtualLink && (
-                                            <a
-                                                href={conf.virtualLink}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                style={{ color: '#0052cc', fontSize: '0.85rem', fontWeight: 'bold', textDecoration: 'underline' }}
-                                            >
-                                                🔗 Unirse a la Reunión
-                                            </a>
-                                        )}
-                                        <div style={{ marginTop: '0.85rem', padding: '0.75rem 1rem', background: '#f8fafc', borderRadius: '14px', border: '1px solid #dbeafe' }}>
-                                            <p style={{ margin: 0, fontSize: '0.82rem', color: '#334155', fontWeight: 700 }}>Presenta este QR para confirmar asistencia</p>
-                                            <p style={{ margin: '0.35rem 0 0', fontSize: '0.8rem', color: '#64748b' }}>Código: <strong>CONF_ATTENDANCE_{conf.id}</strong></p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        className="btn-cancel"
-                                        onClick={() => handleCancel(conf.id)}
-                                    >
-                                        Cancelar
-                                    </button>
+                        conferences.filter(c => !c.attended).map(conf => (
+                            <div key={conf.id} className="conference-mini-card" style={{ alignItems: 'flex-start' }}>
+                                <div className="conf-details" style={{ flex: 1 }}>
+                                    <h4>{conf.title}</h4>
+                                    <p>{conf.dayId ? conf.dayId.replace('day', 'Día ') : (conf.date || 'Día 1')} | {conf.startTime || conf.time} {conf.endTime ? `- ${conf.endTime}` : ''}</p>
+                                    <p className="location">📍 {conf.type === 'virtual' ? 'Plataforma Virtual' : conf.location}</p>
+                                    {conf.type === 'virtual' && conf.virtualLink && (
+                                        <a
+                                            href={conf.virtualLink}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={{ color: '#0052cc', fontSize: '0.85rem', fontWeight: 'bold', textDecoration: 'underline' }}
+                                        >
+                                            🔗 Unirse a la Reunión
+                                        </a>
+                                    )}
                                 </div>
-                            ))
-                        ) : (
-                            <p className="no-data">No tienes conferencias pendientes.</p>
-                        )}
+                                <button
+                                    className="btn-cancel"
+                                    onClick={() => handleCancel(conf.id)}
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
+                        ))
+                    ) : (
+                        <p className="no-data">No tienes conferencias pendientes.</p>
+                    )}
                     </div>
                 </div>
 
