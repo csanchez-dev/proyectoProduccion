@@ -77,7 +77,13 @@ export default function Register() {
         try {
           const { postLocalStorageKey } = await import("../services/api");
           // Intentar sincronizar fallback local al backend repo-local
-          await postLocalStorageKey('usuarios_locales', usuariosGuardados);
+          // IMPORTANTE: nunca enviar contraseñas al backend/almacenamiento del repo
+          const sanitized = usuariosGuardados.map((u: any) => {
+            const { password, pwd, ...rest } = u as any;
+            return rest;
+          });
+
+          await postLocalStorageKey('usuarios_locales', sanitized);
         } catch (syncErr) {
           // No bloquear el flujo si la sincronización falla
           console.warn('No se pudo sincronizar usuarios_locales con backend:', syncErr);

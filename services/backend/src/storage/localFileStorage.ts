@@ -38,7 +38,30 @@ export const readStorage = (key: string) => {
 
 export const writeStorage = (key: string, value: any) => {
   const filePath = getStoragePath(key);
-  fs.writeFileSync(filePath, JSON.stringify(value, null, 2), 'utf-8');
+  // Protecciones: nunca escribir contraseñas en el almacenamiento del repo
+  let safeValue = value;
+  try {
+    if (typeof key === 'string' && key.toLowerCase().includes('usuarios_locales')) {
+      if (Array.isArray(value)) {
+        safeValue = value.map((u: any) => {
+          const copy = { ...u };
+          if (copy.password) delete copy.password;
+          if (copy.pwd) delete copy.pwd;
+          return copy;
+        });
+      } else if (typeof value === 'object' && value !== null) {
+        const copy = { ...value };
+        if (copy.password) delete copy.password;
+        if (copy.pwd) delete copy.pwd;
+        safeValue = copy;
+      }
+    }
+  } catch (e) {
+    // no bloquear en caso de error al sanear
+    safeValue = value;
+  }
+
+  fs.writeFileSync(filePath, JSON.stringify(safeValue, null, 2), 'utf-8');
 };
 
 export const deleteStorage = (key: string) => {
