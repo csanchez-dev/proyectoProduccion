@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import DayTabs, { type DayOption } from "../components/DayTabs";
 import ConferenceCard from "../components/ConferenceCard";
 import { conferences as initialConferences } from "../data/conference_mocks";
@@ -19,12 +20,22 @@ export default function Agenda() {
   const [activeDayId, setActiveDayId] = useState<string>(days[0]?.id || "day1");
 
   const [lang, setLang] = useState<Language>((localStorage.getItem("app_lang") as Language) || 'es');
+  const location = useLocation();
 
   useEffect(() => {
     const updateLang = () => setLang((localStorage.getItem("app_lang") as Language) || 'es');
     window.addEventListener('app-lang-updated', updateLang);
     return () => window.removeEventListener('app-lang-updated', updateLang);
   }, []);
+
+  useEffect(() => {
+    if (location.hash) {
+      const anchor = document.querySelector(location.hash);
+      if (anchor) {
+        anchor.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+  }, [location.hash]);
 
   const t = (key: keyof typeof translations.es) => getTranslation(key, lang);
 

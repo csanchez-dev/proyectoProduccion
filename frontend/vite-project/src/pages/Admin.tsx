@@ -1151,11 +1151,14 @@ export default function Admin() {
                                                         key={theme.id}
                                                         onClick={() => {
                                                             localStorage.setItem("site_theme", theme.id);
-                                                            document.body.className = (theme.id === "default" || !theme.isPreset) ? "" : `theme-${theme.id}`;
+                                                            ["theme-colombia", "theme-italy", "theme-mexico"].forEach(cls => document.body.classList.remove(cls));
+                                                            if (theme.id !== "default" && theme.isPreset) {
+                                                                document.body.classList.add(`theme-${theme.id}`);
+                                                            }
 
                                                             if (theme.isPreset) {
                                                                 // Limpiamos colores inline custom para que se aplique la clase del tema
-                                                                ["custom_bg_color", "custom_text_color", "custom_primary_color", "custom_secondary_color", "custom_header_bg"].forEach(key => localStorage.removeItem(key));
+                                                                ["custom_bg_color", "custom_text_color", "custom_primary_color", "custom_secondary_color", "custom_header_bg", "custom_accent_color", "custom_glass_bg"].forEach(key => localStorage.removeItem(key));
                                                             } else {
                                                                 // Si es tema personalizado, inyectamos sus propios colores inline
                                                                 localStorage.setItem("custom_bg_color", theme.themeData.bg);
@@ -1163,7 +1166,8 @@ export default function Admin() {
                                                                 localStorage.setItem("custom_primary_color", theme.themeData.primary);
                                                                 localStorage.setItem("custom_secondary_color", theme.themeData.secondary);
                                                                 localStorage.setItem("custom_header_bg", theme.themeData.header);
-                                                                localStorage.setItem("custom_accent_color", "#00D2FF"); // Default param para presets
+                                                                localStorage.setItem("custom_accent_color", theme.themeData.accent || "#00D2FF");
+                                                                localStorage.setItem("custom_glass_bg", theme.themeData.glass || "rgba(255, 255, 255, 0.65)");
                                                             }
                                                             dispatchUpdate();
                                                         }}

@@ -258,6 +258,29 @@ export default function Layout({ children }: Props) {
               <>
                 <Link to="/perfil" className="btn-profile">{t("nav_profile")}</Link>
 
+                {(user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "CONTENT_MANAGER") && (
+                  <Link to="/admin" className="btn-config" style={{
+                    padding: '8px 16px',
+                    borderRadius: '20px',
+                    background: '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    fontSize: '0.9rem',
+                    fontWeight: '600',
+                    textDecoration: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = '#059669')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = '#10b981')}
+                  >
+                    ⚙️ {t("nav_config")}
+                  </Link>
+                )}
+
                 <button onClick={handleLogout} className="btn-logout">
                   {t("nav_logout")}
                 </button>

@@ -87,6 +87,13 @@ body.theme-colombia {
   --accent-color: #ce1126;
   --btn-gradient: linear-gradient(90deg, #f1c40f, #003893);
   --text-on-primary: #ffffff;
+  --bg-page: #f8fafc;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --bg-card: rgba(255, 255, 255, 0.82);
+  --glass-bg: rgba(255, 255, 255, 0.78);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.85);
+  --header-bg: #003893;
 }
 
 body.theme-italy {
@@ -98,6 +105,12 @@ body.theme-italy {
   --accent-color: #008C45;
   --btn-gradient: linear-gradient(90deg, #008C45, #CD212A);
   --text-on-primary: #ffffff;
+  --bg-page: #f5f8f4;
+  --text-primary: #10221c;
+  --text-secondary: #4b5f51;
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.9);
   --header-bg: #1a1a1a;
   /* Fondo oscuro para que resalten los colores */
 }
@@ -109,6 +122,13 @@ body.theme-mexico {
   --accent-color: #ce1126;
   --btn-gradient: linear-gradient(90deg, #006847, #ce1126);
   --text-on-primary: #ffffff;
+  --bg-page: #f7faf5;
+  --text-primary: #0f1d15;
+  --text-secondary: #4a5d4f;
+  --bg-card: rgba(255, 255, 255, 0.86);
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.88);
+  --header-bg: #004b35;
 }
 
 * {
@@ -126,7 +146,7 @@ header {
   justify-content: space-between;
   align-items: center;
   padding: 0.8rem 5%;
-  background-color: var(--header-bg-custom, rgba(15, 23, 42, 0.85)); /* Soporte de Personalización en JS */
+  background-color: var(--header-bg-custom, var(--header-bg, rgba(15, 23, 42, 0.85))); /* Soporte de Personalización en JS */
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   color: white;

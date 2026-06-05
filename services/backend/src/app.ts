@@ -3,7 +3,7 @@ import cors from 'cors';
 import proxy from 'express-http-proxy';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
-import { deleteStorage, listStorageKeys, readStorage, writeStorage } from './storage/localFileStorage.js';
+import { deleteStorage, listStorageKeys, readStorage, writeStorage } from './storage/localFileStorage';
 
 const app = express();
 

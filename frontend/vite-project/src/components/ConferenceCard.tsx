@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { createPortal } from "react-dom";
 import type { Conference } from "../types/conference";
 
@@ -38,6 +39,34 @@ type Props = {
 }
 
 export default function ConferenceCard({ conference }: Props) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const anchorId = `conf-${conference.id || String(conference.title || "unknown").replace(/[^a-zA-Z0-9_-]/g, "-").toLowerCase()}`;
+
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [isRevealed, setIsRevealed] = useState(false);
+
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsRevealed(true);
+          observer.disconnect();
+        }
+      },
+      {
+        threshold: 0.12,
+        rootMargin: "0px 0px -40px 0px",
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const [maxCapacity, setMaxCapacity] = useState(() => {
     try {
       if (conference?.type === "virtual") return 500;
@@ -83,6 +112,7 @@ export default function ConferenceCard({ conference }: Props) {
   const [showSpeakerModal, setShowSpeakerModal] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [hasVideoError, setHasVideoError] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const getStockColor = () => {
     if (availableSeats <= 0) return "#ff4d4d";
@@ -118,11 +148,11 @@ export default function ConferenceCard({ conference }: Props) {
     };
 
     window.addEventListener("site-config-updated", refreshCapacity);
-    window.addEventListener("storage", refreshCapacity);
+    window.addEventListener("registration-updated", refreshCapacity);
 
     return () => {
       window.removeEventListener("site-config-updated", refreshCapacity);
-      window.removeEventListener("storage", refreshCapacity);
+      window.removeEventListener("registration-updated", refreshCapacity);
     };
   }, [conference?.location, conference?.title, conference?.type]);
 
@@ -138,7 +168,11 @@ export default function ConferenceCard({ conference }: Props) {
     const sessionData = localStorage.getItem("user_session");
     if (!sessionData) {
       alert("Debes iniciar sesión para inscribirte en conferencias.");
-      window.location.href = "/login";
+      navigate("/login", {
+        state: {
+          from: `${location.pathname}${location.search}#${anchorId}`
+        }
+      });
       return;
     }
 
@@ -193,10 +227,12 @@ export default function ConferenceCard({ conference }: Props) {
       ) {
         userRegs.push(normalized);
         localStorage.setItem(userRegKey, JSON.stringify(userRegs));
-        window.dispatchEvent(new Event("storage"));
+        window.dispatchEvent(new Event("registration-updated"));
       }
 
-      alert("🎉 ¡Inscripción exitosa! Puedes verla en tu perfil.");
+      // Notificación no bloqueante en lugar de alert()
+      setToastMsg("🎉 ¡Inscripción exitosa! Puedes verla en tu perfil.");
+      setTimeout(() => setToastMsg(null), 4000);
     }, 1500);
   };
 
@@ -255,9 +291,11 @@ export default function ConferenceCard({ conference }: Props) {
 
   return (
     <div
+      ref={cardRef}
+      id={anchorId}
       className={`card ${isRegistered ? "registered" : ""} ${
         isFull ? "full" : ""
-      }`}
+      } ${isRevealed ? "is-visible" : ""}`}
       data-reveal="up"
       style={{
         position: "relative",
@@ -408,7 +446,7 @@ export default function ConferenceCard({ conference }: Props) {
             </span>
           </div>
 
-          {/* ── Enlace de transmisión en vivo por YouTube ── */}
+          {/* ── Enlace de cómo llegar (ubicación) ── */}
           {youtubeLink && (
             <div className="info-row" style={{ marginTop: '4px' }}>
               <button
@@ -418,7 +456,7 @@ export default function ConferenceCard({ conference }: Props) {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '8px',
-                  background: 'linear-gradient(135deg, #ff0000, #cc0000)',
+                  background: 'linear-gradient(135deg, #0b3b8f, #1e40af)',
                   color: 'white',
                   border: 'none',
                   borderRadius: '999px',
@@ -426,22 +464,23 @@ export default function ConferenceCard({ conference }: Props) {
                   fontSize: '0.85rem',
                   fontWeight: 800,
                   cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(255,0,0,0.25)',
+                  boxShadow: '0 4px 12px rgba(11, 59, 143, 0.2)',
                   transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                 }}
                 onMouseEnter={e => {
                   e.currentTarget.style.transform = 'translateY(-2px) scale(1.03)';
-                  e.currentTarget.style.boxShadow = '0 8px 20px rgba(255,0,0,0.35)';
+                  e.currentTarget.style.boxShadow = '0 8px 20px rgba(11, 59, 143, 0.3)';
                 }}
                 onMouseLeave={e => {
                   e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(255,0,0,0.25)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(11, 59, 143, 0.2)';
                 }}
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.546 12 3.546 12 3.546s-7.505 0-9.377.504A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.504 9.376.504 9.376.504s7.505 0 9.377-.504a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                  <circle cx="12" cy="10" r="3" />
                 </svg>
-                Ver transmisión
+                Cómo llegar
               </button>
             </div>
           )}
@@ -487,10 +526,10 @@ export default function ConferenceCard({ conference }: Props) {
               }}>
                 <div>
                   <div style={{ color: 'white', fontWeight: 700, fontSize: '1rem' }}>
-                    {conference.title}
+                    {conference.location}
                   </div>
                   <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '4px' }}>
-                    {conference.location} — Transmisión en vivo
+                    Vídeo guía — Cómo llegar
                   </div>
                 </div>
                 <button
@@ -513,7 +552,7 @@ export default function ConferenceCard({ conference }: Props) {
               <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, background: '#000' }}>
                 <iframe
                   src={toEmbedUrl(youtubeLink)}
-                  title={`Transmisión: ${conference.title}`}
+                  title={`Vídeo guía: Cómo llegar a ${conference.location}`}
                   style={{
                     position: 'absolute',
                     top: 0,
@@ -534,7 +573,7 @@ export default function ConferenceCard({ conference }: Props) {
                     No se puede reproducir el video en este navegador.
                   </p>
                   <p style={{ color: '#cbd5e1', marginBottom: '1rem' }}>
-                    Abre la transmisión directamente en YouTube.
+                    Abre la vídeo guía directamente en YouTube.
                   </p>
                   <a
                     href={youtubeLink}
@@ -738,6 +777,31 @@ export default function ConferenceCard({ conference }: Props) {
           </button>
         </div>
       </div>
+
+      {/* ── Toast de inscripción exitosa ── */}
+      {toastMsg && (
+        <div
+          style={{
+            position: "absolute",
+            top: "12px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "linear-gradient(135deg, #10b981, #059669)",
+            color: "#fff",
+            padding: "10px 20px",
+            borderRadius: "12px",
+            fontSize: "0.9rem",
+            fontWeight: 600,
+            boxShadow: "0 4px 16px rgba(16, 185, 129, 0.35)",
+            zIndex: 10,
+            animation: "fadeInDown 0.4s ease",
+            whiteSpace: "nowrap",
+            pointerEvents: "none",
+          }}
+        >
+          {toastMsg}
+        </div>
+      )}
     </div>
   );
 }
