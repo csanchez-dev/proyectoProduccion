@@ -1,4 +1,4 @@
-import type { Conference } from "../types/conference.ts"
+import type { Conference } from "../types/conference.ts";
 
 export const conferences: Conference[] = [
   {
@@ -11,12 +11,13 @@ export const conferences: Conference[] = [
     category: "IA",
     level: "Intermedio",
     type: "presencial",
+    year: 2026,
     dayId: "day1",
     documentUrl: "https://ejemplo.com/slides-ia",
     speaker: {
       name: "Laura Gómez",
       bio: "Ingeniera en Machine Learning",
-      avatar: "/speaker1.jpg",
+      avatar: "https://i.pravatar.cc/150?u=laura",
       organization: "TechLab"
     }
   },
@@ -30,11 +31,12 @@ export const conferences: Conference[] = [
     category: "Seguridad",
     level: "Avanzado",
     type: "presencial",
+    year: 2026,
     dayId: "day1",
     speaker: {
       name: "Andrés Martínez",
       bio: "Especialista en ciberseguridad y auditorías de sistemas",
-      avatar: "/speaker2.jpg",
+      avatar: "https://i.pravatar.cc/150?u=andres",
       organization: "SecureTech"
     }
   },
@@ -48,12 +50,13 @@ export const conferences: Conference[] = [
     category: "Blockchain",
     level: "Intermedio",
     type: "presencial",
+    year: 2026,
     dayId: "day1",
     documentUrl: "https://ejemplo.com/blockchain-whitepaper",
     speaker: {
       name: "Carolina Ruiz",
       bio: "Consultora en tecnología financiera y blockchain",
-      avatar: "/speaker3.jpg",
+      avatar: "https://i.pravatar.cc/150?u=carolina",
       organization: "FinTech Global"
     }
   },
@@ -67,12 +70,13 @@ export const conferences: Conference[] = [
     category: "Robótica",
     level: "Avanzado",
     type: "virtual",
+    year: 2026,
     dayId: "day1",
     virtualLink: "https://zoom.us/j/123456789",
     speaker: {
       name: "Diego Vargas",
       bio: "Ingeniero en robótica y automatización industrial",
-      avatar: "/speaker4.jpg",
+      avatar: "https://i.pravatar.cc/150?u=diego",
       organization: "RoboWorks"
     }
   },
@@ -86,12 +90,53 @@ export const conferences: Conference[] = [
     category: "Sostenibilidad",
     level: "Básico",
     type: "presencial",
+    year: 2026,
     dayId: "day2",
     speaker: {
       name: "Mariana López",
       bio: "Investigadora en tecnologías sostenibles",
-      avatar: "/speaker5.jpg",
+      avatar: "https://i.pravatar.cc/150?u=mariana",
       organization: "GreenTech"
+    }
+  },
+  // Past Conferences
+  {
+    id: "6",
+    title: "El Futuro del IoT",
+    description: "Desafíos y oportunidades en Internet de las Cosas.",
+    startTime: "2025-05-10T09:00:00",
+    endTime: "2025-05-10T10:30:00",
+    location: "Auditorio Principal",
+    category: "IoT",
+    level: "Intermedio",
+    type: "presencial",
+    year: 2025,
+    dayId: "day1",
+    speaker: {
+      name: "Jorge Ramírez",
+      bio: "Experto en IoT y Sistemas Embebidos",
+      avatar: "https://i.pravatar.cc/150?u=jorge",
+      organization: "IoT Solutions"
+    }
+  },
+  {
+    id: "7",
+    title: "Realidad Aumentada en Educación",
+    description: "Nuevas formas de enseñar usando AR y VR.",
+    startTime: "2024-05-12T14:00:00",
+    endTime: "2024-05-12T15:30:00",
+    location: "Virtual",
+    category: "Educación",
+    level: "Básico",
+    type: "virtual",
+    year: 2024,
+    dayId: "day2",
+    virtualLink: "https://zoom.us/j/987654321",
+    speaker: {
+      name: "Elena Suárez",
+      bio: "Diseñadora de Experiencias Educativas",
+      avatar: "https://i.pravatar.cc/150?u=elena",
+      organization: "EdTech Innovations"
     }
   }
 ];

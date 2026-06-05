@@ -1,76 +1,76 @@
-import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
-import { supabase } from "../services/api"
-import { updatePassword } from "../services/api"
-import { toast } from "sonner"
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../services/api";
+import { updatePassword } from "../services/api";
+import { toast } from "sonner";
 
 export default function ResetPassword() {
-    const navigate = useNavigate()
-    const [password, setPassword] = useState("")
-    const [confirmPassword, setConfirmPassword] = useState("")
-    const [isLoading, setIsLoading] = useState(false)
-    const [errorMsg, setErrorMsg] = useState("")
-    const [isSessionActive, setIsSessionActive] = useState(false)
+    const navigate = useNavigate();
+    const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [errorMsg, setErrorMsg] = useState("");
+    const [isSessionActive, setIsSessionActive] = useState(false);
 
     useEffect(() => {
         // Verificar si existe una sesion de recuperación
         const checkSession = async () => {
-            const { data } = await supabase.auth.getSession()
+            const { data } = await supabase.auth.getSession();
             if (data.session) {
-                setIsSessionActive(true)
+                setIsSessionActive(true);
             } else {
                 // Supabase a veces tarda un momento en registrar la sesión desde el hash de la URL
                 const { data: authListener } = supabase.auth.onAuthStateChange(
                     async (event, session) => {
                         if (event === "PASSWORD_RECOVERY" || session) {
-                            setIsSessionActive(true)
+                            setIsSessionActive(true);
                         }
                     }
-                )
+                );
                 return () => {
-                    authListener.subscription.unsubscribe()
-                }
+                    authListener.subscription.unsubscribe();
+                };
             }
-        }
-        checkSession()
-    }, [])
+        };
+        checkSession();
+    }, []);
 
     const handleReset = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setErrorMsg("")
+        e.preventDefault();
+        setErrorMsg("");
 
         if (password !== confirmPassword) {
-            setErrorMsg("Las contraseñas no coinciden.")
-            return
+            setErrorMsg("Las contraseñas no coinciden.");
+            return;
         }
 
         if (password.length < 6) {
-            setErrorMsg("La contraseña debe tener al menos 6 caracteres.")
-            return
+            setErrorMsg("La contraseña debe tener al menos 6 caracteres.");
+            return;
         }
 
-        setIsLoading(true)
+        setIsLoading(true);
 
         try {
-            const { error } = await updatePassword(password)
+            const { error } = await updatePassword(password);
 
             if (error) {
-                throw error
+                throw error;
             }
 
             // Una vez actualizada, el usuario ya tiene sesión activa o lo enviamos a login
-            toast.success("¡Contraseña actualizada con éxito!")
+            toast.success("¡Contraseña actualizada con éxito!");
 
             // Cerrar la sesión actual (de recuperación) e ir a login
-            await supabase.auth.signOut()
-            navigate("/login")
+            await supabase.auth.signOut();
+            navigate("/login");
         } catch (err: any) {
-            console.error("Error al actualizar la contraseña:", err)
-            setErrorMsg(err.message || "No se pudo actualizar la contraseña. Revisa que el enlace siga siendo válido.")
+            console.error("Error al actualizar la contraseña:", err);
+            setErrorMsg(err.message || "No se pudo actualizar la contraseña. Revisa que el enlace siga siendo válido.");
         } finally {
-            setIsLoading(false)
+            setIsLoading(false);
         }
-    }
+    };
 
     if (!isSessionActive) {
         return (
@@ -89,7 +89,7 @@ export default function ResetPassword() {
                     </button>
                 </div>
             </div>
-        )
+        );
     }
 
     return (
@@ -138,5 +138,5 @@ export default function ResetPassword() {
                 </form>
             </div>
         </div>
-    )
+    );
 }

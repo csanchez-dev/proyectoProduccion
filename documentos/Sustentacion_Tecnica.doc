@@ -1,0 +1,41 @@
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+    <meta charset="utf-8">
+    <title>Seguridad y Observabilidad CONIITI</title>
+    <style>
+        body { font-family: 'Calibri', sans-serif; line-height: 1.6; color: #333; }
+        h1 { color: #1f2a44; text-align: center; border-bottom: 2px solid #2563EB; padding-bottom: 10px; }
+        h2 { color: #2563EB; margin-top: 20px; }
+        h3 { color: #1E293B; }
+        p { text-align: justify; }
+        .highlight { background-color: #f3f4f6; padding: 10px; border-left: 4px solid #2563EB; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <h1>Documento Técnico - Proyecto CONIITI</h1>
+    
+    <h2>1. Seguridad: Control de Acceso y Cifrado</h2>
+    <div class="highlight">
+        <strong>Requerimiento:</strong> Mecanismos de autenticación mediante tokens firmados (JWT) y almacenamiento cifrado de contraseñas mediante funciones de hash adaptativas.
+    </div>
+    <p>Para garantizar la seguridad de la plataforma y la integridad de los datos de los usuarios, se ha implementado un robusto sistema de control de acceso en el <strong>auth-service</strong>.</p>
+    <ul>
+        <li><strong>Almacenamiento Cifrado (Bcrypt):</strong> Las contraseñas de los usuarios nunca se almacenan en texto plano. Se utiliza la librería <em>bcrypt</em>, una función de hash adaptativa que aplica un "salt" único a cada contraseña y realiza múltiples iteraciones (costo de procesamiento configurado en 10 rondas). Esto hace que los ataques de fuerza bruta o de diccionario sean computacionalmente inviables.</li>
+        <li><strong>Autenticación con Tokens Firmados (JWT):</strong> Una vez que un usuario ingresa credenciales válidas, el sistema genera un JSON Web Token (JWT). Este token contiene el ID del usuario y su rol (SUPER_ADMIN, ADMIN, VIEWER, etc.) y está firmado digitalmente utilizando una clave secreta (<em>JWT_SECRET</em>). Al ser <em>stateless</em>, permite que cualquier microservicio verifique la autenticidad de la petición sin necesidad de consultar repetidamente la base de datos, mejorando el rendimiento y la escalabilidad.</li>
+    </ul>
+
+    <h2>2. Observabilidad Mínima</h2>
+    <div class="highlight">
+        <strong>Requerimiento:</strong> Implementación de logs estructurados en la capa de servicios y despliegue de un panel básico para verificar la disponibilidad (Uptime) del sistema.
+    </div>
+    <p>La observabilidad es crucial en una arquitectura de microservicios para detectar y diagnosticar problemas en tiempo real.</p>
+    <ul>
+        <li><strong>Logs Estructurados (Winston):</strong> Se implementó la librería <em>Winston</em> en todos los microservicios (auth-service, agenda-service, inscription-service y notification-service). A diferencia del uso básico de <code>console.log()</code>, Winston genera logs estructurados que incluyen marcas de tiempo precisas, niveles de severidad (INFO, ERROR, WARN) y metadatos del request (Método HTTP, Ruta, Código de estado y Tiempo de respuesta en milisegundos). Esto estandariza la salida de los servicios y facilita su posible integración futura con herramientas de monitoreo (como ELK o Datadog).</li>
+        <li><strong>Panel de Disponibilidad (Uptime Dashboard):</strong> Se configuró un endpoint de salud (<code>/health</code>) en cada microservicio que reporta el estado actual ("ok") y el tiempo de actividad ininterrumpida (<em>process.uptime()</em>). En el frontend (React), se desarrolló un <strong>UptimePanel</strong> dentro del área administrativa que hace pings constantes a estos endpoints. Este panel ofrece una vista semaforizada (Verde/Rojo) que le permite a los administradores comprobar de un vistazo si todos los servicios están operando correctamente.</li>
+    </ul>
+
+    <br/><br/>
+    <hr/>
+    <p><em>Documento generado para validación de requerimientos técnicos del proyecto.</em></p>
+</body>
+</html>
